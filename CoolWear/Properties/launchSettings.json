@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "CoolWear (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "CoolWear (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
