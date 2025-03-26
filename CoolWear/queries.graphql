@@ -1,0 +1,5 @@
+﻿query MyQuery {
+  order(nodeId: "") {
+    customerId
+  }
+}
