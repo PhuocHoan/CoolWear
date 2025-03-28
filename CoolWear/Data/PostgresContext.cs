@@ -5,8 +5,13 @@ using System.Collections.Generic;
 
 namespace CoolWear.Data;
 
-public partial class PostgresContext(DbContextOptions<PostgresContext> options) : DbContext(options)
+public partial class PostgresContext : DbContext
 {
+    public PostgresContext(DbContextOptions<PostgresContext> options)
+        : base(options)
+    {
+    }
+
     public virtual DbSet<Customer> Customers { get; set; }
 
     public virtual DbSet<Order> Orders { get; set; }
@@ -16,6 +21,8 @@ public partial class PostgresContext(DbContextOptions<PostgresContext> options) 
     public virtual DbSet<PaymentMethod> PaymentMethods { get; set; }
 
     public virtual DbSet<Product> Products { get; set; }
+
+    public virtual DbSet<ProductCategory> ProductCategories { get; set; }
 
     public virtual DbSet<ProductColor> ProductColors { get; set; }
 
@@ -143,7 +150,7 @@ public partial class PostgresContext(DbContextOptions<PostgresContext> options) 
 
             entity.ToTable("payment_method", tb => tb.HasComment("Bảng lưu trữ thông tin phương thức thanh toán"));
 
-            entity.HasIndex(e => e.PaymentMethodName, "unique_payment_method_name").IsUnique();
+            entity.HasIndex(e => e.PaymentMethodName, "payment_method_payment_method_name_key").IsUnique();
 
             entity.Property(e => e.PaymentMethodId)
                 .HasComment("Mã phương thức thanh toán (khóa chính)")
@@ -160,11 +167,14 @@ public partial class PostgresContext(DbContextOptions<PostgresContext> options) 
 
             entity.ToTable("product", tb => tb.HasComment("Bảng lưu trữ thông tin sản phẩm"));
 
-            entity.HasIndex(e => e.ProductName, "unique_product_name").IsUnique();
+            entity.HasIndex(e => e.ProductName, "product_product_name_key").IsUnique();
 
             entity.Property(e => e.ProductId)
                 .HasComment("Mã sản phẩm (khóa chính)")
                 .HasColumnName("product_id");
+            entity.Property(e => e.CategoryId)
+                .HasComment("Mã danh mục (khóa ngoại)")
+                .HasColumnName("category_id");
             entity.Property(e => e.ImportPrice)
                 .HasComment("Giá nhập")
                 .HasColumnName("import_price");
@@ -182,6 +192,33 @@ public partial class PostgresContext(DbContextOptions<PostgresContext> options) 
             entity.Property(e => e.StockQuantity)
                 .HasComment("Số lượng tồn kho")
                 .HasColumnName("stock_quantity");
+
+            entity.HasOne(d => d.Category).WithMany(p => p.Products)
+                .HasForeignKey(d => d.CategoryId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("product_category_id_fkey");
+        });
+
+        modelBuilder.Entity<ProductCategory>(entity =>
+        {
+            entity.HasKey(e => e.CategoryId).HasName("product_category_pkey");
+
+            entity.ToTable("product_category", tb => tb.HasComment("Bảng lưu trữ thông tin các danh mục sản phẩm"));
+
+            entity.HasIndex(e => e.CategoryName, "product_category_category_name_key").IsUnique();
+
+            entity.Property(e => e.CategoryId)
+                .ValueGeneratedNever()
+                .HasComment("ID duy nhất của danh mục (khóa chính)")
+                .HasColumnName("category_id");
+            entity.Property(e => e.CategoryName)
+                .HasComment("Tên danh mục sản phẩm")
+                .HasColumnType("character varying")
+                .HasColumnName("category_name");
+            entity.Property(e => e.ProductType)
+                .HasComment("Loại sản phẩm (áo, quần) thuộc danh mục")
+                .HasColumnType("character varying")
+                .HasColumnName("product_type");
         });
 
         modelBuilder.Entity<ProductColor>(entity =>
@@ -190,7 +227,7 @@ public partial class PostgresContext(DbContextOptions<PostgresContext> options) 
 
             entity.ToTable("product_color", tb => tb.HasComment("Bảng lưu trữ thông tin màu sắc sản phẩm"));
 
-            entity.HasIndex(e => e.ColorName, "unique_color_name").IsUnique();
+            entity.HasIndex(e => e.ColorName, "product_color_color_name_key").IsUnique();
 
             entity.Property(e => e.ColorId)
                 .HasComment("Mã màu (khóa chính)")
@@ -234,7 +271,7 @@ public partial class PostgresContext(DbContextOptions<PostgresContext> options) 
 
             entity.ToTable("product_size", tb => tb.HasComment("Bảng lưu trữ thông tin kích thước sản phẩm"));
 
-            entity.HasIndex(e => e.SizeName, "unique_size_name").IsUnique();
+            entity.HasIndex(e => e.SizeName, "product_size_size_name_key").IsUnique();
 
             entity.Property(e => e.SizeId)
                 .HasComment("Mã kích thước (khóa chính)")

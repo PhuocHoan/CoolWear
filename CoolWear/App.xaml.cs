@@ -1,5 +1,5 @@
 ﻿using CoolWear.Services;
-using CoolWear.View;
+using CoolWear.Views;
 using Microsoft.UI.Xaml;
 using System;
 using System.Diagnostics;

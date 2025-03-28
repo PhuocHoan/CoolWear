@@ -37,18 +37,20 @@ public partial class Product : INotifyPropertyChanged
     /// <summary>
     /// Mã danh mục (khóa ngoại)
     /// </summary>
-    public string Category { get; set; } = null!;
+    public int CategoryId { get; set; }
 
     /// <summary>
     /// Đường dẫn tới ảnh sản phẩm
     /// </summary>
     public string PublicId { get; set; } = null!;
 
-    public virtual ICollection<OrderItem> OrderItems { get; set; } = [];
+    public virtual ProductCategory Category { get; set; } = null!;
 
-    public virtual ICollection<ProductColorLink> ProductColorLinks { get; set; } = [];
+    public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 
-    public virtual ICollection<ProductSizeLink> ProductSizeLinks { get; set; } = [];
+    public virtual ICollection<ProductColorLink> ProductColorLinks { get; set; } = new List<ProductColorLink>();
+
+    public virtual ICollection<ProductSizeLink> ProductSizeLinks { get; set; } = new List<ProductSizeLink>();
 
     public event PropertyChangedEventHandler? PropertyChanged;
 }

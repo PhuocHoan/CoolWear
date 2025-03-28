@@ -9,6 +9,7 @@ public partial class UnitOfWork(PostgresContext context) : IUnitOfWork
 {
     private bool disposed = false;
 
+    public GenericRepository<ProductCategory> ProductCategories { get; } = new(context);
     public GenericRepository<Product> Products { get; } = new(context);
     public GenericRepository<Customer> Customers { get; } = new(context);
     public GenericRepository<Order> Orders { get; } = new(context);

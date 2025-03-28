@@ -1,10 +1,16 @@
+CREATE TABLE "product_category" (
+  "category_id" integer PRIMARY KEY,
+  "category_name" varchar not null unique,
+  "product_type" varchar not null
+);
+
 CREATE TABLE "product" (
   "product_id" serial PRIMARY KEY,
   "product_name" varchar not null unique,
   "import_price" integer not null,
   "price" integer not null,
   "stock_quantity" integer not null,
-  "category" varchar not null,
+  "category_id" integer not null,
   "public_id" varchar not null
 );
 
@@ -71,6 +77,8 @@ CREATE TABLE "order_item" (
   "unit_price" integer not null
 );
 
+ALTER TABLE "product" ADD FOREIGN KEY ("category_id") REFERENCES "product_category" ("category_id");
+
 ALTER TABLE "product_color_link" ADD FOREIGN KEY ("product_id") REFERENCES "product" ("product_id");
 
 ALTER TABLE "product_color_link" ADD FOREIGN KEY ("color_id") REFERENCES "product_color" ("color_id");
@@ -86,6 +94,12 @@ ALTER TABLE "order_item" ADD FOREIGN KEY ("order_id") REFERENCES "order" ("order
 ALTER TABLE "order_item" ADD FOREIGN KEY ("product_id") REFERENCES "product" ("product_id");
 
 ALTER TABLE "order" ADD FOREIGN KEY ("payment_method_id") REFERENCES "payment_method" ("payment_method_id");
+
+-- Bảng 
+COMMENT ON TABLE product_category IS 'Bảng lưu trữ thông tin các danh mục sản phẩm';
+COMMENT ON COLUMN product_category.category_id IS 'ID duy nhất của danh mục (khóa chính)';
+COMMENT ON COLUMN product_category.category_name IS 'Tên danh mục sản phẩm';
+COMMENT ON COLUMN product_category.product_type IS 'Loại sản phẩm (áo, quần) thuộc danh mục';
 
 -- Bảng sản phẩm
 COMMENT ON TABLE "product" IS 'Bảng lưu trữ thông tin sản phẩm';

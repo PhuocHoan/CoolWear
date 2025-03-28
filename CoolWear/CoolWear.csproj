@@ -14,13 +14,15 @@
     <UserSecretsId>12608b1b-0e4c-4f1f-a102-496fd5390d44</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="Views\**" />
-    <EmbeddedResource Remove="Views\**" />
-    <None Remove="Views\**" />
-    <Page Remove="Views\**" />
+    <Content Remove="Assets\logo.png" />
   </ItemGroup>
   <ItemGroup>
-    <GraphQL Remove="queries.graphql" />
+    <None Remove="Views\CategoriesPage.xaml" />
+    <None Remove="Views\CustomersPage.xaml" />
+    <None Remove="Views\DashboardWindow.xaml" />
+    <None Remove="Views\LoginWindow.xaml" />
+    <None Remove="Views\OrdersPage.xaml" />
+    <None Remove="Views\ProductsPage.xaml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -58,22 +60,32 @@
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.3" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="Customers.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <Page Update="View\CustomersPage.xaml">
+    <Page Update="Views\DashboardWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Update="View\OrdersPage.xaml">
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\LoginWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Update="View\ProductsPage.xaml">
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\CategoriesPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Update="View\DashboardWindow.xaml">
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\OrdersPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Update="View\LoginWindow.xaml">
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\ProductsPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\CustomersPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
@@ -95,14 +107,4 @@
     <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">True</PublishTrimmed>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
-  <ItemGroup>
-    <PRIResource Remove="Views\**" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Remove="View\CustomersPage.xaml" />
-    <None Remove="View\DashboardWindow.xaml" />
-    <None Remove="View\LoginWindow.xaml" />
-    <None Remove="View\OrdersPage.xaml" />
-    <None Remove="View\ProductsPage.xaml" />
-  </ItemGroup>
 </Project>
