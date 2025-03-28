@@ -1,0 +1,10 @@
+Chính sách tích điểm:
+- Hóa đơn trên 100000 đồng: +1 điểm
+- Hóa đơn trên 1000000 đồng: +10 điểm
+
+Hoàn trả sản phẩm:
+- Hóa đơn trên 100000 đồng: -1 điểm
+- Hóa đơn trên 1000000 đồng: -10 điểm
+
+Đổi điểm:
+- 1 điểm = 1000 đồng

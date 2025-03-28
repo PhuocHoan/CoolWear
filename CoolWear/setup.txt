@@ -1,0 +1,10 @@
+ef core:
+- Tạo toàn bộ database mapping từ database sang dotnet (scaffolding database using efcore)
+dotnet ef dbcontext scaffold "Host=localhost;Database=coolwear;Username=postgres;Password=1234" Npgsql.EntityFrameworkCore.PostgreSQL --output-dir Models --namespace CoolWear.Models --context PostgresContext --no-onconfiguring --context-dir Data
+- Thay đổi bảng cụ thể từ database (thêm cột trong bảng table, thay đổi những bảng bị ảnh hưởng bởi bảng order: customer, payment_method)
+dotnet ef dbcontext scaffold "Host=localhost;Database=coolwear;Username=postgres;Password=1234" Npgsql.EntityFrameworkCore.PostgreSQL --table order --table customer --table payment_method --output-dir Models --namespace CoolWear.Models --context PostgresContext --no-onconfiguring --context-dir Data --force
+
+knex migration
+- knex migrate:make migration1 : tạo file migration1
+- Chỉnh sửa file migration1
+- knex migrate:latest : run migration

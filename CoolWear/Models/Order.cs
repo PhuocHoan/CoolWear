@@ -39,9 +39,12 @@ public partial class Order : INotifyPropertyChanged
     /// </summary>
     public bool IsRefunded { get; set; }
 
-    public virtual Customer Customer { get; set; } = null!;
+    /// <summary>
+    /// Số điểm sử dụng để thanh toán (Tích điểm sẽ tính trước khi dùng điểm thưởng để thanh toán
+    /// </summary>
+    public int PointUsed { get; set; }
 
-    public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+    public virtual Customer Customer { get; set; } = null!;
 
     public virtual PaymentMethod PaymentMethod { get; set; } = null!;
 
