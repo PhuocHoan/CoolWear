@@ -1,13 +1,7 @@
-﻿using CoolWear.Data;
-using CoolWear.Model;
-using CoolWear.Services;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration.UserSecrets;
+﻿using CoolWear.Services;
+using CoolWear.View;
 using Microsoft.UI.Xaml;
 using System;
-using System.Configuration;
 using System.Diagnostics;
 
 namespace CoolWear;
@@ -25,16 +19,8 @@ public partial class App : Application
     {
         this.InitializeComponent();
 
-        // Configure user secrets
-        ServiceManager.AddKeyedSingleton<IConfiguration>(() =>
-        {
-            return new ConfigurationBuilder()
-                .AddUserSecrets<App>()
-                .Build();
-        });
-
-        // Config - Dependency injection => Inversion of control
-        ServiceManager.AddKeyedSingleton<IDao, PostgresDao>(); // TextDao, PostgresDao, SqlServerDao, RestDao, GraphQLDao
+        // Configure services
+        ServiceManager.ConfigureServices();
     }
 
     /// <summary>
@@ -43,7 +29,8 @@ public partial class App : Application
     /// <param name="args">Details about the launch request and process.</param>
     protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
-        m_window = new MainWindow();
+
+        m_window = new LoginWindow();
         m_window.Activate();
     }
 

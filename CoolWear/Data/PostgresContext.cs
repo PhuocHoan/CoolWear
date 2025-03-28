@@ -1,4 +1,4 @@
-﻿using CoolWear.Model;
+﻿using CoolWear.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -16,8 +16,6 @@ public partial class PostgresContext(DbContextOptions<PostgresContext> options) 
     public virtual DbSet<PaymentMethod> PaymentMethods { get; set; }
 
     public virtual DbSet<Product> Products { get; set; }
-
-    public virtual DbSet<ProductCategory> ProductCategories { get; set; }
 
     public virtual DbSet<ProductColor> ProductColors { get; set; }
 
@@ -167,9 +165,6 @@ public partial class PostgresContext(DbContextOptions<PostgresContext> options) 
             entity.Property(e => e.ProductId)
                 .HasComment("Mã sản phẩm (khóa chính)")
                 .HasColumnName("product_id");
-            entity.Property(e => e.CategoryId)
-                .HasComment("Mã danh mục (khóa ngoại)")
-                .HasColumnName("category_id");
             entity.Property(e => e.ImportPrice)
                 .HasComment("Giá nhập")
                 .HasColumnName("import_price");
@@ -187,32 +182,6 @@ public partial class PostgresContext(DbContextOptions<PostgresContext> options) 
             entity.Property(e => e.StockQuantity)
                 .HasComment("Số lượng tồn kho")
                 .HasColumnName("stock_quantity");
-
-            entity.HasOne(d => d.Category).WithMany(p => p.Products)
-                .HasForeignKey(d => d.CategoryId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("product_category_id_fkey");
-        });
-
-        modelBuilder.Entity<ProductCategory>(entity =>
-        {
-            entity.HasKey(e => e.CategoryId).HasName("product_category_pkey");
-
-            entity.ToTable("product_category", tb => tb.HasComment("Bảng lưu trữ danh mục sản phẩm (loại áo/quần)"));
-
-            entity.HasIndex(e => e.CategoryName, "unique_category_name").IsUnique();
-
-            entity.Property(e => e.CategoryId)
-                .HasComment("Mã danh mục (khóa chính)")
-                .HasColumnName("category_id");
-            entity.Property(e => e.CategoryName)
-                .HasComment("Tên danh mục")
-                .HasColumnType("character varying")
-                .HasColumnName("category_name");
-            entity.Property(e => e.ProductType)
-                .HasComment("Loại sản phẩm")
-                .HasColumnType("character varying")
-                .HasColumnName("product_type");
         });
 
         modelBuilder.Entity<ProductColor>(entity =>

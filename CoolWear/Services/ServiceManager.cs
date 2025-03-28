@@ -1,6 +1,10 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using CoolWear.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,11 +27,47 @@ public sealed class ServiceManager
         _singletons[serviceType.Name] = factory()!;
     }
 
-
-
     public static IParent GetKeyedSingleton<IParent>()
     {
         Type parent = typeof(IParent);
         return (IParent)_singletons[parent.Name];
+    }
+
+    public static void ConfigureServices()
+    {
+        // Configure user secrets
+        AddKeyedSingleton<IConfiguration>(() => new ConfigurationBuilder()
+                .AddUserSecrets<ServiceManager>()
+                .Build());
+
+        // Register PostgresDao
+        try
+        {
+            var configuration = GetKeyedSingleton<IConfiguration>();
+
+            string connectionString = configuration.GetConnectionString("PostgresDatabase")!;
+
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                throw new InvalidOperationException("Connection string 'PostgresDatabase' not found in user secrets configuration.");
+            }
+
+            // Configure DbContext
+            AddKeyedSingleton(() =>
+                new PooledDbContextFactory<PostgresContext>(
+                new DbContextOptionsBuilder<PostgresContext>()
+                .UseNpgsql(connectionString)
+                .Options).CreateDbContext());
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Database connection error: {ex.Message}");
+            throw;
+        }
+
+        var context = GetKeyedSingleton<PostgresContext>();
+
+        // Register UnitOfWork
+        AddKeyedSingleton<IUnitOfWork>(() => new UnitOfWork(context));
     }
 }

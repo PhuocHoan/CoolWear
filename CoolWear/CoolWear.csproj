@@ -14,6 +14,12 @@
     <UserSecretsId>12608b1b-0e4c-4f1f-a102-496fd5390d44</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="Views\**" />
+    <EmbeddedResource Remove="Views\**" />
+    <None Remove="Views\**" />
+    <Page Remove="Views\**" />
+  </ItemGroup>
+  <ItemGroup>
     <GraphQL Remove="queries.graphql" />
   </ItemGroup>
 
@@ -49,15 +55,27 @@
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250310001" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
     <PackageReference Include="PropertyChanged.Fody" Version="4.1.0" />
-    <PackageReference Include="StrawberryShake.Server" Version="15.1.1" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="View\" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.3" />
   </ItemGroup>
   <ItemGroup>
     <None Update="Customers.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <Page Update="View\CustomersPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="View\OrdersPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="View\ProductsPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="View\DashboardWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="View\LoginWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
 
   <!--
@@ -77,4 +95,14 @@
     <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">True</PublishTrimmed>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+  <ItemGroup>
+    <PRIResource Remove="Views\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="View\CustomersPage.xaml" />
+    <None Remove="View\DashboardWindow.xaml" />
+    <None Remove="View\LoginWindow.xaml" />
+    <None Remove="View\OrdersPage.xaml" />
+    <None Remove="View\ProductsPage.xaml" />
+  </ItemGroup>
 </Project>
