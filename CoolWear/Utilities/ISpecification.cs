@@ -7,10 +7,19 @@ using System.Threading.Tasks;
 
 namespace CoolWear.Utilities;
 
+/// <summary>
+/// Interface for implementing the Specification pattern with dynamic querying capabilities.
+/// </summary>
+/// <typeparam name="T">The type of entity to which this specification applies.</typeparam>
 public interface ISpecification<T>
 {
-    Expression<Func<T, bool>>? Filter { get; }
-    Func<IQueryable<T>, IOrderedQueryable<T>>? OrderBy { get; }
-    int? PageNumber { get; }
-    int? PageSize { get; }
+    /// <summary>
+    /// Gets a collection of filter expressions to be applied to the query.
+    /// </summary>
+    IEnumerable<Expression<Func<T, bool>>> Criteria { get; }
+
+    /// <summary>
+    /// Gets a collection of include expressions for eager loading related entities.
+    /// </summary>
+    IEnumerable<Expression<Func<T, object>>> Includes { get; }
 }

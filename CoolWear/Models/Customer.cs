@@ -5,12 +5,12 @@ using System.ComponentModel;
 namespace CoolWear.Models;
 
 /// <summary>
-/// Bảng lưu trữ thông tin khách hàng
+/// Bảng khách hàng
 /// </summary>
 public partial class Customer : INotifyPropertyChanged
 {
     /// <summary>
-    /// Mã khách hàng (khóa chính)
+    /// Mã khách hàng, khóa chính, tự động tăng
     /// </summary>
     public int CustomerId { get; set; }
 
@@ -35,12 +35,12 @@ public partial class Customer : INotifyPropertyChanged
     public string? Address { get; set; }
 
     /// <summary>
-    /// Ngày tạo tài khoản
+    /// Ngày tạo tài khoản, mặc định là thời điểm hiện tại
     /// </summary>
     public DateTime CreateDate { get; set; }
 
     /// <summary>
-    /// Điểm tích lũy
+    /// Điểm tích lũy của khách hàng, mặc định là 0
     /// </summary>
     public int Points { get; set; }
 

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="CoolWear.Views.CustomTitleBar"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:CoolWear.Views"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+	<Grid 
+		Height="32" 
+		Background="{StaticResource AccentAAFillColorDefaultBrush}">
+		<StackPanel 
+			Orientation="Horizontal" 
+			VerticalAlignment="Center" 
+			Margin="12,0,0,0">
+			<Image 
+				Source="/Assets/logo.png" 
+				Width="20" 
+				Height="20"/>
+			<TextBlock 
+				Text="CoolWear" 
+				Foreground="White"
+				Style="{StaticResource CaptionTextBlockStyle}" 
+				Margin="12,0,0,0"/>
+		</StackPanel>
+	</Grid>
+</UserControl>

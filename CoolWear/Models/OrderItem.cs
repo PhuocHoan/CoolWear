@@ -1,30 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace CoolWear.Models;
 
 /// <summary>
-/// Bảng lưu trữ thông tin chi tiết đơn hàng
+/// Bảng chi tiết đơn hàng
 /// </summary>
-public partial class OrderItem
+public partial class OrderItem : INotifyPropertyChanged
 {
     /// <summary>
-    /// Mã chi tiết đơn hàng (khóa chính)
+    /// Mã chi tiết đơn hàng, khóa chính, tự động tăng
     /// </summary>
     public int OrderItemId { get; set; }
 
     /// <summary>
-    /// Mã đơn hàng (khóa ngoại)
+    /// Mã đơn hàng, khóa ngoại
     /// </summary>
     public int OrderId { get; set; }
 
     /// <summary>
-    /// Mã sản phẩm (khóa ngoại)
+    /// Mã biến thể sản phẩm, khóa ngoại
     /// </summary>
-    public int ProductId { get; set; }
+    public int VariantId { get; set; }
 
     /// <summary>
-    /// Số lượng
+    /// Số lượng sản phẩm
     /// </summary>
     public int Quantity { get; set; }
 
@@ -35,5 +36,7 @@ public partial class OrderItem
 
     public virtual Order Order { get; set; } = null!;
 
-    public virtual Product Product { get; set; } = null!;
+    public virtual ProductVariant Variant { get; set; } = null!;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 }

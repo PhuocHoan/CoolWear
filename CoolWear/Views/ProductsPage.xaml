@@ -5,11 +5,200 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:CoolWear.Views"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+	xmlns:models="using:CoolWear.Models"
+	mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Grid>
+	<Grid>
+		<!-- 2 columns: Left sidebar for filters, right for top toolbar & data grid -->
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="220" />
+			<ColumnDefinition Width="*" />
+		</Grid.ColumnDefinitions>
 
-    </Grid>
+		<!-- LEFT SIDEBAR -->
+		<ScrollViewer Grid.Column="0" 
+              Background="#F8F8F8" 
+              VerticalScrollBarVisibility="Auto">
+			<StackPanel Padding="10"
+                Spacing="16">
+				<!-- Nhóm hàng -->
+				<TextBlock Text="Nhóm hàng"
+                   FontWeight="Bold" />
+				<ComboBox x:Name="NhomHangComboBox"
+                  PlaceholderText="Chọn nhóm hàng..." 
+                  ItemsSource="{x:Bind ViewModel.Categories, Mode=OneWay}"
+                  SelectedItem="{x:Bind ViewModel.SelectedCategory, Mode=TwoWay}"
+                  HorizontalAlignment="Stretch">
+					<ComboBox.ItemTemplate>
+						<DataTemplate x:DataType="models:ProductCategory">
+							<TextBlock Text="{x:Bind CategoryName}" />
+						</DataTemplate>
+					</ComboBox.ItemTemplate>
+				</ComboBox>
+
+				<!-- Tồn kho -->
+				<TextBlock Text="Tồn kho"
+                   FontWeight="Bold" />
+				<CheckBox Content="Còn hàng" 
+                  IsChecked="{x:Bind ViewModel.InStockOnly, Mode=TwoWay}" />
+
+				<!-- Size -->
+				<TextBlock Text="Size"
+						   FontWeight="Bold" />
+				<ComboBox ItemsSource="{x:Bind ViewModel.Sizes, Mode=OneWay}"
+						  SelectedItem="{x:Bind ViewModel., Mode=TwoWay}"
+						  PlaceholderText="Chọn màu sắc..."
+						  HorizontalAlignment="Stretch">
+					<ComboBox.ItemTemplate>
+						<DataTemplate x:DataType="models:ProductColor">
+							<TextBlock Text="{x:Bind ColorName}" />
+						</DataTemplate>
+					</ComboBox.ItemTemplate>
+				</ComboBox>
+
+				<!-- Màu sắc -->
+				<TextBlock Text="Màu sắc"
+                   FontWeight="Bold" />
+				<ComboBox ItemsSource="{x:Bind ViewModel.Colors, Mode=OneWay}"
+                  SelectedItem="{x:Bind ViewModel.SelectedColor, Mode=TwoWay}"
+                  PlaceholderText="Chọn màu sắc..."
+                  HorizontalAlignment="Stretch">
+					<ComboBox.ItemTemplate>
+						<DataTemplate x:DataType="models:ProductColor">
+							<TextBlock Text="{x:Bind ColorName}" />
+						</DataTemplate>
+					</ComboBox.ItemTemplate>
+				</ComboBox>
+			</StackPanel>
+		</ScrollViewer>
+
+
+		<!-- MAIN CONTENT: top bar + data area -->
+		<Grid Grid.Column="1">
+			<Grid.RowDefinitions>
+				<!-- Top row for toolbar -->
+				<RowDefinition Height="Auto" />
+				<!-- Main row for data grid -->
+				<RowDefinition Height="*" />
+			</Grid.RowDefinitions>
+
+			<!-- TOP TOOLBAR -->
+			<StackPanel Orientation="Horizontal"
+                        Grid.Row="0"
+                        Padding="10"
+                        Spacing="8"
+                        Background="#EAEAEA">
+				<!-- Search box -->
+				<TextBox x:Name="SearchBox"
+                         Width="200"
+                         PlaceholderText="Tìm kiếm..."
+                         Margin="0,0,10,0" />
+
+				<!-- Buttons -->
+				<Button x:Name="AddButton"
+                        Content="Thêm" />
+				<Button x:Name="DeleteButton"
+                        Content="Xóa" />
+				<Button x:Name="EditButton"
+                        Content="Sửa" />
+				<Button x:Name="ImportButton"
+                        Content="Thêm file" />
+				<Button x:Name="ExportButton"
+                        Content="Xuất file" />
+			</StackPanel>
+
+			<!-- DATA GRID / TABLE AREA -->
+			<ListView x:Name="ItemsListView"
+          Grid.Row="1"
+          Margin="10"
+          ItemsSource="{x:Bind ViewModel.Products, Mode=OneWay}">
+				<ListView.HeaderTemplate>
+					<DataTemplate>
+						<Grid>
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="80" />
+								<!-- Image -->
+								<ColumnDefinition Width="100" />
+								<!-- Mã hàng -->
+								<ColumnDefinition Width="250" />
+								<!-- Tên hàng -->
+								<ColumnDefinition Width="120" />
+								<!-- Nhóm hàng -->
+								<ColumnDefinition Width="100" />
+								<!-- Size -->
+								<ColumnDefinition Width="100" />
+								<!-- Màu sắc -->
+								<ColumnDefinition Width="100" />
+								<!-- Giá bán -->
+								<ColumnDefinition Width="100" />
+								<!-- Giá vốn -->
+								<ColumnDefinition Width="100" />
+								<!-- Tồn kho -->
+							</Grid.ColumnDefinitions>
+
+							<TextBlock Grid.Column="0" Text="Hình ảnh" FontWeight="Bold" />
+							<TextBlock Grid.Column="1" Text="Mã hàng" FontWeight="Bold" />
+							<TextBlock Grid.Column="2" Text="Tên hàng" FontWeight="Bold" />
+							<TextBlock Grid.Column="3" Text="Nhóm hàng" FontWeight="Bold" />
+							<TextBlock Grid.Column="4" Text="Size" FontWeight="Bold" />
+							<TextBlock Grid.Column="5" Text="Màu sắc" FontWeight="Bold" />
+							<TextBlock Grid.Column="6" Text="Giá bán" FontWeight="Bold" />
+							<TextBlock Grid.Column="7" Text="Giá vốn" FontWeight="Bold" />
+							<TextBlock Grid.Column="8" Text="Tồn kho" FontWeight="Bold" />
+						</Grid>
+					</DataTemplate>
+				</ListView.HeaderTemplate>
+
+				<ListView.ItemTemplate>
+					<DataTemplate x:DataType="models:Product">
+						<Grid>
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="80" />
+								<!-- Image -->
+								<ColumnDefinition Width="100" />
+								<!-- Mã hàng -->
+								<ColumnDefinition Width="250" />
+								<!-- Tên hàng -->
+								<ColumnDefinition Width="120" />
+								<!-- Nhóm hàng -->
+								<ColumnDefinition Width="100" />
+								<!-- Size -->
+								<ColumnDefinition Width="100" />
+								<!-- Màu sắc -->
+								<ColumnDefinition Width="100" />
+								<!-- Giá bán -->
+								<ColumnDefinition Width="100" />
+								<!-- Giá vốn -->
+								<ColumnDefinition Width="100" />
+								<!-- Tồn kho -->
+							</Grid.ColumnDefinitions>
+
+							<!-- Product Image -->
+							<Image Grid.Column="0" Source="{x:Bind PublicId}" Width="60" Height="60" Stretch="Uniform" />
+
+							<!-- Mã hàng -->
+							<TextBlock Grid.Column="1" Text="{x:Bind ProductId}" VerticalAlignment="Center" />
+
+							<!-- Tên hàng -->
+							<TextBlock Grid.Column="2" Text="{x:Bind ProductName}" VerticalAlignment="Center" />
+
+							<!-- Nhóm hàng -->
+							<TextBlock Grid.Column="3" Text="{x:Bind Category.CategoryName}" VerticalAlignment="Center" />
+
+							<!-- Giá bán -->
+							<TextBlock Grid.Column="6" Text="{x:Bind Price}" VerticalAlignment="Center" />
+
+							<!-- Giá vốn -->
+							<TextBlock Grid.Column="7" Text="{x:Bind ImportPrice}" VerticalAlignment="Center" />
+
+							<!-- Tồn kho -->
+							<!--<TextBlock Grid.Column="8" Text="{x:Bind ProductVariants[0].StockQuantity}" VerticalAlignment="Center" />-->
+						</Grid>
+					</DataTemplate>
+				</ListView.ItemTemplate>
+			</ListView>
+		</Grid>
+	</Grid>
 </Page>

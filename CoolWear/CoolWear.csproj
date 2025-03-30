@@ -14,15 +14,15 @@
     <UserSecretsId>12608b1b-0e4c-4f1f-a102-496fd5390d44</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
-    <Content Remove="Assets\logo.png" />
-  </ItemGroup>
-  <ItemGroup>
+    <None Remove="Assets\logo.png" />
     <None Remove="Views\CategoriesPage.xaml" />
     <None Remove="Views\CustomersPage.xaml" />
+    <None Remove="Views\CustomTitleBar.xaml" />
     <None Remove="Views\DashboardWindow.xaml" />
     <None Remove="Views\LoginWindow.xaml" />
     <None Remove="Views\OrdersPage.xaml" />
     <None Remove="Views\ProductsPage.xaml" />
+    <None Remove="Views\ReportPage.xaml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -58,6 +58,16 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
     <PackageReference Include="PropertyChanged.Fody" Version="4.1.0" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.3" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\CustomTitleBar.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\ReportPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Page Update="Views\DashboardWindow.xaml">

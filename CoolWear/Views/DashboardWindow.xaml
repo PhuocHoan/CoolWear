@@ -7,50 +7,52 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Title="DashboardWindow">
+    Title="CoolWear">
 
 	<Grid>
-		<!--<VisualStateManager.VisualStateGroups>
-        <VisualStateGroup>
-            <VisualState>
-                <VisualState.StateTriggers>
-                    <AdaptiveTrigger MinWindowWidth="{x:Bind navigation.CompactModeThresholdWidth}" />
-                </VisualState.StateTriggers>
-                <VisualState.Setters>
-                    <Setter Target="navigation.PaneDisplayMode" Value="Top" />
-                </VisualState.Setters>
-            </VisualState>
-        </VisualStateGroup>
-    </VisualStateManager.VisualStateGroups >-->
+		<Grid.RowDefinitions>
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="*"/>
+		</Grid.RowDefinitions>
 
-		<NavigationView x:Name="navigation" IsBackButtonVisible="Collapsed" ItemInvoked="navigation_ItemInvoked" SelectionChanged="navigation_SelectionChanged" PaneDisplayMode="Top">
-			<NavigationView.Header>
-				<StackPanel Orientation="Horizontal">
-					<Image Source="/Assets/logo.png" Width="40" Height="40"/>
-					<TextBlock Text="CoolWear" VerticalAlignment="Center" Margin="10,0,0,0"/>
-				</StackPanel>
-			</NavigationView.Header>
+		<!-- App Title Bar -->
+		<local:CustomTitleBar x:Name="AppTitleBar" Grid.Row="0"/>
+
+		<!-- Navigation View -->
+		<NavigationView 
+            x:Name="navigation" 
+            Grid.Row="1"
+            IsBackButtonVisible="Collapsed" 
+            ItemInvoked="Navigation_ItemInvoked" 
+            SelectionChanged="Navigation_SelectionChanged" 
+            PaneDisplayMode="Top">
+
 			<NavigationView.MenuItems>
-				<NavigationViewItem Icon="Shop" Content="Dữ liệu cơ sở" IsExpanded="True">
-					<NavigationViewItem.MenuItems>
-						<NavigationViewItem Icon="Refresh" Content="Loại hàng" Tag="CategoriesPage"/>
-						<NavigationViewItem Icon="Refresh" Content="Kho hàng" Tag="ProductsPage"/>
-						<NavigationViewItem Icon="Refresh" Content="Khách hàng" Tag="CustomersPage"/>
-					</NavigationViewItem.MenuItems>
-				</NavigationViewItem>
-				<NavigationViewItem Content="Dữ liệu theo thời gian" IsExpanded="True">
-					<NavigationViewItem.Icon>
-						<ImageIcon Source="/Assets/shops.png"/>
-					</NavigationViewItem.Icon>
-					<NavigationViewItem.MenuItems>
-						<NavigationViewItem Icon="Refresh" Content="Đơn hàng" Tag="OrdersPage"/>
-					</NavigationViewItem.MenuItems>
-				</NavigationViewItem>
+				<NavigationViewItem Icon="Refresh" Content="Loại sản phẩm" Tag="CategoriesPage"/>
+				<NavigationViewItem Icon="Refresh" Content="Sản phẩm" Tag="ProductsPage"/>
+				<NavigationViewItem Icon="Refresh" Content="Khách hàng" Tag="CustomersPage"/>
+				<NavigationViewItem Icon="Refresh" Content="Đơn hàng" Tag="OrdersPage"/>
+				<NavigationViewItem Icon="Refresh" Content="Báo cáo" Tag="ReportPage"/>
 			</NavigationView.MenuItems>
-				<NavigationView.FooterMenuItems>
+
+			<NavigationView.FooterMenuItems>
 				<NavigationViewItem Content="Tài khoản" Tag="SamplePage4" Icon="Contact" />
 			</NavigationView.FooterMenuItems>
+
 			<Frame x:Name="container"/>
 		</NavigationView>
+
+		<VisualStateManager.VisualStateGroups>
+			<VisualStateGroup>
+				<VisualState>
+					<VisualState.StateTriggers>
+						<AdaptiveTrigger MinWindowWidth="{x:Bind navigation.CompactModeThresholdWidth}" />
+					</VisualState.StateTriggers>
+					<VisualState.Setters>
+						<Setter Target="navigation.PaneDisplayMode" Value="Top" />
+					</VisualState.Setters>
+				</VisualState>
+			</VisualStateGroup>
+		</VisualStateManager.VisualStateGroups>
 	</Grid>
 </Window>

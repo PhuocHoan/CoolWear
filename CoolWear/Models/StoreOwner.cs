@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace CoolWear.Models;
 
 /// <summary>
-/// Bảng lưu trữ thông tin chủ cửa hàng
+/// Bảng chủ cửa hàng
 /// </summary>
-public partial class StoreOwner
+public partial class StoreOwner : INotifyPropertyChanged
 {
     /// <summary>
-    /// Mã chủ cửa hàng (khóa chính)
+    /// Mã chủ cửa hàng, khóa chính, tự động tăng
     /// </summary>
     public int OwnerId { get; set; }
 
@@ -34,7 +35,19 @@ public partial class StoreOwner
     public string Address { get; set; } = null!;
 
     /// <summary>
-    /// Mật khẩu đã mã hóa
+    /// Tên đăng nhập
+    /// </summary>
+    public string Username { get; set; } = null!;
+
+    /// <summary>
+    /// Mật khẩu
     /// </summary>
     public string Password { get; set; } = null!;
+
+    /// <summary>
+    /// Mã hóa mật khẩu
+    /// </summary>
+    public string Entropy { get; set; } = null!;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 }

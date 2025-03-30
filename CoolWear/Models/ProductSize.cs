@@ -1,22 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace CoolWear.Models;
 
 /// <summary>
-/// Bảng lưu trữ thông tin kích thước sản phẩm
+/// Bảng kích thước sản phẩm
 /// </summary>
-public partial class ProductSize
+public partial class ProductSize : INotifyPropertyChanged
 {
     /// <summary>
-    /// Mã kích thước (khóa chính)
+    /// Mã kích thước, khóa chính, tự động tăng
     /// </summary>
     public int SizeId { get; set; }
 
     /// <summary>
-    /// Tên kích thước
+    /// Tên kích thước, duy nhất
     /// </summary>
     public string SizeName { get; set; } = null!;
 
-    public virtual ICollection<ProductSizeLink> ProductSizeLinks { get; set; } = new List<ProductSizeLink>();
+    public virtual ICollection<ProductVariant> ProductVariants { get; set; } = new List<ProductVariant>();
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 }

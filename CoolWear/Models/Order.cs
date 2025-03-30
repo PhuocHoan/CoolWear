@@ -5,46 +5,48 @@ using System.ComponentModel;
 namespace CoolWear.Models;
 
 /// <summary>
-/// Bảng lưu trữ thông tin đơn hàng
+/// Bảng đơn hàng
 /// </summary>
 public partial class Order : INotifyPropertyChanged
 {
     /// <summary>
-    /// Mã đơn hàng (khóa chính)
+    /// Mã đơn hàng, khóa chính, tự động tăng
     /// </summary>
     public int OrderId { get; set; }
 
     /// <summary>
-    /// Ngày đặt hàng
+    /// Ngày đặt hàng, mặc định là thời điểm hiện tại
     /// </summary>
     public DateTime OrderDate { get; set; }
 
     /// <summary>
-    /// Mã khách hàng (khóa ngoại)
+    /// Mã khách hàng, khóa ngoại (có thể null nếu khách hàng không đăng nhập)
     /// </summary>
-    public int CustomerId { get; set; }
+    public int? CustomerId { get; set; }
 
     /// <summary>
-    /// Tổng số tiền
+    /// Tổng tiền đơn hàng
     /// </summary>
     public int TotalAmount { get; set; }
 
     /// <summary>
-    /// Mã phương thức thanh toán (khóa ngoại)
+    /// Mã phương thức thanh toán, khóa ngoại
     /// </summary>
     public int PaymentMethodId { get; set; }
 
     /// <summary>
-    /// Trạng thái hoàn tiền
-    /// </summary>
-    public bool IsRefunded { get; set; }
-
-    /// <summary>
-    /// Số điểm sử dụng để thanh toán (Tích điểm sẽ tính trước khi dùng điểm thưởng để thanh toán
+    /// Số điểm sử dụng, mặc định là 0
     /// </summary>
     public int PointUsed { get; set; }
 
-    public virtual Customer Customer { get; set; } = null!;
+    /// <summary>
+    /// Trạng thái đơn hàng, mặc định là &quot;Đang xử lý&quot;
+    /// </summary>
+    public string Status { get; set; } = null!;
+
+    public virtual Customer? Customer { get; set; }
+
+    public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 
     public virtual PaymentMethod PaymentMethod { get; set; } = null!;
 

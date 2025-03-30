@@ -7,14 +7,56 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Title="LoginWindow">
+    Title="Đăng Nhập">
 
-	<Grid>
-		<StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
-			<TextBox Header="Username" Text="{x:Bind ViewModel.Username, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-			<PasswordBox Header="Password" Password="{x:Bind ViewModel.Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-			<CheckBox Content="Remember me" IsChecked="{x:Bind ViewModel.RememberMe, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-			<Button Content="Login" Width="80" Height="35" Click="loginButton_Click"/>
-		</StackPanel>
+	<Grid Background="#D9D9D9">
+		<Grid.RowDefinitions>
+			<!-- For title bar -->
+			<RowDefinition Height="Auto"/>
+			<!-- For content -->
+			<RowDefinition Height="*"/>
+		</Grid.RowDefinitions>
+
+		<!-- App Title Bar -->
+		<local:CustomTitleBar x:Name="AppTitleBar" Grid.Row="0"/>
+
+		<!-- Login Content -->
+		<Border 
+            Grid.Row="1"
+            Background="White"
+            CornerRadius="10"
+            Padding="30"
+            VerticalAlignment="Center"
+            HorizontalAlignment="Center"
+            Width="500"
+            Height="400"
+            BorderBrush="Black"
+            BorderThickness="1">
+
+			<StackPanel Spacing="20">
+				<!-- Header -->
+				<TextBlock 
+                    Text="Đăng Nhập" 
+                    Style="{StaticResource TitleTextBlockStyle}"/>
+				<TextBox 
+                    Header="Tài khoản" 
+                    MaxLength="20" 
+                    PlaceholderText="Nhập tài khoản"
+                    Text="{x:Bind ViewModel.Username, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+				<PasswordBox 
+                    Header="Mật khẩu" 
+                    MaxLength="20" 
+                    PlaceholderText="Nhập mật khẩu" 
+                    Password="{x:Bind ViewModel.Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+				<CheckBox 
+                    Content="Remember me"
+                    IsChecked="{x:Bind ViewModel.RememberMe, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+				<Button 
+                    Content="Đăng nhập" 
+                    Background="#5FE2FF"
+                    Click="LoginButton_Click" 
+                    HorizontalAlignment="Center"/>
+			</StackPanel>
+		</Border>
 	</Grid>
 </Window>

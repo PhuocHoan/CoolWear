@@ -24,10 +24,14 @@ public sealed partial class DashboardWindow : Window
 {
     public DashboardWindow()
     {
-        this.InitializeComponent();
+        InitializeComponent();
+
+        // Set the title bar
+        ExtendsContentIntoTitleBar = true;
+        SetTitleBar(AppTitleBar);
     }
 
-    private void navigation_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
+    private void Navigation_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
     {
         if (args.IsSettingsInvoked)
         {
@@ -44,7 +48,7 @@ public sealed partial class DashboardWindow : Window
         }
     }
 
-    private void navigation_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+    private void Navigation_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
 
     }

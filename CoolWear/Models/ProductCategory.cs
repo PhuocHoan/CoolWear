@@ -5,22 +5,22 @@ using System.ComponentModel;
 namespace CoolWear.Models;
 
 /// <summary>
-/// Bảng lưu trữ thông tin các danh mục sản phẩm
+/// Bảng danh mục sản phẩm
 /// </summary>
 public partial class ProductCategory : INotifyPropertyChanged
 {
     /// <summary>
-    /// ID duy nhất của danh mục (khóa chính)
+    /// Mã danh mục sản phẩm, khóa chính
     /// </summary>
     public int CategoryId { get; set; }
 
     /// <summary>
-    /// Tên danh mục sản phẩm
+    /// Tên danh mục sản phẩm, duy nhất
     /// </summary>
     public string CategoryName { get; set; } = null!;
 
     /// <summary>
-    /// Loại sản phẩm (áo, quần) thuộc danh mục
+    /// Loại sản phẩm (áo, quần,...)
     /// </summary>
     public string ProductType { get; set; } = null!;
 

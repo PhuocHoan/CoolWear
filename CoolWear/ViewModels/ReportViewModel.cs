@@ -5,8 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace CoolWear.ViewModels;
-
-internal partial class OrderViewModel : ViewModelBase
+internal class ReportViewModel
 {
-    // Your OrderViewModel implementation here
 }

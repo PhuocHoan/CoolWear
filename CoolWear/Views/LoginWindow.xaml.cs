@@ -1,3 +1,4 @@
+using CoolWear.Services;
 using CoolWear.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -14,11 +15,6 @@ using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Security.Cryptography;
 using System.Text;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
 
 namespace CoolWear.Views;
 /// <summary>
@@ -26,19 +22,22 @@ namespace CoolWear.Views;
 /// </summary>
 public sealed partial class LoginWindow : Window
 {
-    public LoginViewModel ViewModel { get; set; }
+    public LoginViewModel ViewModel { get; } = ServiceManager.GetKeyedSingleton<LoginViewModel>();
 
     public LoginWindow()
     {
-        this.InitializeComponent();
-        ViewModel = new LoginViewModel();
+        InitializeComponent();
+
+        // Set the title bar
+        ExtendsContentIntoTitleBar = true;
+        SetTitleBar(AppTitleBar);
 
         var localStorage = Windows.Storage.ApplicationData.Current.LocalSettings;
         var username = (string)localStorage.Values["Username"];
         var encryptedInBase64 = (string)localStorage.Values["Password"];
         var entropyInBase64 = (string)localStorage.Values["Entropy"];
 
-        if (username == null) return;
+        if (username == null || encryptedInBase64 == null || entropyInBase64 == null) return;
 
         var encryptedInBytes = Convert.FromBase64String(encryptedInBase64);
         var entropyInBytes = Convert.FromBase64String(entropyInBase64);
@@ -53,7 +52,7 @@ public sealed partial class LoginWindow : Window
         ViewModel.Username = username;
     }
 
-    private void loginButton_Click(object sender, RoutedEventArgs e)
+    public void LoginButton_Click(object sender, RoutedEventArgs e)
     {
         Debug.WriteLine(ViewModel.Username + " " + ViewModel.Password);
 
@@ -90,7 +89,7 @@ public sealed partial class LoginWindow : Window
                 var screen = new DashboardWindow();
                 screen.Activate();
 
-                this.Close();
+                Close();
             }
         }
     }

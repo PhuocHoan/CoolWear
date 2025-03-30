@@ -364,3 +364,5 @@ FodyWeavers.xsd
 
 # environment file
 .env
+
+# Jetbrain tools

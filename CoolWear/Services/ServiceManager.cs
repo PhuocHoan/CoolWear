@@ -1,4 +1,5 @@
 ﻿using CoolWear.Data;
+using CoolWear.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
@@ -69,5 +70,13 @@ public sealed class ServiceManager
 
         // Register UnitOfWork
         AddKeyedSingleton<IUnitOfWork>(() => new UnitOfWork(context));
+
+        var unitOfWork = GetKeyedSingleton<IUnitOfWork>();
+
+        // Register LoginViewModel
+        AddKeyedSingleton(() => new LoginViewModel(unitOfWork));
+
+        // Register ProductViewModel
+        AddKeyedSingleton(() => new ProductViewModel(unitOfWork));
     }
 }
