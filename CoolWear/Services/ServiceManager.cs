@@ -6,9 +6,6 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CoolWear.Services;
 
@@ -78,5 +75,8 @@ public sealed class ServiceManager
 
         // Register ProductViewModel
         AddKeyedSingleton(() => new ProductViewModel(unitOfWork));
+
+        // Register CategoryViewModel
+        AddKeyedSingleton(() => new CategoryViewModel(unitOfWork));
     }
 }

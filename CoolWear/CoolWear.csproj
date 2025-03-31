@@ -15,6 +15,8 @@
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Assets\logo.png" />
+    <None Remove="Views\CategoriesPage.xaml" />
+    <None Remove="Views\ColorsPage.xaml" />
     <None Remove="Views\CustomersPage.xaml" />
     <None Remove="Views\CustomTitleBar.xaml" />
     <None Remove="Views\DashboardWindow.xaml" />
@@ -22,6 +24,7 @@
     <None Remove="Views\OrdersPage.xaml" />
     <None Remove="Views\ProductsPage.xaml" />
     <None Remove="Views\ReportPage.xaml" />
+    <None Remove="Views\SizesPage.xaml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -57,6 +60,21 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
     <PackageReference Include="PropertyChanged.Fody" Version="4.1.0" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.3" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\ColorsPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\SizesPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\CategoriesPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Page Update="Views\CustomTitleBar.xaml">

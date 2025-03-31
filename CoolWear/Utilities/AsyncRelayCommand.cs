@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
@@ -39,7 +35,6 @@ public partial class AsyncRelayCommand(Func<Task> execute, Func<bool>? canExecut
         CanExecuteChanged?.Invoke(this, EventArgs.Empty);
 }
 
-// Add generic version of AsyncRelayCommand
 public partial class AsyncRelayCommand<T>(Func<T, Task> execute, Func<T, bool>? canExecute = null) : ICommand
 {
     private bool _isExecuting; // To avoid re-entrancy

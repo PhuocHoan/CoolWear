@@ -61,4 +61,4 @@ POSTGRES_PASSWORD=1234
 
 - Bug:
 
-  - FilterInStockOnly luôn hiển thị sản phẩm
+  - FilterInStockOnly không set true, false nữa

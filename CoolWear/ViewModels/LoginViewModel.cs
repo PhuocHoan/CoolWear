@@ -1,13 +1,12 @@
 ﻿using CoolWear.Models;
 using CoolWear.Services;
 using CoolWear.Utilities;
-using System;
-using System.Collections.Generic;
+using CoolWear.Views;
+using Microsoft.UI.Xaml;
 using System.Diagnostics;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Input;
 
 namespace CoolWear.ViewModels;
 
@@ -42,10 +41,14 @@ public partial class LoginViewModel : ViewModelBase
         set => SetProperty(ref _rememberMe, value);
     }
 
+    public ICommand LoginCommand { get; }
+
     public LoginViewModel(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
-        // Use proper async loading method
+
+        LoginCommand = new AsyncRelayCommand(LoginAsync);
+
         GetStoreOwnersAsync(unitOfWork);
     }
 
@@ -56,6 +59,7 @@ public partial class LoginViewModel : ViewModelBase
         {
             _storeOwner = owners.First(); // Assume there is one store owner
             Debug.WriteLine($"Store owner: {_storeOwner.Username}");
+
             ManagePassword = new(_storeOwner, unitOfWork);
             var result = ManagePassword.UnprotectPassword();
             Username = result.Item1 ?? "";
@@ -74,4 +78,44 @@ public partial class LoginViewModel : ViewModelBase
         _storeOwner != null &&
         Username == _storeOwner.Username &&
         Password == _unProtectedPassword;
+
+    public async Task LoginAsync()
+    {
+        Debug.WriteLine(Username + " " + Password);
+
+        if (CanLogin())
+        { // CanExecute - Look before you leap
+            bool success = Login(); // Execute
+
+            if (RememberMe == true)
+            {
+                // Use for change password, first, type the wanted password,
+                // click remember me, then click the button. Rerun the program and login successfully.
+                ManagePassword!.ProtectPassword(Password);
+
+                Debug.WriteLine($"Encrypted password in base 64 is: {Password}");
+            }
+
+            if (success)
+            {
+                var dashboardWindow = new DashboardWindow();
+
+                if (Application.Current is App app)
+                {
+                    app.MainWindow!.Close(); // Close the login window
+                    app.SetMainWindow(dashboardWindow); // Tell the App about the new main window
+                }
+                else
+                {
+                    Debug.WriteLine("ERROR: Could not cast Application.Current to App to set main window.");
+                }
+
+                dashboardWindow.Activate(); // Activate the new window
+            }
+            else
+            {
+                await ShowErrorDialogAsync("Đăng Nhập Thất Bại", "Tài khoản hoặc mật khẩu không đúng. Vui lòng thử lại.");
+            }
+        }
+    }
 }

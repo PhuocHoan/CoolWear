@@ -37,7 +37,7 @@ public class GenericRepository<T> : IRepository<T> where T : class
         ArgumentNullException.ThrowIfNull(entity);
 
         _dbSet.Attach(entity); // Attach if not tracked
-        _context.Entry(entity).State = EntityState.Modified;
+        _dbSet.Entry(entity).State = EntityState.Modified;
 
         return Task.CompletedTask; // Call SaveChangesAsync() to save
     }
@@ -48,7 +48,7 @@ public class GenericRepository<T> : IRepository<T> where T : class
 
         // If entity is already tracked, Remove works directly.
         // If not tracked, Attach first then Remove.
-        if (_context.Entry(entity).State == EntityState.Detached)
+        if (_dbSet.Entry(entity).State == EntityState.Detached)
         {
             _dbSet.Attach(entity);
         }
@@ -57,16 +57,11 @@ public class GenericRepository<T> : IRepository<T> where T : class
         return Task.CompletedTask; // Call SaveChangesAsync() to save
     }
 
-    // --- UpdateAsync using ExecuteUpdateAsync (Keep if needed for bulk updates) ---
-    // Be cautious as this bypasses change tracking and concurrency checks
     public async Task UpdateAsync(
         ISpecification<T> spec,
-        Expression<Func<SetPropertyCalls<T>, SetPropertyCalls<T>>> updateExpression)
-    {
+        Expression<Func<SetPropertyCalls<T>, SetPropertyCalls<T>>> updateExpression) =>
         // This method remains for bulk updates if explicitly desired
-        var query = ApplySpecification(spec);
-        await query.ExecuteUpdateAsync(updateExpression);
-    }
+        await ApplySpecification(spec).ExecuteUpdateAsync(updateExpression);
 
     // Modified DeleteAsync using Specification: Fetch then Remove
     public async Task DeleteAsync(ISpecification<T> spec)
@@ -76,12 +71,10 @@ public class GenericRepository<T> : IRepository<T> where T : class
 
         if (entitiesToDelete.Any())
         {
-            _dbSet.RemoveRange(entitiesToDelete);
-            // Note: Actual deletion happens on SaveChangesAsync()
+            _dbSet.RemoveRange(entitiesToDelete); // Call SaveChangesAsync() to save
         }
     }
 
-    // --- ApplySpecification remains the same ---
     private IQueryable<T> ApplySpecification(ISpecification<T> spec)
     {
         var query = _dbSet.AsQueryable();
@@ -100,9 +93,6 @@ public class GenericRepository<T> : IRepository<T> where T : class
         {
             query = spec.IncludeStrings.Aggregate(query, (current, include) => current.Include(include)); // Use string overload
         }
-
-        // Add AsNoTracking() if needed (consider adding IsReadOnly to ISpecification)
-        // if (spec.IsReadOnly) query = query.AsNoTracking();
 
         return query;
     }

@@ -4,7 +4,7 @@ using System.Globalization;
 
 namespace CoolWear.Converters;
 
-public class CurrencyFormatConverter : IValueConverter
+public partial class CurrencyFormatConverter : IValueConverter
 {
     // Convert value (int/decimal) to formatted currency string (e.g., "10.000 đ")
     public object Convert(object value, Type targetType, object parameter, string language)
@@ -24,9 +24,5 @@ public class CurrencyFormatConverter : IValueConverter
         return value?.ToString() ?? string.Empty; // Fallback
     }
 
-    // Converting back is usually not needed for display converters
-    public object ConvertBack(object value, Type targetType, object parameter, string language)
-    {
-        throw new NotImplementedException();
-    }
+    public object ConvertBack(object value, Type targetType, object parameter, string language) => throw new NotImplementedException();
 }

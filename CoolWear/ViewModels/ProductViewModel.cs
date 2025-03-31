@@ -1,9 +1,7 @@
 ﻿using CoolWear.Models;
 using CoolWear.Services;
-using CoolWear.Services;
 using CoolWear.Utilities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
@@ -16,16 +14,20 @@ namespace CoolWear.ViewModels;
 
 public partial class ProductViewModel : ViewModelBase
 {
+    // --- Dependencies ---
     private readonly IUnitOfWork _unitOfWork;
+
+    // --- Backing Fields ---
     private List<Product>? _allProducts;
     private FullObservableCollection<Product>? _filteredProducts;
     private FullObservableCollection<ProductCategory>? _categories;
     private FullObservableCollection<ProductSize>? _sizes;
     private FullObservableCollection<ProductColor>? _colors;
+
     private ProductCategory? _selectedCategory;
     private ProductSize? _selectedSize;
     private ProductColor? _selectedColor;
-    private bool _filterInStockOnly = true;
+    private bool _filterInStockOnly = true; // Keep default
     private string? _searchTerm;
     private bool _isLoading;
     private bool _showEmptyMessage;
@@ -155,38 +157,29 @@ public partial class ProductViewModel : ViewModelBase
         {
             Debug.WriteLine($"ERROR Loading Products: {ex}");
             errorMessage = $"Không thể tải danh sách sản phẩm: {ex.Message}";
-            _allProducts = []; // Ensure list is not null on error
-                               // Don't ApplyFilters here on error yet
         }
         finally
         {
-            _allProducts = loadedProducts ?? []; // Assign loaded data (or empty list) to the main backing field
+            _allProducts = loadedProducts ?? [];
 
-            // Load filter options AFTER data is potentially available
             LoadFilterOptions(_allProducts);
 
-            IsLoading = false; // Set loading state OFF *BEFORE* applying filters
+            IsLoading = false;
 
-            ApplyFilters(); // Apply filters AFTER loading is complete and IsLoading is false
+            ApplyFilters();
 
             if (!string.IsNullOrEmpty(errorMessage))
             {
                 await ShowErrorDialogAsync("Lỗi Tải Dữ Liệu", errorMessage);
-                // ApplyFilters() was already called, potentially showing empty message correctly
             }
-            // *** END CHANGE AREA ***
         }
     }
 
     private void LoadFilterOptions(List<Product>? products)
     {
-        // Use dispatcher if this might be called from non-UI thread in other scenarios
         Categories?.Clear();
         Sizes?.Clear();
         Colors?.Clear();
-
-        // Add "All" options (represented by null selection in ComboBox)
-        // The ComboBox PlaceholderText handles the visual representation of "All"
 
         if (products != null && products.Any())
         {
@@ -197,30 +190,27 @@ public partial class ProductViewModel : ViewModelBase
                                             .ToList();
             foreach (var cat in distinctCategories) Categories?.Add(cat);
 
-            var distinctSizes = products.SelectMany(p => p.ProductVariants?.Select(v => v.Size) ?? Enumerable.Empty<ProductSize>())
+            var distinctSizes = products.SelectMany(p => p.ProductVariants?.Select(v => v.Size) ?? [])
                                         .Where(s => s != null)
                                         .DistinctBy(s => s.SizeId)
-                                        .OrderBy(s => s.SizeName) // TODO: Add custom sort logic if needed (S, M, L...)
+                                        .OrderBy(s => s.SizeName)
                                         .ToList();
             foreach (var size in distinctSizes) Sizes?.Add(size);
 
-            var distinctColors = products.SelectMany(p => p.ProductVariants?.Select(v => v.Color) ?? Enumerable.Empty<ProductColor>())
+            var distinctColors = products.SelectMany(p => p.ProductVariants?.Select(v => v.Color) ?? [])
                                          .Where(c => c != null)
                                          .DistinctBy(c => c.ColorId)
                                          .OrderBy(c => c.ColorName)
                                          .ToList();
             foreach (var color in distinctColors) Colors?.Add(color);
         }
-        // No need to reset SelectedItem here, null represents "All"
     }
 
     private void ApplyFilters()
     {
-        // Now this check works correctly because IsLoading is false when called after loading finishes
-        if (_allProducts == null /* || IsLoading */) // You can even remove the IsLoading check here if you ensure ApplyFilters is only called when not loading
+        FilteredProducts?.Clear();
+        if (_allProducts == null)
         {
-            FilteredProducts?.Clear();
-            // Only set ShowEmptyMessage based on whether _allProducts is null/empty
             ShowEmptyMessage = !_allProducts?.Any() ?? true;
             return;
         }
@@ -230,12 +220,12 @@ public partial class ProductViewModel : ViewModelBase
         // Apply filters sequentially
         if (!string.IsNullOrWhiteSpace(SearchTerm))
         {
-            string lowerSearch = SearchTerm.ToLowerInvariant().Trim();
-            filtered = filtered.Where(p => p.ProductName.ToLowerInvariant().Contains(lowerSearch) ||
-                                            p.ProductId.ToString().Contains(lowerSearch) ||
-                                            p.ProductVariants.Any(v => v.VariantId.ToString().Contains(lowerSearch))); // Assuming VariantId acts as SKU
+            string lowerSearch = SearchTerm.Trim();
+            filtered = filtered.Where(p => p.ProductName.Contains(lowerSearch, StringComparison.InvariantCultureIgnoreCase) ||
+                                            p.ProductId.ToString().Contains(lowerSearch));
         }
 
+        // --- Check for NON-NULL selections before applying filter ---
         if (SelectedCategory != null)
         {
             filtered = filtered.Where(p => p.CategoryId == SelectedCategory.CategoryId);
@@ -251,12 +241,10 @@ public partial class ProductViewModel : ViewModelBase
             filtered = filtered.Where(p => p.ProductVariants.Any(v => v.SizeId == SelectedSize.SizeId));
         }
 
-        if (FilterInStockOnly)
-        {
-            filtered = filtered.Where(p => p.ProductVariants.Any(v => v.StockQuantity > 0));
-        }
+        filtered = FilterInStockOnly
+            ? filtered.Where(p => p.ProductVariants.Any(v => v.StockQuantity > 0))
+            : filtered.Where(p => p.ProductVariants.Any(v => v.StockQuantity == 0));
 
-        // Update the bound collection efficiently
         var results = filtered.ToList();
         FilteredProducts?.Clear();
         foreach (var product in results)
@@ -264,18 +252,13 @@ public partial class ProductViewModel : ViewModelBase
             FilteredProducts?.Add(product);
         }
 
-        // Update empty message based on the *final filtered* results
         ShowEmptyMessage = !(FilteredProducts?.Any() ?? false);
     }
 
     // --- Command Implementations ---
-    // (All command implementation methods remain the same)
-    private async Task AddProductAsync()
-    {
+    private async Task AddProductAsync() =>
         // TODO: Navigate to AddEditProductPage/ViewModel
-        await ShowNotImplementedDialogAsync("Thêm Sản Phẩm Mới");
-        // On successful add, call await LoadProductsAsync();
-    }
+        await ShowNotImplementedDialogAsync("Thêm Sản Phẩm Mới");// On successful add, call await LoadProductsAsync();
 
     private async Task EditProductAsync(Product? product)
     {
@@ -301,13 +284,11 @@ public partial class ProductViewModel : ViewModelBase
             string? errorMsg = null;
             try
             {
-                // Use the simple DeleteAsync(entity) which uses Remove()
                 await _unitOfWork.Products.DeleteAsync(product);
                 bool saved = await _unitOfWork.SaveChangesAsync();
 
                 if (saved)
                 {
-                    // Remove from the source list and update UI
                     _allProducts?.Remove(product);
                     FilteredProducts?.Remove(product); // Also remove from filtered list directly
                     ShowEmptyMessage = !(FilteredProducts?.Any() ?? false);
@@ -333,8 +314,6 @@ public partial class ProductViewModel : ViewModelBase
                 if (errorMsg != null)
                 {
                     await ShowErrorDialogAsync("Lỗi Xóa Sản Phẩm", errorMsg);
-                    // Optional: Reload data if unsure about state
-                    // await LoadProductsAsync(); 
                 }
             }
         }
@@ -382,9 +361,6 @@ public partial class ProductViewModel : ViewModelBase
                     // Also remove from the master list's corresponding product
                     var productInAllList = _allProducts?.FirstOrDefault(p => p.ProductId == variant.ProductId);
                     productInAllList?.ProductVariants.Remove(variant); // Keep master list consistent
-
-                    // Trigger property changed on parent product if variant count display needs update
-                    // (Already handled by Expander header binding to ProductVariants.Count)
                 }
                 else
                 {
@@ -414,63 +390,4 @@ public partial class ProductViewModel : ViewModelBase
 
     private async Task ImportProductsAsync() => await ShowNotImplementedDialogAsync("Nhập File Excel/CSV");
     private async Task ExportProductsAsync() => await ShowNotImplementedDialogAsync("Xuất File Excel/CSV");
-
-    // --- Helper Methods for Dialogs ---
-    // (Dialog helper methods remain the same)
-    private XamlRoot? GetXamlRootForDialogs()
-    {
-        if (Application.Current is App app && app.MainWindow?.Content is FrameworkElement rootElement)
-        {
-            return rootElement.XamlRoot; // This should now be the XamlRoot from DashboardWindow's content
-        }
-        Debug.WriteLine("ERROR: Could not obtain XamlRoot for ContentDialog. App, MainWindow, or MainWindow.Content might be null/invalid.");
-        return null;
-    }
-
-    private async Task<ContentDialogResult> ShowConfirmationDialogAsync(string title, string content, string primaryText = "OK", string closeText = "Cancel")
-    {
-        var xamlRoot = GetXamlRootForDialogs();
-        if (xamlRoot == null) return ContentDialogResult.None; // Cannot show dialog
-
-        var dialog = new ContentDialog
-        {
-            Title = title,
-            Content = content,
-            PrimaryButtonText = primaryText,
-            CloseButtonText = closeText,
-            DefaultButton = ContentDialogButton.Close,
-            XamlRoot = xamlRoot
-        };
-        return await dialog.ShowAsync();
-    }
-
-    private async Task ShowErrorDialogAsync(string title, string message)
-    {
-        var xamlRoot = GetXamlRootForDialogs();
-        if (xamlRoot == null) return;
-
-        var dialog = new ContentDialog
-        {
-            Title = title,
-            Content = message,
-            CloseButtonText = "Đóng",
-            XamlRoot = xamlRoot
-        };
-        await dialog.ShowAsync();
-    }
-
-    private async Task ShowNotImplementedDialogAsync(string feature)
-    {
-        var xamlRoot = GetXamlRootForDialogs();
-        if (xamlRoot == null) return;
-
-        var dialog = new ContentDialog
-        {
-            Title = "Chức Năng Chưa Sẵn Sàng",
-            Content = $"Chức năng '{feature}' đang được phát triển.",
-            CloseButtonText = "Đóng",
-            XamlRoot = xamlRoot
-        };
-        await dialog.ShowAsync();
-    }
 }

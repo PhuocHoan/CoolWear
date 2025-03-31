@@ -13,12 +13,15 @@
 
 	<Page.Resources>
 		<converters:CurrencyFormatConverter x:Key="CurrencyFormatConverter"/>
-		<!-- Converter used to HIDE the "No variants" message when count > 0 -->
 		<converters:ZeroIsCollapsedConverter x:Key="ZeroIsCollapsedConverter"/>
 		<Style x:Key="ListHeaderTextStyle" TargetType="TextBlock">
 			<Setter Property="FontWeight" Value="SemiBold"/>
 			<Setter Property="VerticalAlignment" Value="Center"/>
-			<Setter Property="Margin" Value="0,0,5,0"/>
+		</Style>
+		<Style x:Key="NoPaddingListViewItemStyle" TargetType="ListViewItem">
+			<Setter Property="Padding" Value="0"/>
+			<Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+			<Setter Property="VerticalContentAlignment" Value="Stretch"/>
 		</Style>
 	</Page.Resources>
 
@@ -31,27 +34,40 @@
 		<!-- Filter Panel (Column 0) -->
 		<ScrollViewer Grid.Column="0" Background="#F8F8F8" VerticalScrollBarVisibility="Auto">
 			<StackPanel Padding="10" Spacing="16">
-				<!-- Filter Controls -->
-				<TextBlock Text="Nhóm hàng" FontWeight="Bold" />
-				<ComboBox x:Name="NhomHangComboBox" PlaceholderText="Tất cả nhóm hàng" ItemsSource="{x:Bind ViewModel.Categories, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedCategory, Mode=TwoWay}" HorizontalAlignment="Stretch">
+				<TextBlock Text="Danh mục" FontWeight="Bold" />
+				<ComboBox x:Name="DanhMucComboBox"
+                  ItemsSource="{x:Bind ViewModel.Categories, Mode=OneWay}"
+                  SelectedItem="{x:Bind ViewModel.SelectedCategory, Mode=TwoWay}"
+                  HorizontalAlignment="Stretch"
+                  PlaceholderText="Tất cả danh mục">
 					<ComboBox.ItemTemplate>
 						<DataTemplate x:DataType="models:ProductCategory">
 							<TextBlock Text="{x:Bind CategoryName}" />
 						</DataTemplate>
 					</ComboBox.ItemTemplate>
 				</ComboBox>
+
 				<TextBlock Text="Tồn kho" FontWeight="Bold" />
-				<CheckBox Content="Còn hàng" IsChecked="{x:Bind ViewModel.FilterInStockOnly, Mode=TwoWay}" />
+				<CheckBox Content="Còn hàng"
+                  IsChecked="{x:Bind ViewModel.FilterInStockOnly, Mode=TwoWay}" />
+
 				<TextBlock Text="Size" FontWeight="Bold" />
-				<ComboBox ItemsSource="{x:Bind ViewModel.Sizes, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedSize, Mode=TwoWay}" PlaceholderText="Tất cả size" HorizontalAlignment="Stretch">
+				<ComboBox ItemsSource="{x:Bind ViewModel.Sizes, Mode=OneWay}"
+                  SelectedItem="{x:Bind ViewModel.SelectedSize, Mode=TwoWay}"
+                  HorizontalAlignment="Stretch"
+                  PlaceholderText="Tất cả size">
 					<ComboBox.ItemTemplate>
 						<DataTemplate x:DataType="models:ProductSize">
 							<TextBlock Text="{x:Bind SizeName}" />
 						</DataTemplate>
 					</ComboBox.ItemTemplate>
 				</ComboBox>
+
 				<TextBlock Text="Màu sắc" FontWeight="Bold" />
-				<ComboBox ItemsSource="{x:Bind ViewModel.Colors, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedColor, Mode=TwoWay}" PlaceholderText="Tất cả màu sắc" HorizontalAlignment="Stretch">
+				<ComboBox ItemsSource="{x:Bind ViewModel.Colors, Mode=OneWay}"
+                  SelectedItem="{x:Bind ViewModel.SelectedColor, Mode=TwoWay}"
+                  HorizontalAlignment="Stretch"
+                  PlaceholderText="Tất cả màu sắc">
 					<ComboBox.ItemTemplate>
 						<DataTemplate x:DataType="models:ProductColor">
 							<StackPanel Orientation="Horizontal" Spacing="5">
@@ -77,113 +93,129 @@
 			<!-- Toolbar (Row 0) -->
 			<StackPanel Orientation="Horizontal" Grid.Row="0" Padding="10" Spacing="8" Background="#EAEAEA">
 				<!-- Toolbar Buttons -->
-				<TextBox x:Name="SearchBox" Width="250" PlaceholderText="Tìm kiếm theo Tên hoặc Mã sản phẩm..." Text="{x:Bind ViewModel.SearchTerm, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,10,0" />
+				<TextBox x:Name="SearchBox" Width="300" PlaceholderText="Tìm kiếm theo Tên hoặc Mã sản phẩm..." Text="{x:Bind ViewModel.SearchTerm, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,10,0" />
 				<Button ToolTipService.ToolTip="Thêm sản phẩm mới" Command="{x:Bind ViewModel.AddProductCommand}">
 					<StackPanel Orientation="Horizontal" Spacing="5">
-						<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph=""/>
+						<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE710;"/>
 						<TextBlock Text="Thêm mới"/>
 					</StackPanel>
 				</Button>
 				<Button ToolTipService.ToolTip="Nhập sản phẩm từ file Excel/CSV" Command="{x:Bind ViewModel.ImportProductsCommand}">
 					<StackPanel Orientation="Horizontal" Spacing="5">
-						<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph=""/>
+						<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE896;"/>
 						<TextBlock Text="Nhập file"/>
 					</StackPanel>
 				</Button>
 				<Button ToolTipService.ToolTip="Xuất danh sách sản phẩm ra file" Command="{x:Bind ViewModel.ExportProductsCommand}">
 					<StackPanel Orientation="Horizontal" Spacing="5">
-						<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph=""/>
+						<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE78C;"/>
 						<TextBlock Text="Xuất file"/>
 					</StackPanel>
 				</Button>
 				<Button ToolTipService.ToolTip="Tải lại danh sách" Command="{x:Bind ViewModel.LoadProductsCommand}">
 					<StackPanel Orientation="Horizontal" Spacing="5">
-						<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph=""/>
+						<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE72C;"/>
 						<TextBlock Text="Tải lại"/>
 					</StackPanel>
 				</Button>
 			</StackPanel>
 
 			<!-- Static Product List Header (Row 1) -->
-			<!-- Padding Left=50 accounts for Image(40) + Margin(10) in rows below -->
-			<Grid Grid.Row="1" Padding="50,5,10,5" Margin="10,5,10,0" Background="{ThemeResource SystemControlBackgroundListLowBrush}" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,0,1">
+			<Grid Grid.Row="1" 
+				  Padding="0,10,0,10" Margin="10,5,10,5"
+				  Background="{ThemeResource SystemControlBackgroundListLowBrush}"
+				  BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
+				  BorderThickness="0,0,0,1">
 				<Grid.ColumnDefinitions>
-					<!-- Columns widths MUST match the Expander.Header grid below (excluding the image column) -->
+					<ColumnDefinition Width="100"/>
+					<!-- 1. Image Space -->
+					<ColumnDefinition Width="100" />
+					<!-- 2. Product ID -->
 					<ColumnDefinition Width="*" />
-					<!-- Product Name -->
+					<!-- 3. Product Name -->
 					<ColumnDefinition Width="150" />
-					<!-- Category -->
+					<!-- 4. Category -->
 					<ColumnDefinition Width="100" />
-					<!-- Import Price -->
+					<!-- 5. Import Price -->
 					<ColumnDefinition Width="100" />
-					<!-- Price -->
-					<ColumnDefinition Width="100" />
-					<!-- Variants Count -->
-					<ColumnDefinition Width="Auto" MinWidth="90"/>
-					<!-- Actions -->
+					<!-- 6. Price -->
+					<ColumnDefinition Width="110" />
+					<!-- 7. Variants Count -->
+					<ColumnDefinition Width="90"/>
+					<!-- 8. Actions Space -->
 				</Grid.ColumnDefinitions>
-				<!-- Header Text Blocks -->
-				<TextBlock Grid.Column="0" Text="Tên sản phẩm" Style="{StaticResource ListHeaderTextStyle}"/>
-				<TextBlock Grid.Column="1" Text="Nhóm hàng" Style="{StaticResource ListHeaderTextStyle}"/>
-				<TextBlock Grid.Column="2" Text="Giá nhập" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Right"/>
-				<TextBlock Grid.Column="3" Text="Giá bán" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Right"/>
-				<TextBlock Grid.Column="4" Text="Phiên bản" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Center"/>
-				<TextBlock Grid.Column="5" Text="Thao tác" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Center"/>
+				<TextBlock Grid.Column="1" Text="Mã hàng" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Center" Margin="30,0,0,0"/>
+				<TextBlock Grid.Column="2" Text="Tên sản phẩm" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Center" Margin="-50,0,0,0"/>
+				<TextBlock Grid.Column="3" Text="Danh mục" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Left" Margin="-25,0,0,0"/>
+				<TextBlock Grid.Column="4" Text="Giá nhập" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Left" Margin="-40,0,0,0"/>
+				<TextBlock Grid.Column="5" Text="Giá bán" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Left" Margin="-40,0,0,0"/>
+				<TextBlock Grid.Column="6" Text="Phiên bản" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Left" Margin="-40,0,0,0"/>
+				<TextBlock Grid.Column="7" Text="Thao tác" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Left" Margin="-45,0,0,0"/>
 			</Grid>
 
 			<!-- ListView (Row 2) -->
-			<ListView x:Name="ItemsListView" Grid.Row="2" Margin="10,0,10,10" ItemsSource="{x:Bind ViewModel.FilteredProducts, Mode=OneWay}" SelectionMode="None" IsItemClickEnabled="False" ScrollViewer.VerticalScrollBarVisibility="Auto">
+			<ListView x:Name="ItemsListView"
+                      Grid.Row="2"
+                      Margin="10,0,10,10" 
+					  ItemsSource="{x:Bind ViewModel.FilteredProducts, Mode=OneWay}"
+                      SelectionMode="None"
+                      IsItemClickEnabled="False"
+                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+                      ItemContainerStyle="{StaticResource NoPaddingListViewItemStyle}">
 				<ListView.ItemTemplate>
 					<DataTemplate x:DataType="models:Product">
-						<Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Margin="0,0,0,5" BorderThickness="0,0,0,1" BorderBrush="{ThemeResource SystemControlBackgroundBaseLowBrush}">
+						<Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Margin="0,5,0,5">
 							<Expander.Header>
-								<Grid ColumnSpacing="10" Padding="0,5">
+								<Grid Padding="0,5,0,5" Background="Transparent">
 									<Grid.ColumnDefinitions>
-										<!-- Column Definitions MUST match Static Header structure (adding image column) -->
-										<ColumnDefinition Width="40"/>
+										<ColumnDefinition Width="100"/>
 										<!-- 1. Image -->
+										<ColumnDefinition Width="100" />
+										<!-- 2. Product ID -->
 										<ColumnDefinition Width="*" />
-										<!-- 2. Product Name -->
+										<!-- 3. Product Name -->
 										<ColumnDefinition Width="150" />
-										<!-- 3. Category -->
+										<!-- 4. Category -->
 										<ColumnDefinition Width="100" />
-										<!-- 4. Import Price -->
+										<!-- 5. Import Price -->
 										<ColumnDefinition Width="100" />
-										<!-- 5. Price -->
-										<ColumnDefinition Width="100" />
-										<!-- 6. Variants Count -->
-										<ColumnDefinition Width="Auto" MinWidth="90"/>
-										<!-- 7. Actions -->
+										<!-- 6. Price -->
+										<ColumnDefinition Width="110" />
+										<!-- 7. Variants Count -->
+										<ColumnDefinition Width="90"/>
+										<!-- 8. Actions -->
 									</Grid.ColumnDefinitions>
 
 									<!-- Column 1: Image -->
-									<Image Grid.Column="0" Source="{x:Bind PublicId}" Width="40" Height="40" Stretch="UniformToFill" VerticalAlignment="Center"/>
+									<Image Grid.Column="0" Source="{x:Bind PublicId}" Width="100" Height="100" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center"/>
 
-									<!-- Column 2: Product Name -->
-									<!-- Margin Left=10 creates space after image, aligns with Static Header's Padding -->
-									<TextBlock Grid.Column="1" Text="{x:Bind ProductName}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind ProductName}" Margin="10,0,0,0"/>
+									<!-- Column 2: Product ID -->
+									<TextBlock Grid.Column="1" Text="{x:Bind ProductId}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" HorizontalAlignment="Center"/>
 
-									<!-- Column 3: Category -->
-									<TextBlock Grid.Column="2" Text="{x:Bind Category.CategoryName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+									<!-- Column 3: Product Name -->
+									<TextBlock Grid.Column="2" Text="{x:Bind ProductName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" FontWeight="SemiBold" HorizontalAlignment="Center"/>
 
-									<!-- Column 4: Import Price -->
-									<TextBlock Grid.Column="3" Text="{x:Bind ImportPrice, Converter={StaticResource CurrencyFormatConverter}}" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+									<!-- Column 4: Category -->
+									<TextBlock Grid.Column="3" Text="{x:Bind Category.CategoryName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" HorizontalAlignment="Center"/>
 
-									<!-- Column 5: Selling Price -->
-									<TextBlock Grid.Column="4" Text="{x:Bind Price, Converter={StaticResource CurrencyFormatConverter}}" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+									<!-- Column 5: Import Price -->
+									<TextBlock Grid.Column="4" Text="{x:Bind ImportPrice, Converter={StaticResource CurrencyFormatConverter}}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
 
-									<!-- Column 6: Variants Count -->
-									<TextBlock Grid.Column="5" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                         <Run Text="{x:Bind ProductVariants.Count}"/> <Run Text=" phiên bản"/>
+									<!-- Column 6: Selling Price -->
+									<TextBlock Grid.Column="5" Text="{x:Bind Price, Converter={StaticResource CurrencyFormatConverter}}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+
+									<!-- Column 7: Variants Count -->
+									<TextBlock Grid.Column="6" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                         <Run Text="{x:Bind ProductVariants.Count}"/> <Run Text="phiên bản"/>
 									</TextBlock>
 
-									<!-- Column 7: Actions -->
-									<StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="5" VerticalAlignment="Center" HorizontalAlignment="Center">
+									<!-- Column 8: Actions -->
+									<StackPanel Grid.Column="7" Orientation="Horizontal" Spacing="5" VerticalAlignment="Center" HorizontalAlignment="Center">
 										<Button Padding="5" ToolTipService.ToolTip="Chỉnh sửa sản phẩm" Command="{Binding DataContext.EditProductCommand, ElementName=ItemsListView}" CommandParameter="{x:Bind}">
-											<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="" FontSize="16"/>
+											<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE70F;" FontSize="16"/>
 										</Button>
 										<Button Padding="5" ToolTipService.ToolTip="Xóa sản phẩm và tất cả phiên bản" Background="IndianRed" Command="{Binding DataContext.DeleteProductCommand, ElementName=ItemsListView}" CommandParameter="{x:Bind}">
-											<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="" FontSize="16"/>
+											<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE74D;" FontSize="16"/>
 										</Button>
 									</StackPanel>
 								</Grid>
@@ -196,10 +228,7 @@
 										<RowDefinition Height="Auto"/>
 										<RowDefinition Height="*"/>
 									</Grid.RowDefinitions>
-
-									<!-- Variant Header -->
 									<Grid Grid.Row="0" Padding="5" Margin="0,0,0,5" Background="{ThemeResource SystemControlBackgroundListLowBrush}">
-										<!-- Variant Header Column Definitions -->
 										<Grid.ColumnDefinitions>
 											<ColumnDefinition Width="150"/>
 											<ColumnDefinition Width="100"/>
@@ -208,20 +237,16 @@
 											<ColumnDefinition Width="*"/>
 											<ColumnDefinition Width="Auto"/>
 										</Grid.ColumnDefinitions>
-										<TextBlock Grid.Column="0" Text="Mã SKU" FontWeight="SemiBold"/>
-										<TextBlock Grid.Column="1" Text="Màu sắc" FontWeight="SemiBold"/>
-										<TextBlock Grid.Column="2" Text="Size" FontWeight="SemiBold"/>
-										<TextBlock Grid.Column="3" Text="Tồn kho" FontWeight="SemiBold" HorizontalAlignment="Right"/>
-										<TextBlock Grid.Column="5" Text="Thao tác" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+										<TextBlock Grid.Column="0" Text="Mã SKU" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+										<TextBlock Grid.Column="1" Text="Màu sắc" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+										<TextBlock Grid.Column="2" Text="Size" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+										<TextBlock Grid.Column="3" Text="Tồn kho" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+										<TextBlock Grid.Column="5" Text="Thao tác" FontWeight="SemiBold" HorizontalAlignment="Center"/>
 									</Grid>
-
-									<!-- Variant Items Repeater -->
 									<ItemsRepeater Grid.Row="1" ItemsSource="{x:Bind ProductVariants, Mode=OneWay}">
 										<ItemsRepeater.ItemTemplate>
 											<DataTemplate x:DataType="models:ProductVariant">
-												<!-- Variant Row Grid -->
 												<Grid Padding="5" BorderBrush="{ThemeResource SystemControlBackgroundBaseLowBrush}" BorderThickness="0,0,0,1">
-													<!-- Variant Row Column Definitions -->
 													<Grid.ColumnDefinitions>
 														<ColumnDefinition Width="150"/>
 														<ColumnDefinition Width="100"/>
@@ -230,39 +255,36 @@
 														<ColumnDefinition Width="*"/>
 														<ColumnDefinition Width="Auto"/>
 													</Grid.ColumnDefinitions>
-													<TextBlock Grid.Column="0" Text="{x:Bind VariantId}" VerticalAlignment="Center"/>
-													<TextBlock Grid.Column="1" Text="{x:Bind Color.ColorName}" VerticalAlignment="Center"/>
-													<TextBlock Grid.Column="2" Text="{x:Bind Size.SizeName}" VerticalAlignment="Center"/>
-													<TextBlock Grid.Column="3" Text="{x:Bind StockQuantity}" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-													<StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="5" VerticalAlignment="Center" HorizontalAlignment="Right">
+													<TextBlock Grid.Column="0" Text="{x:Bind VariantId}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+													<TextBlock Grid.Column="1" Text="{x:Bind Color.ColorName}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+													<TextBlock Grid.Column="2" Text="{x:Bind Size.SizeName}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+													<TextBlock Grid.Column="3" Text="{x:Bind StockQuantity}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+													<StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="5" VerticalAlignment="Center" HorizontalAlignment="Center">
 														<Button Padding="5" ToolTipService.ToolTip="Chỉnh sửa phiên bản" Command="{Binding DataContext.EditVariantCommand, ElementName=ItemsListView}" CommandParameter="{x:Bind}">
-															<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="" FontSize="14"/>
+															<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE70F;" FontSize="14"/>
 														</Button>
 														<Button Padding="5" ToolTipService.ToolTip="Xóa phiên bản" Background="#FFE0E0" Command="{Binding DataContext.DeleteVariantCommand, ElementName=ItemsListView}" CommandParameter="{x:Bind}">
-															<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="" FontSize="14"/>
+															<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE74D;" FontSize="14"/>
 														</Button>
 													</StackPanel>
 												</Grid>
 											</DataTemplate>
 										</ItemsRepeater.ItemTemplate>
 									</ItemsRepeater>
-
-									<!-- "No Variants" Message TextBlock - HIDDEN when count > 0 -->
-									<!-- Shows "Sản phẩm này chưa có phiên bản nào." -->
-									<!-- Currently HIDDEN when variants ARE present (due to ZeroIsCollapsedConverter logic) -->
-									<!-- Consider removing or using an *inverted* converter if you want this message ONLY when count is 0 -->
-									<!--<TextBlock Text="Sản phẩm này chưa có phiên bản nào." Grid.Row="1" Visibility="{x:Bind ProductVariants.Count, Converter={StaticResource ZeroIsCollapsedConverter}, Mode=OneWay}" Margin="5" FontStyle="Italic"/>-->
+									<TextBlock Text="Sản phẩm này chưa có phiên bản nào." Grid.Row="1" Visibility="{x:Bind ProductVariants.Count, Converter={StaticResource ZeroIsCollapsedConverter}, Mode=OneWay}" Margin="5" FontStyle="Italic"/>
 								</Grid>
 							</Expander.Content>
+							<Expander.BorderBrush>
+								<SolidColorBrush Color="{ThemeResource SystemListLowColor}"/>
+							</Expander.BorderBrush>
 						</Expander>
 					</DataTemplate>
 				</ListView.ItemTemplate>
 			</ListView>
 
-			<!-- Overlays (Progress Ring / Empty Message) -->
+			<!-- Overlays (Row 2) -->
 			<ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" VerticalAlignment="Center" HorizontalAlignment="Center" Width="50" Height="50" Grid.Row="2"/>
 			<TextBlock Text="Không tìm thấy sản phẩm nào khớp với bộ lọc." Visibility="{x:Bind ViewModel.ShowEmptyMessage, Mode=OneWay}" VerticalAlignment="Center" HorizontalAlignment="Center" Grid.Row="2" Style="{ThemeResource BodyStrongTextBlockStyle}"/>
-
 		</Grid>
 	</Grid>
 </Page>

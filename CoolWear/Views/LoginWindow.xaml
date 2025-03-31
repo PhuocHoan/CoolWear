@@ -54,7 +54,7 @@
 				<Button 
                     Content="Đăng nhập" 
                     Background="#5FE2FF"
-                    Click="LoginButton_Click" 
+                    Command="{x:Bind ViewModel.LoginCommand}"
                     HorizontalAlignment="Center"/>
 			</StackPanel>
 		</Border>
