@@ -40,7 +40,7 @@ public partial class AsyncRelayCommand(Func<Task> execute, Func<bool>? canExecut
 }
 
 // Add generic version of AsyncRelayCommand
-public class AsyncRelayCommand<T>(Func<T, Task> execute, Func<T, bool>? canExecute = null) : ICommand
+public partial class AsyncRelayCommand<T>(Func<T, Task> execute, Func<T, bool>? canExecute = null) : ICommand
 {
     private bool _isExecuting; // To avoid re-entrancy
 

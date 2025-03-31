@@ -14,8 +14,10 @@ public interface IRepository<T> where T : class
     Task<IEnumerable<T>> GetAllAsync();
     Task<IEnumerable<T>> GetAsync(ISpecification<T> spec);
     Task AddAsync(T entity);
+    Task UpdateAsync(T entity);
     Task UpdateAsync(
         ISpecification<T> spec,
         Expression<Func<SetPropertyCalls<T>, SetPropertyCalls<T>>> updateExpression);
+    Task DeleteAsync(T entity);
     Task DeleteAsync(ISpecification<T> spec);
 }

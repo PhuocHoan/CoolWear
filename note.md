@@ -42,19 +42,23 @@ POSTGRES_PASSWORD=1234
 
 - Chính sách tích điểm:
 
-* Hóa đơn trên 100000 đồng: +1 điểm
-* Hóa đơn trên 1000000 đồng: +10 điểm
+  - Hóa đơn trên 100000 đồng: +1 điểm
+  - Hóa đơn trên 1000000 đồng: +10 điểm
 
 - Hoàn trả sản phẩm:
 
-* Hóa đơn trên 100000 đồng: -1 điểm
-* Hóa đơn trên 1000000 đồng: -10 điểm
+  - Hóa đơn trên 100000 đồng: -1 điểm
+  - Hóa đơn trên 1000000 đồng: -10 điểm
 
 - Đổi điểm:
 
-* 1 điểm = 1000 đồng
+  - 1 điểm = 1000 đồng
 
 - Đơn hàng:
 
-* Có 4 trạng thái: Đang xử lý (dùng khi giao hàng), hoàn thành, Đã hủy, Đã hoàn trả
-* Khi trạng thái đang xử lí thì có thể chuyển thành hoàn thành hoặc đã hủy
+  - Có 4 trạng thái: Đang xử lý (dùng khi giao hàng), hoàn thành, Đã hủy, Đã hoàn trả
+  - Khi trạng thái đang xử lí thì có thể chuyển thành hoàn thành hoặc đã hủy
+
+- Bug:
+
+  - FilterInStockOnly luôn hiển thị sản phẩm

@@ -2,27 +2,45 @@ using CoolWear.Services;
 using CoolWear.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using System.Threading.Tasks;
+using System;
+using System.Diagnostics;
 
 namespace CoolWear.Views;
-/// <summary>
-/// An empty page that can be used on its own or navigated to within a Frame.
-/// </summary>
+
 public sealed partial class ProductsPage : Page
 {
-    // Public property so x:Bind can see it
-    public ProductViewModel ViewModel { get; } = ServiceManager.GetKeyedSingleton<ProductViewModel>();
+    public ProductViewModel ViewModel { get; }
 
     public ProductsPage()
     {
         InitializeComponent();
 
-        // Optionally, set DataContext (if you want normal {Binding} usage)
-        DataContext = ViewModel;
+        try
+        {
+            ViewModel = ServiceManager.GetKeyedSingleton<ProductViewModel>();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"FATAL ERROR: Could not resolve ProductViewModel. Ensure it's registered in ServiceManager.ConfigureServices(). Details: {ex}");
+            throw; // Rethrow or handle gracefully
+        }
 
-        // Load data after the page is constructed
-        Loaded += OnPageLoaded;
+        Loaded += Page_Loaded;
     }
 
-    private async void OnPageLoaded(object sender, RoutedEventArgs e) => await ViewModel.LoadProductsAsync();
+    private async void Page_Loaded(object sender, RoutedEventArgs e)
+    {
+        // Unsubscribe to prevent potential multiple loads if page is re-navigated to
+        // without being destroyed and reconstructed.
+        Loaded -= Page_Loaded;
+
+        if (ViewModel != null)
+        {
+            await ViewModel.LoadProductsAsync();
+        }
+        else
+        {
+            Debug.WriteLine("ERROR: ViewModel is null in Page_Loaded.");
+        }
+    }
 }

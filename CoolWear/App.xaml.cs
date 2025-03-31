@@ -1,43 +1,33 @@
-﻿using CoolWear.Models;
+﻿// In App.xaml.cs
 using CoolWear.Services;
-using CoolWear.Utilities;
 using CoolWear.Views;
 using Microsoft.UI.Xaml;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq.Expressions;
-using System.Threading.Tasks;
 
 namespace CoolWear;
 
-/// <summary>
-/// Provides application-specific behavior to supplement the default Application class.
-/// </summary>
 public partial class App : Application
 {
-    /// <summary>
-    /// Initializes the singleton application object.  This is the first line of authored code
-    /// executed, and as such is the logical equivalent of main() or WinMain().
-    /// </summary>
+    // Keep the property getter
+    public Window? MainWindow { get { return m_window; } }
+    private Window? m_window;
+
     public App()
     {
         this.InitializeComponent();
-
-        // Configure services
         ServiceManager.ConfigureServices();
     }
 
-    /// <summary>
-    /// Invoked when the application is launched.
-    /// </summary>
-    /// <param name="args">Details about the launch request and process.</param>
     protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
-
+        // Initial window is LoginWindow
         m_window = new LoginWindow();
         m_window.Activate();
     }
 
-    private Window? m_window;
+    // *** ADD THIS METHOD ***
+    public void SetMainWindow(Window window)
+    {
+        m_window = window;
+        // Optional: You might want to handle closed events of the old window if needed
+    }
 }

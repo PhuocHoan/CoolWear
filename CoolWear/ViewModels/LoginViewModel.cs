@@ -1,76 +1,77 @@
 ﻿using CoolWear.Models;
 using CoolWear.Services;
+using CoolWear.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection.Metadata.Ecma335;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace CoolWear.ViewModels;
 
-public class LoginViewModel
+public partial class LoginViewModel : ViewModelBase
 {
     private readonly IUnitOfWork _unitOfWork;
     private StoreOwner? _storeOwner;
-    public string Username { get; set; } = "";
-    public string Password { get; set; } = "";
-    public bool RememberMe { get; set; } = false;
+    public ManagePassword? ManagePassword { get; private set; }
+
+    // Add backing fields for properties
+    private string _username = "";
+    private string _password = "";
+    private bool _rememberMe = false;
+    private string _unProtectedPassword = "";
+
+    // Use properties with SetProperty for change notification
+    public string Username
+    {
+        get => _username;
+        set => SetProperty(ref _username, value);
+    }
+
+    public string Password
+    {
+        get => _password;
+        set => SetProperty(ref _password, value);
+    }
+
+    public bool RememberMe
+    {
+        get => _rememberMe;
+        set => SetProperty(ref _rememberMe, value);
+    }
 
     public LoginViewModel(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
-        _ = GetStoreOwnersAsync(unitOfWork);
+        // Use proper async loading method
+        GetStoreOwnersAsync(unitOfWork);
     }
 
-    private async Task GetStoreOwnersAsync(IUnitOfWork unitOfWork)
+    private async void GetStoreOwnersAsync(IUnitOfWork unitOfWork)
     {
         var owners = await unitOfWork.StoreOwners.GetAllAsync();
-        _storeOwner = owners.First(); // Assume there is one store owner
-    }
-
-    public bool CanLogin() => Username != null && Password != null;
-
-    public bool Login() => Username == _storeOwner.Username && Password == _storeOwner.Password;
-
-    public void ProtectPassword()
-    {
-        var passwordInBytes = Encoding.UTF8.GetBytes(Password);
-        var entropyInBytes = new byte[20];
-        using (var rng = RandomNumberGenerator.Create())
+        if (owners.Any())
         {
-            rng.GetBytes(entropyInBytes);
+            _storeOwner = owners.First(); // Assume there is one store owner
+            Debug.WriteLine($"Store owner: {_storeOwner.Username}");
+            ManagePassword = new(_storeOwner, unitOfWork);
+            var result = ManagePassword.UnprotectPassword();
+            Username = result.Item1 ?? "";
+            Password = result.Item2 ?? "";
+            _unProtectedPassword = Password;
         }
-        var encryptedInBytes = ProtectedData.Protect(
-            passwordInBytes,
-            entropyInBytes,
-            DataProtectionScope.CurrentUser
-        );
-        var encryptedInBase64 = Convert.ToBase64String(encryptedInBytes);
-        var entropyInBase64 = Convert.ToBase64String(entropyInBytes);
-        var localStorage = Windows.Storage.ApplicationData.Current.LocalSettings;
-        localStorage.Values["Username"] = Username;
-        localStorage.Values["Password"] = encryptedInBase64;
-        localStorage.Values["Entropy"] = entropyInBase64;
+        else
+        {
+            Debug.WriteLine("No store owners found");
+        }
     }
 
-    public void UnprotectPassword()
-    {
-        var localStorage = Windows.Storage.ApplicationData.Current.LocalSettings;
-        var username = (string)localStorage.Values["Username"];
-        var encryptedInBase64 = (string)localStorage.Values["Password"];
-        var entropyInBase64 = (string)localStorage.Values["Entropy"];
-        if (username == null || encryptedInBase64 == null || entropyInBase64 == null) return;
-        var encryptedInBytes = Convert.FromBase64String(encryptedInBase64);
-        var entropyInBytes = Convert.FromBase64String(entropyInBase64);
-        var passwordInBytes = ProtectedData.Unprotect(
-            encryptedInBytes,
-            entropyInBytes,
-            DataProtectionScope.CurrentUser
-        );
-        Password = Encoding.UTF8.GetString(passwordInBytes);
-        Username = username;
-    }
+    public bool CanLogin() => !string.IsNullOrEmpty(Username) && !string.IsNullOrEmpty(Password);
+
+    public bool Login() =>
+        _storeOwner != null &&
+        Username == _storeOwner.Username &&
+        Password == _unProtectedPassword;
 }

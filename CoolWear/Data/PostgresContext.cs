@@ -196,6 +196,12 @@ public partial class PostgresContext : DbContext
                 .HasForeignKey(d => d.CategoryId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("product_category_id_fkey");
+            // IMPORTANT: Configure relationship with ProductVariants
+            entity.HasMany(p => p.ProductVariants) // Product has many Variants
+                  .WithOne(v => v.Product)         // Variant has one Product
+                  .HasForeignKey(v => v.ProductId) // Foreign key is ProductId in Variant
+                  .OnDelete(DeleteBehavior.Cascade) // <<<--- ADDED: Delete Variants when Product is deleted
+                  .HasConstraintName("product_variant_product_id_fkey");
         });
 
         modelBuilder.Entity<ProductCategory>(entity =>
@@ -291,6 +297,15 @@ public partial class PostgresContext : DbContext
             entity.HasOne(d => d.Size).WithMany(p => p.ProductVariants)
                 .HasForeignKey(d => d.SizeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("product_variant_size_id_fkey");
+            entity.HasOne(d => d.Color).WithMany(p => p.ProductVariants)
+                .HasForeignKey(d => d.ColorId)
+                .OnDelete(DeleteBehavior.Restrict) // Variants should not be deleted if Color is deleted
+                .HasConstraintName("product_variant_color_id_fkey");
+
+            entity.HasOne(d => d.Size).WithMany(p => p.ProductVariants)
+                .HasForeignKey(d => d.SizeId)
+                 .OnDelete(DeleteBehavior.Restrict) // Variants should not be deleted if Size is deleted
                 .HasConstraintName("product_variant_size_id_fkey");
         });
 

@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CoolWear.Utilities;
 
@@ -21,5 +19,5 @@ public interface ISpecification<T>
     /// <summary>
     /// Gets a collection of include expressions for eager loading related entities.
     /// </summary>
-    IEnumerable<Expression<Func<T, object>>> Includes { get; }
+    IEnumerable<string> IncludeStrings { get; } // String based Includes
 }

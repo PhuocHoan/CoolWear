@@ -41,7 +41,7 @@ Step by step run the following commands in the terminal:
 ```bash
 docker exec -it db /bin/bash
 psql -U postgres # connect to postgres database
-create database MyShop; # create a new database named MyShop
+create database coolwear; # create a new database named coolwear
 \q # exit psql
 exit # exit container
 ```
@@ -52,7 +52,7 @@ Configuration:
 
 - Host: localhost (127.0.0.1)
 - Port: 5432
-- Database: MyShop
+- Database: coolwear
 - User: postgres
 - Password: 1234
 

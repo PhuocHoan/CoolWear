@@ -1,18 +1,12 @@
+﻿// In LoginWindow.xaml.cs
 using CoolWear.Services;
 using CoolWear.ViewModels;
+using CoolWear.Views; // Add this if not present
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -31,25 +25,6 @@ public sealed partial class LoginWindow : Window
         // Set the title bar
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
-
-        var localStorage = Windows.Storage.ApplicationData.Current.LocalSettings;
-        var username = (string)localStorage.Values["Username"];
-        var encryptedInBase64 = (string)localStorage.Values["Password"];
-        var entropyInBase64 = (string)localStorage.Values["Entropy"];
-
-        if (username == null || encryptedInBase64 == null || entropyInBase64 == null) return;
-
-        var encryptedInBytes = Convert.FromBase64String(encryptedInBase64);
-        var entropyInBytes = Convert.FromBase64String(entropyInBase64);
-
-        var passwordInBytes = ProtectedData.Unprotect(
-            encryptedInBytes,
-            entropyInBytes,
-            DataProtectionScope.CurrentUser
-        );
-        var password = Encoding.UTF8.GetString(passwordInBytes);
-        ViewModel.Password = password;
-        ViewModel.Username = username;
     }
 
     public void LoginButton_Click(object sender, RoutedEventArgs e)
@@ -62,35 +37,49 @@ public sealed partial class LoginWindow : Window
 
             if (ViewModel.RememberMe == true)
             {
-                var passwordInBytes = Encoding.UTF8.GetBytes(ViewModel.Password);
-                var entropyInBytes = new byte[20];
-                using (var rng = RandomNumberGenerator.Create())
-                {
-                    rng.GetBytes(entropyInBytes);
-                }
-                var encryptedInBytes = ProtectedData.Protect(
-                    passwordInBytes,
-                    entropyInBytes,
-                    DataProtectionScope.CurrentUser
-                );
-                var encryptedInBase64 = Convert.ToBase64String(encryptedInBytes);
-                var entropyInBase64 = Convert.ToBase64String(entropyInBytes);
+                ViewModel.ManagePassword!.ProtectPassword(ViewModel.Password); // Use for change password, first, type the wanted password, click remember me, then click the button. Rerun the program and login successfully.
 
-                var localStorage = Windows.Storage.ApplicationData.Current.LocalSettings;
-                localStorage.Values["Username"] = ViewModel.Username;
-                localStorage.Values["Password"] = encryptedInBase64;
-                localStorage.Values["Entropy"] = entropyInBase64;
-
-                Debug.WriteLine($"Encrypted password in base 64 is: {encryptedInBase64}");
+                Debug.WriteLine($"Encrypted password in base 64 is: {ViewModel.Password}");
             }
 
             if (success)
             {
-                var screen = new DashboardWindow();
-                screen.Activate();
+                var dashboardWindow = new DashboardWindow();
 
-                Close();
+                if (Application.Current is App app)
+                {
+                    app.SetMainWindow(dashboardWindow); // Tell the App about the new main window
+                }
+                else
+                {
+                    Debug.WriteLine("ERROR: Could not cast Application.Current to App to set main window.");
+                }
+
+                dashboardWindow.Activate(); // Activate the new window
+
+                Close(); // Close the current login window
+            }
+            else
+            {
+                // Optional: Show login failed message
+                ShowLoginFailedDialog(); // Implement this method if needed
             }
         }
+        else
+        {
+            // Optional: Indicate why login can't proceed (e.g., empty fields)
+        }
+    }
+    // Optional helper for failed login
+    private async void ShowLoginFailedDialog()
+    {
+        ContentDialog dialog = new ContentDialog
+        {
+            Title = "Đăng Nhập Thất Bại",
+            Content = "Tài khoản hoặc mật khẩu không đúng. Vui lòng thử lại.",
+            CloseButtonText = "Đóng",
+            XamlRoot = this.Content.XamlRoot // Use LoginWindow's XamlRoot here
+        };
+        await dialog.ShowAsync();
     }
 }

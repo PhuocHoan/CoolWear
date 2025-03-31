@@ -19,29 +19,68 @@
 		<local:CustomTitleBar x:Name="AppTitleBar" Grid.Row="0"/>
 
 		<!-- Navigation View -->
-		<NavigationView 
-            x:Name="navigation" 
+		<NavigationView
+            x:Name="navigation"
             Grid.Row="1"
-            IsBackButtonVisible="Collapsed" 
-            ItemInvoked="Navigation_ItemInvoked" 
-            SelectionChanged="Navigation_SelectionChanged" 
-            PaneDisplayMode="Top">
+            IsBackButtonVisible="Collapsed"
+            ItemInvoked="Navigation_ItemInvoked"
+            SelectionChanged="Navigation_SelectionChanged"
+            PaneDisplayMode="Top"
+            IsSettingsVisible="False">
+			<!-- Hide default Settings item if not used -->
 
 			<NavigationView.MenuItems>
-				<NavigationViewItem Icon="Refresh" Content="Loại sản phẩm" Tag="CategoriesPage"/>
-				<NavigationViewItem Icon="Refresh" Content="Sản phẩm" Tag="ProductsPage"/>
-				<NavigationViewItem Icon="Refresh" Content="Khách hàng" Tag="CustomersPage"/>
-				<NavigationViewItem Icon="Refresh" Content="Đơn hàng" Tag="OrdersPage"/>
-				<NavigationViewItem Icon="Refresh" Content="Báo cáo" Tag="ReportPage"/>
+				<!-- Use FontIcon with Segoe MDL2 Assets glyphs -->
+				<NavigationViewItem Content="Sản phẩm" Tag="ProductsPage">
+					<NavigationViewItem.Icon>
+						<!-- Tag icon (represents item/product) -->
+						<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph=""/>
+					</NavigationViewItem.Icon>
+				</NavigationViewItem>
+				<NavigationViewItem Content="Khách hàng" Tag="CustomersPage">
+					<NavigationViewItem.Icon>
+						<!-- People icon -->
+						<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph=""/>
+					</NavigationViewItem.Icon>
+				</NavigationViewItem>
+				<NavigationViewItem Content="Đơn hàng" Tag="OrdersPage">
+					<NavigationViewItem.Icon>
+						<!-- Paste icon (like clipboard/order) -->
+						<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph=""/>
+					</NavigationViewItem.Icon>
+				</NavigationViewItem>
+				<NavigationViewItem Content="Báo cáo" Tag="ReportPage">
+					<NavigationViewItem.Icon>
+						<!-- Bar chart icon -->
+						<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph=""/>
+					</NavigationViewItem.Icon>
+				</NavigationViewItem>
 			</NavigationView.MenuItems>
 
 			<NavigationView.FooterMenuItems>
-				<NavigationViewItem Content="Tài khoản" Tag="SamplePage4" Icon="Contact" />
+				<!-- Existing Account Item (Example) -->
+				<NavigationViewItem Content="Tài khoản" Tag="AccountPage">
+					<!-- Changed Tag for clarity -->
+					<NavigationViewItem.Icon>
+						<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph=""/>
+						<!-- Contact icon -->
+					</NavigationViewItem.Icon>
+				</NavigationViewItem>
+
+				<!-- Added Logout Item -->
+				<NavigationViewItem Content="Đăng xuất" Tag="Logout">
+					<!-- Use a non-page Tag -->
+					<NavigationViewItem.Icon>
+						<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph=""/>
+						<!-- Power Button icon -->
+					</NavigationViewItem.Icon>
+				</NavigationViewItem>
 			</NavigationView.FooterMenuItems>
 
 			<Frame x:Name="container"/>
 		</NavigationView>
 
+		<!-- Visual State Manager (No changes needed here) -->
 		<VisualStateManager.VisualStateGroups>
 			<VisualStateGroup>
 				<VisualState>
