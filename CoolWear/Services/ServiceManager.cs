@@ -78,5 +78,9 @@ public sealed class ServiceManager
 
         // Register CategoryViewModel
         AddKeyedSingleton(() => new CategoryViewModel(unitOfWork));
+
+        // Register AccountViewModel
+        AddKeyedSingleton(() => new AccountViewModel(unitOfWork));
+
     }
 }

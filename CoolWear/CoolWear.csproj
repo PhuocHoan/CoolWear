@@ -15,6 +15,7 @@
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Assets\logo.png" />
+    <None Remove="Views\AccountPage.xaml" />
     <None Remove="Views\CategoriesPage.xaml" />
     <None Remove="Views\ColorsPage.xaml" />
     <None Remove="Views\CustomersPage.xaml" />
@@ -60,6 +61,11 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
     <PackageReference Include="PropertyChanged.Fody" Version="4.1.0" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.3" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\AccountPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Page Update="Views\ColorsPage.xaml">
