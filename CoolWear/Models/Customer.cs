@@ -44,6 +44,11 @@ public partial class Customer : INotifyPropertyChanged
     /// </summary>
     public int Points { get; set; }
 
+    /// <summary>
+    /// Trạng thái xóa khách hàng, mặc định là chưa (false)
+    /// </summary>
+    public bool IsDeleted { get; set; }
+
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 
     public event PropertyChangedEventHandler? PropertyChanged;

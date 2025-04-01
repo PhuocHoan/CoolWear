@@ -48,7 +48,8 @@ CREATE TABLE "customer" (
     "phone" varchar(20), 
     "address" varchar(255),
     "create_date" timestamp NOT NULL DEFAULT now(),
-    "points" integer NOT NULL DEFAULT 0
+    "points" integer NOT NULL DEFAULT 0,
+    "is_deleted" boolean NOT NULL DEFAULT false
 );
 
 COMMENT ON TABLE "customer" IS 'Bảng khách hàng';
@@ -59,6 +60,7 @@ COMMENT ON COLUMN "customer"."phone" IS 'Số điện thoại khách hàng';
 COMMENT ON COLUMN "customer"."address" IS 'Địa chỉ khách hàng';
 COMMENT ON COLUMN "customer"."create_date" IS 'Ngày tạo tài khoản, mặc định là thời điểm hiện tại';
 COMMENT ON COLUMN "customer"."points" IS 'Điểm tích lũy của khách hàng, mặc định là 0';
+COMMENT ON COLUMN "customer"."is_deleted" IS 'Trạng thái xóa khách hàng, mặc định là chưa (false)';
 
 -- Bảng chủ cửa hàng
 CREATE TABLE "store_owner" (
@@ -68,7 +70,7 @@ CREATE TABLE "store_owner" (
     "phone" varchar(20) NOT NULL, 
     "address" varchar(255) NOT NULL, 
     "username" varchar(50) NOT NULL, 
-    "password" varchar(100) NOT NULL,
+    "password" varchar(350) NOT NULL,
     "entropy" varchar(100) NOT NULL DEFAULT '0' -- Mã hóa mật khẩu
 );
 
@@ -88,8 +90,9 @@ CREATE TABLE "product" (
     "product_name" varchar(100) NOT NULL UNIQUE,
     "import_price" integer NOT NULL,
     "price" integer NOT NULL,
-    "category_id" integer NOT NULL,
+    "category_id" integer, -- Có thể Null để delete category mà không delete product.
     "public_id" varchar(255) NOT NULL,
+    "is_deleted" boolean NOT NULL DEFAULT false,
     FOREIGN KEY ("category_id") REFERENCES "product_category" ("category_id")
 );
 
@@ -100,14 +103,16 @@ COMMENT ON COLUMN "product"."import_price" IS 'Giá nhập sản phẩm';
 COMMENT ON COLUMN "product"."price" IS 'Giá bán sản phẩm';
 COMMENT ON COLUMN "product"."category_id" IS 'Mã danh mục sản phẩm, khóa ngoại';
 COMMENT ON COLUMN "product"."public_id" IS 'Đường dẫn hình ảnh công khai';
+COMMENT ON COLUMN "product"."is_deleted" IS 'Trạng thái xóa sản phẩm, mặc định là chưa (false)';
 
 -- Bảng biến thể sản phẩm
 CREATE TABLE "product_variant" (
     "variant_id" serial PRIMARY KEY,
     "product_id" integer NOT NULL,
-    "color_id" integer NOT NULL,
-    "size_id" integer NOT NULL,
+    "color_id" integer, -- Có thể Null để delete color mà không delete product.
+    "size_id" integer, -- Có thể Null để delete size mà không delete product.
     "stock_quantity" integer NOT NULL,
+    "is_deleted" boolean NOT NULL DEFAULT false,
     UNIQUE ("product_id", "color_id", "size_id"),
     FOREIGN KEY ("product_id") REFERENCES "product" ("product_id"),
     FOREIGN KEY ("color_id") REFERENCES "product_color" ("color_id"),
@@ -120,13 +125,15 @@ COMMENT ON COLUMN "product_variant"."product_id" IS 'Mã sản phẩm, khóa ngo
 COMMENT ON COLUMN "product_variant"."color_id" IS 'Mã màu sắc, khóa ngoại';
 COMMENT ON COLUMN "product_variant"."size_id" IS 'Mã kích thước, khóa ngoại';
 COMMENT ON COLUMN "product_variant"."stock_quantity" IS 'Số lượng tồn kho';
+COMMENT ON COLUMN "product_variant"."is_deleted" IS 'Trạng thái xóa biến thể sản phẩm, mặc định là chưa (false)';
 
 -- Bảng đơn hàng
 CREATE TABLE "order" (
     "order_id" serial PRIMARY KEY,
     "order_date" timestamp NOT NULL DEFAULT now(),
     "customer_id" integer,
-    "total_amount" integer NOT NULL,
+    "subtotal" integer NOT NULL, -- Tổng tiền trước giảm giá
+    "net_total" integer NOT NULL, -- Tổng tiền sau giảm giá
     "payment_method_id" integer NOT NULL,
     "point_used" integer NOT NULL DEFAULT 0,
     "status" varchar(20) NOT NULL DEFAULT 'Đang xử lý', -- Có 4 trạng thái là: 'Đang xử lý' (dùng khi giao hàng), 'Hoàn thành', 'Đã hủy', 'Đã hoàn trả'
@@ -137,7 +144,8 @@ COMMENT ON TABLE "order" IS 'Bảng đơn hàng';
 COMMENT ON COLUMN "order"."order_id" IS 'Mã đơn hàng, khóa chính, tự động tăng';
 COMMENT ON COLUMN "order"."order_date" IS 'Ngày đặt hàng, mặc định là thời điểm hiện tại';
 COMMENT ON COLUMN "order"."customer_id" IS 'Mã khách hàng, khóa ngoại (có thể null nếu khách hàng không đăng nhập)';
-COMMENT ON COLUMN "order"."total_amount" IS 'Tổng tiền đơn hàng';
+COMMENT ON COLUMN "order"."subtotal" IS 'Tổng tiền đơn hàng trước khi giảm giá';
+COMMENT ON COLUMN "order"."net_total" IS 'Tổng tiền đơn hàng sau khi giảm giá';
 COMMENT ON COLUMN "order"."payment_method_id" IS 'Mã phương thức thanh toán, khóa ngoại';
 COMMENT ON COLUMN "order"."point_used" IS 'Số điểm sử dụng, mặc định là 0';
 COMMENT ON COLUMN "order"."status" IS 'Trạng thái đơn hàng, mặc định là "Đang xử lý"';
@@ -197,9 +205,9 @@ INSERT INTO "store_owner" ("owner_name", "email", "phone", "address", "username"
 
 -- Insert sample data into product
 INSERT INTO "product" ("product_name", "import_price", "price", "category_id", "public_id") VALUES
-('Áo Thun', 50000, 100000, 1, 'img/aothun.jpg'),
-('Quần Jean', 100000, 200000, 11, 'img/quanjean.jpg'),
-('Áo Polo', 70000, 140000, 3, 'img/aopolo.jpg');
+('Áo Thun', 70000, 159000, 1, '/Assets/AT.220.NAU.1.webp'),
+('Quần Jean', 350000, 439000, 11, '/Assets/quan-jeans-nam-dang-straight-sieu-nhe-xanh-wash-1.webp'),
+('Áo Polo', 200000, 279000, 3, '/Assets/ao-polo-the-thao-active-premium-thoang-khi-exdry-xam-1.jpg');
 
 -- Insert sample data into product_variant
 INSERT INTO "product_variant" ("product_id", "color_id", "size_id", "stock_quantity") VALUES

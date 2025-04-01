@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 
 namespace CoolWear.Models;
 
 /// <summary>
 /// Bảng phương thức thanh toán
 /// </summary>
-public partial class PaymentMethod : INotifyPropertyChanged
+public partial class PaymentMethod
 {
     /// <summary>
     /// Mã phương thức thanh toán, khóa chính, tự động tăng
@@ -20,6 +19,4 @@ public partial class PaymentMethod : INotifyPropertyChanged
     public string PaymentMethodName { get; set; } = null!;
 
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
-
-    public event PropertyChangedEventHandler? PropertyChanged;
 }

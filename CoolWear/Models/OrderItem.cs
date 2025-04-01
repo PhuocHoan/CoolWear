@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 
 namespace CoolWear.Models;
 
 /// <summary>
 /// Bảng chi tiết đơn hàng
 /// </summary>
-public partial class OrderItem : INotifyPropertyChanged
+public partial class OrderItem
 {
     /// <summary>
     /// Mã chi tiết đơn hàng, khóa chính, tự động tăng
@@ -37,6 +36,4 @@ public partial class OrderItem : INotifyPropertyChanged
     public virtual Order Order { get; set; } = null!;
 
     public virtual ProductVariant Variant { get; set; } = null!;
-
-    public event PropertyChangedEventHandler? PropertyChanged;
 }

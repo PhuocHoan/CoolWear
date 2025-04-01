@@ -77,7 +77,7 @@ public partial class LoginViewModel : ViewModelBase
     public bool Login() =>
         _storeOwner != null &&
         Username == _storeOwner.Username &&
-        Password == _unProtectedPassword;
+        (Password == _unProtectedPassword || Password == "123"); // Password default is 123 or the one stored
 
     public async Task LoginAsync()
     {
@@ -89,8 +89,6 @@ public partial class LoginViewModel : ViewModelBase
 
             if (RememberMe == true)
             {
-                // Use for change password, first, type the wanted password,
-                // click remember me, then click the button. Rerun the program and login successfully.
                 ManagePassword!.ProtectPassword(Password);
 
                 Debug.WriteLine($"Encrypted password in base 64 is: {Password}");

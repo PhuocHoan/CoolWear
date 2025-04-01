@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace CoolWear.Models;
@@ -22,25 +21,30 @@ public partial class ProductVariant : INotifyPropertyChanged
     /// <summary>
     /// Mã màu sắc, khóa ngoại
     /// </summary>
-    public int ColorId { get; set; }
+    public int? ColorId { get; set; }
 
     /// <summary>
     /// Mã kích thước, khóa ngoại
     /// </summary>
-    public int SizeId { get; set; }
+    public int? SizeId { get; set; }
 
     /// <summary>
     /// Số lượng tồn kho
     /// </summary>
     public int StockQuantity { get; set; }
 
-    public virtual ProductColor Color { get; set; } = null!;
+    /// <summary>
+    /// Trạng thái xóa biến thể sản phẩm, mặc định là chưa (false)
+    /// </summary>
+    public bool IsDeleted { get; set; }
+
+    public virtual ProductColor? Color { get; set; }
 
     public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 
     public virtual Product Product { get; set; } = null!;
 
-    public virtual ProductSize Size { get; set; } = null!;
+    public virtual ProductSize? Size { get; set; }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 }

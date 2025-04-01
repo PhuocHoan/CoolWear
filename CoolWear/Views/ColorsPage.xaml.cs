@@ -1,20 +1,10 @@
+using CoolWear.Services;
+using CoolWear.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
+using System.Diagnostics;
 
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
 
 namespace CoolWear.Views;
 /// <summary>
@@ -22,8 +12,36 @@ namespace CoolWear.Views;
 /// </summary>
 public sealed partial class ColorsPage : Page
 {
+    public ColorViewModel ViewModel { get; }
+
     public ColorsPage()
     {
-        this.InitializeComponent();
+        InitializeComponent();
+
+        try
+        {
+            ViewModel = ServiceManager.GetKeyedSingleton<ColorViewModel>();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"FATAL ERROR: Could not resolve ColorViewModel. Ensure it's registered in ServiceManager.ConfigureServices(). Details: {ex}");
+            throw; // Rethrow or handle gracefully
+        }
+
+        Loaded += Page_Loaded;
+    }
+
+    private async void Page_Loaded(object sender, RoutedEventArgs e)
+    {
+        Loaded -= Page_Loaded; // Prevent multiple loads
+
+        if (ViewModel != null)
+        {
+            await ViewModel.LoadColorsAsync();
+        }
+        else
+        {
+            Debug.WriteLine("ERROR: ColorViewModel is null in Page_Loaded.");
+        }
     }
 }

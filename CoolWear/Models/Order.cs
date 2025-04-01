@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 
 namespace CoolWear.Models;
 
 /// <summary>
 /// Bảng đơn hàng
 /// </summary>
-public partial class Order : INotifyPropertyChanged
+public partial class Order
 {
     /// <summary>
     /// Mã đơn hàng, khóa chính, tự động tăng
@@ -25,9 +24,9 @@ public partial class Order : INotifyPropertyChanged
     public int? CustomerId { get; set; }
 
     /// <summary>
-    /// Tổng tiền đơn hàng
+    /// Tổng tiền đơn hàng trước khi giảm giá
     /// </summary>
-    public int TotalAmount { get; set; }
+    public int Subtotal { get; set; }
 
     /// <summary>
     /// Mã phương thức thanh toán, khóa ngoại
@@ -44,11 +43,14 @@ public partial class Order : INotifyPropertyChanged
     /// </summary>
     public string Status { get; set; } = null!;
 
+    /// <summary>
+    /// Tổng tiền đơn hàng sau khi giảm giá
+    /// </summary>
+    public int? NetTotal { get; set; }
+
     public virtual Customer? Customer { get; set; }
 
     public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 
     public virtual PaymentMethod PaymentMethod { get; set; } = null!;
-
-    public event PropertyChangedEventHandler? PropertyChanged;
 }

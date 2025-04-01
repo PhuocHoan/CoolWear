@@ -18,7 +18,7 @@ public partial class CategoryViewModel : ViewModelBase
     private readonly IUnitOfWork _unitOfWork;
 
     // Backing fields
-    private List<ProductCategory>? _allCategories;
+    private List<ProductCategory>? _allCategories = [];
     private FullObservableCollection<ProductCategory>? _filteredCategories;
     private ObservableCollection<string>? _productTypes; // For filter dropdown
     private string? _selectedProductType;
@@ -107,12 +107,11 @@ public partial class CategoryViewModel : ViewModelBase
         ShowEmptyMessage = false;
         FilteredCategories?.Clear(); // Clear before loading
         string errorMessage = string.Empty;
-        List<ProductCategory>? loadedCategories = null;
 
         try
         {
             var categories = await _unitOfWork.ProductCategories.GetAllAsync();
-            loadedCategories = [.. categories];
+            _allCategories = [.. categories];
         }
         catch (Exception ex)
         {
@@ -121,8 +120,6 @@ public partial class CategoryViewModel : ViewModelBase
         }
         finally
         {
-            _allCategories = loadedCategories ?? [];
-
             LoadFilterOptions(_allCategories);
 
             IsLoading = false;

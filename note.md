@@ -59,6 +59,20 @@ POSTGRES_PASSWORD=1234
   - Có 4 trạng thái: Đang xử lý (dùng khi giao hàng), hoàn thành, Đã hủy, Đã hoàn trả
   - Khi trạng thái đang xử lí thì có thể chuyển thành hoàn thành hoặc đã hủy
 
-- Bug:
+- Delete operation:
 
-  - FilterInStockOnly không set true, false nữa
+  - 2 options for delete:
+
+    - 1: avoid delete if have these errors => show error when try to delete
+    - 2: add new column isDeleted: boolean, default: false to table where have errors => do not make real delete, instead isDeleted to true (preferred)
+
+  - Delete Case:
+    - Delete category => product.category_id = null
+    - Delete product => isDeleted = true (option 2)
+    - Delete product_variant => product_variant.isDeleted = true
+    - Delete color => product_variant.color_id = null
+    - Delete size => product_variant.size_id = null
+    - Delete customer => customer.isDeleted = true
+    - Never delete order or order_item records
+
+- Bug:

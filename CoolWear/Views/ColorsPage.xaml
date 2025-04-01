@@ -5,11 +5,218 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:CoolWear.Views"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+	xmlns:models="using:CoolWear.Models"
+	mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Grid>
+	<Page.Resources>
+		<Style 
+			x:Key="ListHeaderTextStyle" 
+			TargetType="TextBlock">
+			<Setter 
+				Property="FontWeight" 
+				Value="SemiBold"/>
+			<Setter 
+				Property="VerticalAlignment" 
+				Value="Center"/>
+		</Style>
+		<Style 
+			x:Key="NoPaddingListViewItemStyle" 
+			TargetType="ListViewItem">
+			<Setter 
+				Property="Padding" 
+				Value="0"/>
+			<Setter 
+				Property="Margin" 
+				Value="0"/>
+			<Setter 
+				Property="MinHeight" 
+				Value="40"/>
+			<!-- Give items a minimum height -->
+			<Setter 
+				Property="HorizontalContentAlignment" 
+				Value="Stretch"/>
+			<Setter 
+				Property="VerticalContentAlignment" 
+				Value="Stretch"/>
+			<Setter 
+				Property="BorderThickness" 
+				Value="0,0,0,1"/>
+			<!-- Add separator line -->
+			<Setter
+				Property="BorderBrush" 
+				Value="{ThemeResource SystemListLowColor}"/>
+		</Style>
+	</Page.Resources>
 
-    </Grid>
+	<!-- Main Content Area -->
+	<Grid>
+		<Grid.RowDefinitions>
+			<RowDefinition Height="Auto" />
+			<!-- Toolbar -->
+			<RowDefinition Height="*" />
+			<!-- ListView + Overlays -->
+		</Grid.RowDefinitions>
+
+		<!-- Toolbar (Row 0) -->
+		<StackPanel 
+			Orientation="Horizontal" 
+			Grid.Row="0" 
+			Padding="10" 
+			Spacing="8" 
+			Background="#EAEAEA">
+			<TextBox x:Name="SearchBox"
+                     Width="300"
+                     PlaceholderText="Tìm kiếm theo Tên hoặc Mã màu sắc..."
+                     Text="{x:Bind ViewModel.SearchTerm, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     Margin="0,0,10,0" />
+			<Button 
+				ToolTipService.ToolTip="Thêm màu sắc mới" 
+				Command="{x:Bind ViewModel.AddColorCommand}">
+				<StackPanel 
+					Orientation="Horizontal" 
+					Spacing="5">
+					<FontIcon 
+						FontFamily="{StaticResource SymbolThemeFontFamily}" 
+						Glyph="&#xE710;"/>
+					<TextBlock Text="Thêm mới"/>
+				</StackPanel>
+			</Button>
+			<Button 
+				ToolTipService.ToolTip="Nhập màu sắc từ file Excel/CSV" 
+				Command="{x:Bind ViewModel.ImportColorsCommand}">
+				<StackPanel 
+					Orientation="Horizontal" 
+					Spacing="5">
+					<FontIcon 
+						FontFamily="{StaticResource SymbolThemeFontFamily}" 
+						Glyph="&#xE896;"/>
+					<TextBlock Text="Nhập file"/>
+				</StackPanel>
+			</Button>
+			<Button 
+				ToolTipService.ToolTip="Xuất danh sách màu sắc ra file" 
+				Command="{x:Bind ViewModel.ExportColorsCommand}">
+				<StackPanel 
+					Orientation="Horizontal" 
+					Spacing="5">
+					<FontIcon 
+						FontFamily="{StaticResource SymbolThemeFontFamily}" 
+						Glyph="&#xE78C;"/>
+					<TextBlock Text="Xuất file"/>
+				</StackPanel>
+			</Button>
+			<Button 
+				ToolTipService.ToolTip="Tải lại danh sách" 
+				Command="{x:Bind ViewModel.LoadColorsCommand}">
+				<StackPanel 
+					Orientation="Horizontal" 
+					Spacing="5">
+					<FontIcon 
+						FontFamily="{StaticResource SymbolThemeFontFamily}" 
+						Glyph="&#xE72C;"/>
+					<TextBlock Text="Tải lại"/>
+				</StackPanel>
+			</Button>
+		</StackPanel>
+
+		<!-- ListView and Overlays Container (Row 1) -->
+		<Grid Grid.Row="1">
+
+			<!-- ListView -->
+			<ListView x:Name="ItemsListView"
+                      Margin="10,5,10,10"
+                      ItemsSource="{x:Bind ViewModel.FilteredColors, Mode=OneWay}"
+                      SelectionMode="None"
+                      IsItemClickEnabled="False"
+                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+                      ItemContainerStyle="{StaticResource NoPaddingListViewItemStyle}">
+
+				<ListView.HeaderTemplate>
+					<DataTemplate>
+						<Grid Padding="10,8,10,8" Background="{ThemeResource SystemControlBackgroundListLowBrush}">
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="100" />
+								<!-- 1. Color ID -->
+								<ColumnDefinition Width="*" />
+								<!-- 2. Color Name -->
+								<ColumnDefinition Width="200" />
+								<!-- 3. Actions -->
+							</Grid.ColumnDefinitions>
+							<TextBlock Grid.Column="0" Text="Mã màu sắc" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Center"/>
+							<TextBlock Grid.Column="1" Text="Tên màu sắc" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Center"/>
+							<TextBlock Grid.Column="2" Text="Thao tác" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Center"/>
+						</Grid>
+					</DataTemplate>
+				</ListView.HeaderTemplate>
+
+				<ListView.ItemTemplate>
+					<DataTemplate x:DataType="models:ProductColor">
+						<Grid Padding="10,0,10,0" Background="Transparent" VerticalAlignment="Center" MinHeight="40">
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="100" />
+								<!-- 1. Color ID -->
+								<ColumnDefinition Width="*" />
+								<!-- 2. Color Name -->
+								<ColumnDefinition Width="200" />
+								<!-- 3. Actions -->
+							</Grid.ColumnDefinitions>
+
+							<!-- Column 1: Color ID -->
+							<TextBlock Grid.Column="0" Text="{x:Bind ColorId}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+
+							<!-- Column 2: Color Name -->
+							<TextBlock Grid.Column="1" Text="{x:Bind ColorName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+
+							<!-- Column 3: Actions -->
+							<StackPanel 
+								Grid.Column="2" 
+								Orientation="Horizontal" 
+								Spacing="5" 
+								VerticalAlignment="Center" 
+								HorizontalAlignment="Center">
+								<Button 
+									Padding="5" 
+									ToolTipService.ToolTip="Chỉnh sửa màu sắc" 
+									Command="{Binding DataContext.EditColorCommand, ElementName=ItemsListView}" 
+									CommandParameter="{x:Bind}">
+									<FontIcon 
+										FontFamily="{StaticResource SymbolThemeFontFamily}" 
+										Glyph="&#xE70F;" 
+										FontSize="16"/>
+								</Button>
+								<Button 
+									Padding="5" 
+									ToolTipService.ToolTip="Xóa màu sắc" 
+									Background="IndianRed" 
+									Command="{Binding DataContext.DeleteColorCommand, ElementName=ItemsListView}" 
+									CommandParameter="{x:Bind}">
+									<FontIcon 
+										FontFamily="{StaticResource SymbolThemeFontFamily}" 
+										Glyph="&#xE74D;" 
+										FontSize="16"/>
+								</Button>
+							</StackPanel>
+						</Grid>
+					</DataTemplate>
+				</ListView.ItemTemplate>
+			</ListView>
+
+			<!-- Overlays -->
+			<ProgressRing 
+				IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" 
+				VerticalAlignment="Center" 
+				HorizontalAlignment="Center" 
+				Width="50" 
+				Height="50" />
+			<TextBlock 
+				Text="Không tìm thấy màu sắc nào khớp với bộ lọc." 
+				Visibility="{x:Bind ViewModel.ShowEmptyMessage, Mode=OneWay}" 
+				VerticalAlignment="Center" 
+				HorizontalAlignment="Center" 
+				Style="{ThemeResource BodyStrongTextBlockStyle}"/>
+
+		</Grid>
+	</Grid>
 </Page>

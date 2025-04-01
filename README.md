@@ -58,4 +58,19 @@ Configuration:
 
 #### Run `CoolWear.sql` to create tables and insert data
 
-### Enjoy the project
+### Run the project
+
+#### Create new account for store owner
+
+- **username**: admin
+- **password**: 123 (default password, _not hashed_)
+
+Or you can use your wanted password by doing this: (_hashed_ password)
+
+- Type username, password you want, click "Remember me" and click "Đăng nhập"
+  => It will display "Không thể đăng nhập"
+- Close the app, then run it again
+- Type username, password you just typed, click "Đăng nhập"
+  => You can login successfully
+
+This function is because this app only have 1 user that is store owner, so the app should not have Register function. But if user want to use their wanting password (hashed), they could do it by this way.

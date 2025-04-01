@@ -18,7 +18,7 @@ public partial class ProductViewModel : ViewModelBase
     private readonly IUnitOfWork _unitOfWork;
 
     // --- Backing Fields ---
-    private List<Product>? _allProducts;
+    private List<Product>? _allProducts = [];
     private FullObservableCollection<Product>? _filteredProducts;
     private FullObservableCollection<ProductCategory>? _categories;
     private FullObservableCollection<ProductSize>? _sizes;
@@ -145,13 +145,12 @@ public partial class ProductViewModel : ViewModelBase
         ShowEmptyMessage = false;
         FilteredProducts?.Clear();
         string errorMessage = string.Empty;
-        List<Product>? loadedProducts = null; // Temporary variable
 
         try
         {
             var spec = new ProductSpecification(true);
             var products = await _unitOfWork.Products.GetAsync(spec);
-            loadedProducts = [.. products]; // Load into temporary list first
+            _allProducts = [.. products];
         }
         catch (Exception ex)
         {
@@ -160,8 +159,6 @@ public partial class ProductViewModel : ViewModelBase
         }
         finally
         {
-            _allProducts = loadedProducts ?? [];
-
             LoadFilterOptions(_allProducts);
 
             IsLoading = false;
@@ -334,6 +331,15 @@ public partial class ProductViewModel : ViewModelBase
         // Find the parent product in the UI's current list for context
         var parentProduct = FilteredProducts?.FirstOrDefault(p => p.ProductId == variant.ProductId);
         if (parentProduct == null) return; // Should not happen if UI is consistent
+
+        // Avoid delete ProductVariant if it's in an OrderItem
+        var deleteVariant = await _unitOfWork.ProductVariants.GetByIdAsync(variant.VariantId);
+        var canDelete = !deleteVariant!.OrderItems.Any(item => item.VariantId == variant.VariantId);
+        if (!canDelete)
+        {
+            await ShowErrorDialogAsync("Cảnh báo: Xóa Phiên Bản", "Không được xóa");
+            return;
+        }
 
         string variantDesc = $"{variant.Color?.ColorName ?? "N/A"} - {variant.Size?.SizeName ?? "N/A"} (ID: {variant.VariantId})";
 

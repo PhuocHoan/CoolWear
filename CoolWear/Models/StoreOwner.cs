@@ -43,7 +43,7 @@ public partial class StoreOwner : INotifyPropertyChanged
     public string Password { get; set; } = null!;
 
     /// <summary>
-    /// Mã hóa mật khẩu
+    /// Mã hóa mật khẩu, mặc định là 0
     /// </summary>
     public string Entropy { get; set; } = null!;
 

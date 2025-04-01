@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace CoolWear.Models;
@@ -20,6 +19,5 @@ public partial class ProductColor : INotifyPropertyChanged
     public string ColorName { get; set; } = null!;
 
     public virtual ICollection<ProductVariant> ProductVariants { get; set; } = new List<ProductVariant>();
-
     public event PropertyChangedEventHandler? PropertyChanged;
 }

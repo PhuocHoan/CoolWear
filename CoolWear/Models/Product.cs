@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace CoolWear.Models;
@@ -32,14 +31,19 @@ public partial class Product : INotifyPropertyChanged
     /// <summary>
     /// Mã danh mục sản phẩm, khóa ngoại
     /// </summary>
-    public int CategoryId { get; set; }
+    public int? CategoryId { get; set; }
 
     /// <summary>
     /// Đường dẫn hình ảnh công khai
     /// </summary>
     public string PublicId { get; set; } = null!;
 
-    public virtual ProductCategory Category { get; set; } = null!;
+    /// <summary>
+    /// Trạng thái xóa sản phẩm, mặc định là chưa (false)
+    /// </summary>
+    public bool IsDeleted { get; set; }
+
+    public virtual ProductCategory? Category { get; set; }
 
     public virtual ICollection<ProductVariant> ProductVariants { get; set; } = new List<ProductVariant>();
 

@@ -1,7 +1,7 @@
-﻿using CoolWear.Models;
-using Microsoft.EntityFrameworkCore;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using CoolWear.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace CoolWear.Data;
 
@@ -60,6 +60,10 @@ public partial class PostgresContext : DbContext
                 .HasMaxLength(100)
                 .HasComment("Email khách hàng")
                 .HasColumnName("email");
+            entity.Property(e => e.IsDeleted)
+                .HasDefaultValue(false)
+                .HasComment("Trạng thái xóa khách hàng, mặc định là chưa (false)")
+                .HasColumnName("is_deleted");
             entity.Property(e => e.Phone)
                 .HasMaxLength(20)
                 .HasComment("Số điện thoại khách hàng")
@@ -82,6 +86,9 @@ public partial class PostgresContext : DbContext
             entity.Property(e => e.CustomerId)
                 .HasComment("Mã khách hàng, khóa ngoại (có thể null nếu khách hàng không đăng nhập)")
                 .HasColumnName("customer_id");
+            entity.Property(e => e.NetTotal)
+                .HasComment("Tổng tiền đơn hàng sau khi giảm giá")
+                .HasColumnName("net_total");
             entity.Property(e => e.OrderDate)
                 .HasDefaultValueSql("now()")
                 .HasComment("Ngày đặt hàng, mặc định là thời điểm hiện tại")
@@ -99,9 +106,9 @@ public partial class PostgresContext : DbContext
                 .HasDefaultValueSql("'Đang xử lý'::character varying")
                 .HasComment("Trạng thái đơn hàng, mặc định là \"Đang xử lý\"")
                 .HasColumnName("status");
-            entity.Property(e => e.TotalAmount)
-                .HasComment("Tổng tiền đơn hàng")
-                .HasColumnName("total_amount");
+            entity.Property(e => e.Subtotal)
+                .HasComment("Tổng tiền đơn hàng trước khi giảm giá")
+                .HasColumnName("subtotal");
 
             entity.HasOne(d => d.Customer).WithMany(p => p.Orders)
                 .HasForeignKey(d => d.CustomerId)
@@ -180,6 +187,10 @@ public partial class PostgresContext : DbContext
             entity.Property(e => e.ImportPrice)
                 .HasComment("Giá nhập sản phẩm")
                 .HasColumnName("import_price");
+            entity.Property(e => e.IsDeleted)
+                .HasDefaultValue(false)
+                .HasComment("Trạng thái xóa sản phẩm, mặc định là chưa (false)")
+                .HasColumnName("is_deleted");
             entity.Property(e => e.Price)
                 .HasComment("Giá bán sản phẩm")
                 .HasColumnName("price");
@@ -194,14 +205,7 @@ public partial class PostgresContext : DbContext
 
             entity.HasOne(d => d.Category).WithMany(p => p.Products)
                 .HasForeignKey(d => d.CategoryId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("product_category_id_fkey");
-            // IMPORTANT: Configure relationship with ProductVariants
-            entity.HasMany(p => p.ProductVariants) // Product has many Variants
-                  .WithOne(v => v.Product)         // Variant has one Product
-                  .HasForeignKey(v => v.ProductId) // Foreign key is ProductId in Variant
-                  .OnDelete(DeleteBehavior.Cascade) // <<<--- ADDED: Delete Variants when Product is deleted
-                  .HasConstraintName("product_variant_product_id_fkey");
         });
 
         modelBuilder.Entity<ProductCategory>(entity =>
@@ -274,6 +278,10 @@ public partial class PostgresContext : DbContext
             entity.Property(e => e.ColorId)
                 .HasComment("Mã màu sắc, khóa ngoại")
                 .HasColumnName("color_id");
+            entity.Property(e => e.IsDeleted)
+                .HasDefaultValue(false)
+                .HasComment("Trạng thái xóa biến thể sản phẩm, mặc định là chưa (false)")
+                .HasColumnName("is_deleted");
             entity.Property(e => e.ProductId)
                 .HasComment("Mã sản phẩm, khóa ngoại")
                 .HasColumnName("product_id");
@@ -286,7 +294,6 @@ public partial class PostgresContext : DbContext
 
             entity.HasOne(d => d.Color).WithMany(p => p.ProductVariants)
                 .HasForeignKey(d => d.ColorId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("product_variant_color_id_fkey");
 
             entity.HasOne(d => d.Product).WithMany(p => p.ProductVariants)
@@ -296,16 +303,6 @@ public partial class PostgresContext : DbContext
 
             entity.HasOne(d => d.Size).WithMany(p => p.ProductVariants)
                 .HasForeignKey(d => d.SizeId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("product_variant_size_id_fkey");
-            entity.HasOne(d => d.Color).WithMany(p => p.ProductVariants)
-                .HasForeignKey(d => d.ColorId)
-                .OnDelete(DeleteBehavior.Restrict) // Variants should not be deleted if Color is deleted
-                .HasConstraintName("product_variant_color_id_fkey");
-
-            entity.HasOne(d => d.Size).WithMany(p => p.ProductVariants)
-                .HasForeignKey(d => d.SizeId)
-                 .OnDelete(DeleteBehavior.Restrict) // Variants should not be deleted if Size is deleted
                 .HasConstraintName("product_variant_size_id_fkey");
         });
 
@@ -326,18 +323,19 @@ public partial class PostgresContext : DbContext
                 .HasMaxLength(100)
                 .HasComment("Email chủ cửa hàng")
                 .HasColumnName("email");
+            entity.Property(e => e.Entropy)
+                .HasMaxLength(100)
+                .HasDefaultValueSql("'0'::character varying")
+                .HasComment("Mã hóa mật khẩu, mặc định là 0")
+                .HasColumnName("entropy");
             entity.Property(e => e.OwnerName)
                 .HasMaxLength(100)
                 .HasComment("Tên chủ cửa hàng")
                 .HasColumnName("owner_name");
             entity.Property(e => e.Password)
-                .HasMaxLength(100)
+                .HasMaxLength(350)
                 .HasComment("Mật khẩu")
                 .HasColumnName("password");
-            entity.Property(e => e.Entropy)
-                .HasMaxLength(100)
-                .HasComment("Mã hóa mật khẩu")
-                .HasColumnName("entropy");
             entity.Property(e => e.Phone)
                 .HasMaxLength(20)
                 .HasComment("Số điện thoại chủ cửa hàng")

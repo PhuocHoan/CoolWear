@@ -78,5 +78,11 @@ public sealed class ServiceManager
 
         // Register CategoryViewModel
         AddKeyedSingleton(() => new CategoryViewModel(unitOfWork));
+
+        // Register ColorViewModel
+        AddKeyedSingleton(() => new ColorViewModel(unitOfWork));
+
+        // Register SizeViewModel
+        AddKeyedSingleton(() => new SizeViewModel(unitOfWork));
     }
 }

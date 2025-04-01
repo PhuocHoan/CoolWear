@@ -80,9 +80,5 @@ public sealed partial class DashboardWindow : Window
 
     private void Navigation_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
-        if (args.SelectedItem is NavigationViewItem selectedItem && selectedItem.Content != null)
-        {
-            Title = $"CoolWear - {selectedItem.Content}";
-        }
     }
 }

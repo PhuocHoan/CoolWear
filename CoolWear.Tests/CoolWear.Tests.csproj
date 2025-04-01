@@ -1,0 +1,15 @@
+﻿<Project Sdk="MSTest.Sdk/3.6.4">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+		<LangVersion>latest</LangVersion>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\CoolWear\CoolWear.csproj" />
+	</ItemGroup>
+
+</Project>

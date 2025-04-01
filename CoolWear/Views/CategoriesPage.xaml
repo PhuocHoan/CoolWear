@@ -64,7 +64,7 @@
                          Margin="0,0,10,0" />
 				<Button ToolTipService.ToolTip="Thêm danh mục mới" Command="{x:Bind ViewModel.AddCategoryCommand}">
 					<StackPanel Orientation="Horizontal" Spacing="5">
-						<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph=""/>
+						<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE710;"/>
 						<TextBlock Text="Thêm mới"/>
 					</StackPanel>
 				</Button>
@@ -82,7 +82,7 @@
 				</Button>
 				<Button ToolTipService.ToolTip="Tải lại danh sách" Command="{x:Bind ViewModel.LoadCategoriesCommand}">
 					<StackPanel Orientation="Horizontal" Spacing="5">
-						<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph=""/>
+						<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE72C;"/>
 						<TextBlock Text="Tải lại"/>
 					</StackPanel>
 				</Button>
@@ -147,10 +147,10 @@
 								<!-- Column 4: Actions -->
 								<StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="5" VerticalAlignment="Center" HorizontalAlignment="Center">
 									<Button Padding="5" ToolTipService.ToolTip="Chỉnh sửa danh mục" Command="{Binding DataContext.EditCategoryCommand, ElementName=ItemsListView}" CommandParameter="{x:Bind}">
-										<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="" FontSize="16"/>
+										<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE70F;" FontSize="16"/>
 									</Button>
 									<Button Padding="5" ToolTipService.ToolTip="Xóa danh mục" Background="IndianRed" Command="{Binding DataContext.DeleteCategoryCommand, ElementName=ItemsListView}" CommandParameter="{x:Bind}">
-										<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="" FontSize="16"/>
+										<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE74D;" FontSize="16"/>
 									</Button>
 								</StackPanel>
 							</Grid>
