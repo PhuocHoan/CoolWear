@@ -84,5 +84,8 @@ public sealed class ServiceManager
 
         // Register SizeViewModel
         AddKeyedSingleton(() => new SizeViewModel(unitOfWork));
+
+        // Register AccountViewModel
+        AddKeyedSingleton(() => new AccountViewModel(unitOfWork));
     }
 }
