@@ -1,4 +1,4 @@
-﻿namespace CoolWear.Tests;
+﻿namespace CoolWear.tests;
 
 [TestClass]
 public sealed class Test1

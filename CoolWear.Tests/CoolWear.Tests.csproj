@@ -5,11 +5,60 @@
 		<LangVersion>latest</LangVersion>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<!--
+      Displays error on console in addition to the log file. Note that this feature comes with a performance impact.
+      For more information, visit https://learn.microsoft.com/dotnet/core/testing/unit-testing-platform-integration-dotnet-test#show-failure-per-test
+      -->
+		<Platforms>x86;x64;ARM64</Platforms>
+		<RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
+		<PlatformTarget>x64</PlatformTarget>
+		<!-- Or use $(Platform) if building solution for a specific platform -->
+		<!-- <PlatformTarget>$(Platform)</PlatformTarget> -->
+		
 		<TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\CoolWear\CoolWear.csproj" />
+		<!-- Add Npgsql, which should pull in the correct EF Core dependencies -->
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+
+		<!-- You might also need UserSecrets if your tests load configuration the same way -->
+		<PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.3" />
+
+		<!-- Usually not needed for tests, but if conflicts persist, you could add explicitly: -->
+		<!-- <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.3" /> -->
+		<!-- <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.3" /> -->
+	</ItemGroup>
+	
+	<ItemGroup>
+		<ProjectReference Include="..\CoolWear\CoolWear.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Update="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Update="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Update="Microsoft.Testing.Extensions.TrxReport" Version="1.6.3" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Update="MSTest.Analyzers" Version="3.8.3">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Update="MSTest.TestAdapter" Version="3.8.3" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Update="MSTest.TestFramework" Version="3.8.3" />
 	</ItemGroup>
 
 </Project>

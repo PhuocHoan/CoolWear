@@ -12,7 +12,10 @@
 		<EnableMsixTooling>true</EnableMsixTooling>
 		<Nullable>enable</Nullable>
 		<UserSecretsId>12608b1b-0e4c-4f1f-a102-496fd5390d44</UserSecretsId>
+		<WindowsPackageType>None</WindowsPackageType>
+		<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
 	</PropertyGroup>
+
 	<ItemGroup>
 		<None Remove="Assets\ao-polo-the-thao-active-premium-thoang-khi-exdry-xam-1.jpg" />
 		<None Remove="Assets\logo.png" />
@@ -135,6 +138,5 @@
 		<PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
 		<PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
 		<PublishTrimmed Condition="'$(Configuration)' != 'Debug'">True</PublishTrimmed>
-		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 </Project>

@@ -58,6 +58,19 @@ Configuration:
 
 #### Run `CoolWear.sql` to create tables and insert data
 
+#### Add `connectionString` to `secrets.json`
+
+- Open file `secrets.json` explorer with path: `%APPDATA%\Microsoft\UserSecrets\12608b1b-0e4c-4f1f-a102-496fd5390d44\secrets.json`
+- Add the following line to `secrets.json`:
+
+```json
+{
+  "ConnectionStrings": {
+    "PostgresDatabase": "Host=localhost;Database=coolwear;Username=postgres;Password=1234"
+  }
+}
+```
+
 ### Run the project
 
 #### Create new account for store owner
