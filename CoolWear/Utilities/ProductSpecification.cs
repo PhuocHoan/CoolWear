@@ -1,5 +1,5 @@
 ﻿using CoolWear.Models;
-using System;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 
 namespace CoolWear.Utilities;
@@ -8,12 +8,57 @@ public class ProductSpecification : GenericSpecification<Product>
 {
     public ProductSpecification() { }
 
-    public ProductSpecification(bool includeAllDetails)
+    public ProductSpecification(
+        string? searchTerm = null,
+        int? categoryId = null,
+        int? colorId = null,
+        int? sizeId = null,
+        bool? inStockOnly = null, // true = in stock, false = out of stock, null = all
+        int? skip = null,
+        int? take = null,
+        bool includeDetails = true)
     {
-        if (includeAllDetails)
+        AddCriteria(p => !p.IsDeleted); // Exclude deleted products
+
+        if (includeDetails)
         {
             IncludeCategory();
             IncludeVariantsWithDetails();
+        }
+
+        // Apply Filters based on constructor parameters
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            SearchByIdOrName(searchTerm);
+        }
+        if (categoryId.HasValue)
+        {
+            WhereCategoryIs(categoryId.Value);
+        }
+        if (colorId.HasValue)
+        {
+            HasColor(colorId.Value);
+        }
+        if (sizeId.HasValue)
+        {
+            HasSize(sizeId.Value);
+        }
+        if (inStockOnly.HasValue)
+        {
+            if (inStockOnly.Value)
+            {
+                IsInStock();
+            }
+            else
+            {
+                IsOutOfStock();
+            }
+        }
+
+        // Apply Paging if requested
+        if (skip.HasValue && take.HasValue)
+        {
+            ApplyPaging(skip.Value, take.Value);
         }
     }
 
@@ -40,6 +85,16 @@ public class ProductSpecification : GenericSpecification<Product>
     }
 
     /// <summary>
+    /// Includes variants
+    /// </summary>
+    public ProductSpecification IncludeVariants()
+    {
+        AddInclude(nameof(Product.ProductVariants)); // Pass "ProductVariants" string
+
+        return this;
+    }
+
+    /// <summary>
     /// Creates a specification for products with a specific category name.
     /// Relies on Category being included or EF Core implicitly joining.
     /// Consider calling IncludeCategory() if using this filter often.
@@ -61,13 +116,15 @@ public class ProductSpecification : GenericSpecification<Product>
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
             var trimmedSearchTerm = searchTerm.Trim();
+            var pattern = $"%{trimmedSearchTerm}%";
+
             if (int.TryParse(trimmedSearchTerm, out int id))
             {
-                AddCriteria(p => p.ProductId == id || p.ProductName.Contains(trimmedSearchTerm, StringComparison.CurrentCultureIgnoreCase));
+                AddCriteria(p => p.ProductId == id || EF.Functions.ILike(p.ProductName, pattern));
             }
             else
             {
-                AddCriteria(p => p.ProductName.Contains(trimmedSearchTerm, StringComparison.CurrentCultureIgnoreCase));
+                AddCriteria(p => EF.Functions.ILike(p.ProductName, pattern));
             }
         }
         return this;
@@ -106,6 +163,18 @@ public class ProductSpecification : GenericSpecification<Product>
     public ProductSpecification IsInStock()
     {
         AddCriteria(p => p.ProductVariants.Any(v => v.StockQuantity > 0));
+        return this;
+    }
+
+    public ProductSpecification IsOutOfStock()
+    {
+        AddCriteria(p => p.ProductVariants.Any(v => v.StockQuantity == 0));
+        return this;
+    }
+
+    public new ProductSpecification ApplyPaging(int skip, int take)
+    {
+        base.ApplyPaging(skip, take);
         return this;
     }
 }

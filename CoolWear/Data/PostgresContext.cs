@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using CoolWear.Models;
+﻿using CoolWear.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace CoolWear.Data;
@@ -298,7 +296,7 @@ public partial class PostgresContext : DbContext
 
             entity.HasOne(d => d.Product).WithMany(p => p.ProductVariants)
                 .HasForeignKey(d => d.ProductId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("product_variant_product_id_fkey");
 
             entity.HasOne(d => d.Size).WithMany(p => p.ProductVariants)

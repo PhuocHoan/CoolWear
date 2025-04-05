@@ -4,33 +4,57 @@ using CoolWear.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.UI.Xaml.Controls;
 using System;
-using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows.Input;
 
 namespace CoolWear.ViewModels;
 
 public partial class ProductViewModel : ViewModelBase
 {
+    public partial class StockFilterOption : INotifyPropertyChanged
+    {
+        public string DisplayName { get; set; } = string.Empty;
+
+        // Represents the filter state:
+        // null = All
+        // true = In Stock
+        // false = Out of Stock
+        public bool? Value { get; set; }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        public override string ToString() => DisplayName;
+    }
+
     // --- Dependencies ---
     private readonly IUnitOfWork _unitOfWork;
+    private readonly INavigationService _navigationService; // Inject service
+
+    // --- Constants ---
+    private const int DefaultPageSize = 2;
 
     // --- Backing Fields ---
-    private List<Product>? _allProducts = [];
     private FullObservableCollection<Product>? _filteredProducts;
     private FullObservableCollection<ProductCategory>? _categories;
     private FullObservableCollection<ProductSize>? _sizes;
     private FullObservableCollection<ProductColor>? _colors;
+    public FullObservableCollection<StockFilterOption> StockFilterOptions { get; }
 
     private ProductCategory? _selectedCategory;
     private ProductSize? _selectedSize;
     private ProductColor? _selectedColor;
-    private bool _filterInStockOnly = true; // Keep default
+    private StockFilterOption? _selectedStockFilter;
     private string? _searchTerm;
     private bool _isLoading;
     private bool _showEmptyMessage;
+
+    // --- Pagination Fields ---
+    private int _currentPage = 1;
+    private int _pageSize = DefaultPageSize;
+    private int _totalItems;
+    private int _totalPages;
 
     // --- Properties ---
     public FullObservableCollection<Product>? FilteredProducts
@@ -38,19 +62,16 @@ public partial class ProductViewModel : ViewModelBase
         get => _filteredProducts;
         private set => SetProperty(ref _filteredProducts, value);
     }
-
     public FullObservableCollection<ProductCategory>? Categories
     {
         get => _categories;
         private set => SetProperty(ref _categories, value);
     }
-
     public FullObservableCollection<ProductSize>? Sizes
     {
         get => _sizes;
         private set => SetProperty(ref _sizes, value);
     }
-
     public FullObservableCollection<ProductColor>? Colors
     {
         get => _colors;
@@ -60,65 +81,67 @@ public partial class ProductViewModel : ViewModelBase
     // --- Filter Properties ---
     public ProductCategory? SelectedCategory
     {
-        get => _selectedCategory;
-        set
-        {
-            if (SetProperty(ref _selectedCategory, value)) ApplyFilters();
-        }
+        get => _selectedCategory; set => SetProperty(ref _selectedCategory, value);
     }
-
     public ProductSize? SelectedSize
     {
-        get => _selectedSize;
-        set { if (SetProperty(ref _selectedSize, value)) ApplyFilters(); }
+        get => _selectedSize; set => SetProperty(ref _selectedSize, value);
     }
-
     public ProductColor? SelectedColor
     {
-        get => _selectedColor;
-        set { if (SetProperty(ref _selectedColor, value)) ApplyFilters(); }
+        get => _selectedColor; set => SetProperty(ref _selectedColor, value);
     }
-
-    public bool FilterInStockOnly
-    {
-        get => _filterInStockOnly;
-        set { if (SetProperty(ref _filterInStockOnly, value)) ApplyFilters(); }
-    }
-
     public string? SearchTerm
     {
-        get => _searchTerm;
-        set { if (SetProperty(ref _searchTerm, value)) ApplyFilters(); }
+        get => _searchTerm; set => SetProperty(ref _searchTerm, value);
+    }
+
+    public StockFilterOption? SelectedStockFilter
+    {
+        get => _selectedStockFilter; set => SetProperty(ref _selectedStockFilter, value);
     }
 
     // If IsLoading = true, prevent ApplyFilters from running
-    public bool IsLoading
-    {
-        get => _isLoading;
-        set => SetProperty(ref _isLoading, value);
-    }
+    public bool IsLoading { get => _isLoading; private set => SetProperty(ref _isLoading, value, nameof(IsLoading), UpdateCommandStates); }
+    public bool ShowEmptyMessage { get => _showEmptyMessage; private set => SetProperty(ref _showEmptyMessage, value); }
 
-    public bool ShowEmptyMessage
+    // --- Pagination Properties ---
+    public int CurrentPage
     {
-        get => _showEmptyMessage;
-        set => SetProperty(ref _showEmptyMessage, value);
+        get => _currentPage;
+        private set => SetProperty(ref _currentPage, value, nameof(CurrentPage), UpdateCommandStates);
+    }
+    public int PageSize
+    {
+        get => _pageSize; set => SetProperty(ref _pageSize, value);
+    }
+    public int TotalItems
+    {
+        get => _totalItems;
+        private set => SetProperty(ref _totalItems, value);
+    }
+    public int TotalPages
+    {
+        get => _totalPages;
+        private set => SetProperty(ref _totalPages, value, nameof(TotalPages), UpdateCommandStates);
     }
 
     // --- Commands ---
-    public ICommand LoadProductsCommand { get; }
-    public ICommand AddProductCommand { get; }
-    public ICommand EditProductCommand { get; }
-    public ICommand DeleteProductCommand { get; }
-    public ICommand EditVariantCommand { get; }
-    public ICommand DeleteVariantCommand { get; }
-    public ICommand ImportProductsCommand { get; }
-    public ICommand ExportProductsCommand { get; }
+    public AsyncRelayCommand LoadDataCommand { get; }
+    public AsyncRelayCommand AddProductCommand { get; }
+    public AsyncRelayCommand<Product> EditProductCommand { get; }
+    public AsyncRelayCommand<Product> DeleteProductCommand { get; }
+    public AsyncRelayCommand ImportProductsCommand { get; }
+    public AsyncRelayCommand ExportProductsCommand { get; }
+    public AsyncRelayCommand PreviousPageCommand { get; }
+    public AsyncRelayCommand NextPageCommand { get; }
 
 
     // --- Constructor ---
-    public ProductViewModel(IUnitOfWork unitOfWork)
+    public ProductViewModel(IUnitOfWork unitOfWork, INavigationService navigationService)
     {
         _unitOfWork = unitOfWork;
+        _navigationService = navigationService; // Store service
 
         // Initialize Collections
         FilteredProducts = [];
@@ -126,44 +149,139 @@ public partial class ProductViewModel : ViewModelBase
         Sizes = [];
         Colors = [];
 
+        StockFilterOptions =
+        [
+            new() { DisplayName = "Tất cả", Value = null },        // All
+            new() { DisplayName = "Còn hàng", Value = true },       // In Stock
+            new() { DisplayName = "Hết hàng", Value = false }       // Out of Stock
+        ];
+
         // Initialize Commands
-        LoadProductsCommand = new AsyncRelayCommand(LoadProductsAsync);
-        AddProductCommand = new AsyncRelayCommand(AddProductAsync); // Stubbed
-        EditProductCommand = new AsyncRelayCommand<Product>(EditProductAsync); // Stubbed
+        LoadDataCommand = new AsyncRelayCommand(InitializeDataAsync);
+        AddProductCommand = new AsyncRelayCommand(AddProductAsync);
+        EditProductCommand = new AsyncRelayCommand<Product>(EditProductAsync);
         DeleteProductCommand = new AsyncRelayCommand<Product>(DeleteProductAsync);
-        EditVariantCommand = new AsyncRelayCommand<ProductVariant>(EditVariantAsync); // Stubbed
-        DeleteVariantCommand = new AsyncRelayCommand<ProductVariant>(DeleteVariantAsync);
-        ImportProductsCommand = new AsyncRelayCommand(ImportProductsAsync); // Stubbed
-        ExportProductsCommand = new AsyncRelayCommand(ExportProductsAsync); // Stubbed
+        ImportProductsCommand = new AsyncRelayCommand(ImportProductsAsync); // Chưa cài đặt
+        ExportProductsCommand = new AsyncRelayCommand(ExportProductsAsync); // Chưa cài đặt
+        PreviousPageCommand = new AsyncRelayCommand(GoToPreviousPageAsync, CanGoToPreviousPage);
+        NextPageCommand = new AsyncRelayCommand(GoToNextPageAsync, CanGoToNextPage);
+
+        PropertyChanged += ViewModel_PropertyChanged;
+    }
+
+    // --- Event Handler for Filter Changes ---
+    private async void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (IsLoading)
+        {
+            Debug.WriteLine($"ViewModel_PropertyChanged for {e.PropertyName}: Ignored because IsLoading is true.");
+            return;
+        }
+
+        switch (e.PropertyName)
+        {
+            case nameof(SelectedCategory):
+            case nameof(SelectedSize):
+            case nameof(SelectedColor):
+            case nameof(SearchTerm):
+            case nameof(SelectedStockFilter):
+            case nameof(PageSize):
+                Debug.WriteLine($"ViewModel_PropertyChanged for {e.PropertyName}: Triggering ResetPageAndLoadAsync.");
+                await ResetPageAndLoadAsync();
+                break;
+        }
     }
 
     // --- Data Loading and Filtering ---
+    public async Task InitializeDataAsync()
+    {
+        // Load filter options first
+        await LoadFilterOptionsAsync();
+        await ResetFiltersAndLoadAsync();
+    }
+
+    public async Task ResetFiltersAndLoadAsync()
+    {
+        if (IsLoading) return;
+
+        SearchTerm = null;
+        SelectedCategory = null;
+        SelectedSize = null;
+        SelectedColor = null;
+        SelectedStockFilter = StockFilterOptions.FirstOrDefault(opt => opt.Value == null);
+        CurrentPage = 1;
+
+        await LoadProductsAsync();
+    }
+
+    // Called by filter property setters to reset page and reload products
+    private async Task ResetPageAndLoadAsync()
+    {
+        if (IsLoading)
+        {
+            return;
+        }
+        CurrentPage = 1;
+        await LoadProductsAsync();
+    }
+
     public async Task LoadProductsAsync()
     {
         if (IsLoading) return;
         IsLoading = true;
         ShowEmptyMessage = false;
-        FilteredProducts?.Clear();
         string errorMessage = string.Empty;
 
         try
         {
-            var spec = new ProductSpecification(true);
-            var products = await _unitOfWork.Products.GetAsync(spec);
-            _allProducts = [.. products];
+            var countSpec = new ProductSpecification(
+                searchTerm: SearchTerm,
+                categoryId: SelectedCategory?.CategoryId,
+                colorId: SelectedColor?.ColorId,
+                sizeId: SelectedSize?.SizeId,
+                inStockOnly: SelectedStockFilter?.Value,
+                includeDetails: false
+            );
+            TotalItems = await _unitOfWork.Products.CountAsync(countSpec);
+
+            TotalPages = TotalItems > 0 ? (int)Math.Ceiling((double)TotalItems / PageSize) : 1;
+            if (CurrentPage > TotalPages) CurrentPage = TotalPages;
+            if (CurrentPage < 1) CurrentPage = 1;
+
+            int skip = (CurrentPage - 1) * PageSize;
+            var dataSpec = new ProductSpecification(
+                searchTerm: SearchTerm,
+                categoryId: SelectedCategory?.CategoryId,
+                colorId: SelectedColor?.ColorId,
+                sizeId: SelectedSize?.SizeId,
+                inStockOnly: SelectedStockFilter?.Value,
+                skip: skip,
+                take: PageSize,
+                includeDetails: true
+            );
+
+            var products = await _unitOfWork.Products.GetAsync(dataSpec);
+
+            FilteredProducts?.Clear();
+            foreach (var product in products)
+            {
+                FilteredProducts?.Add(product);
+            }
+
+            ShowEmptyMessage = TotalItems == 0;
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"ERROR Loading Products: {ex}");
             errorMessage = $"Không thể tải danh sách sản phẩm: {ex.Message}";
+            ShowEmptyMessage = true;
+            FilteredProducts?.Clear();
+            TotalItems = 0;
+            TotalPages = 1;
         }
         finally
         {
-            LoadFilterOptions(_allProducts);
-
             IsLoading = false;
-
-            ApplyFilters();
 
             if (!string.IsNullOrEmpty(errorMessage))
             {
@@ -172,228 +290,241 @@ public partial class ProductViewModel : ViewModelBase
         }
     }
 
-    private void LoadFilterOptions(List<Product>? products)
+    public async Task LoadFilterOptionsAsync()
     {
-        Categories?.Clear();
-        Sizes?.Clear();
-        Colors?.Clear();
-
-        if (products != null && products.Any())
+        try
         {
-            var distinctCategories = products.Where(p => p.Category != null)
-                                            .Select(p => p.Category)
-                                            .DistinctBy(c => c.CategoryId)
-                                            .OrderBy(c => c.CategoryName)
-                                            .ToList();
-            foreach (var cat in distinctCategories) Categories?.Add(cat);
+            // --- Execute sequentially ---
+            var categories = await _unitOfWork.ProductCategories.GetAllAsync();
+            var sizes = await _unitOfWork.ProductSizes.GetAllAsync();
+            var colors = await _unitOfWork.ProductColors.GetAllAsync();
 
-            var distinctSizes = products.SelectMany(p => p.ProductVariants?.Select(v => v.Size) ?? [])
-                                        .Where(s => s != null)
-                                        .DistinctBy(s => s.SizeId)
-                                        .OrderBy(s => s.SizeName)
-                                        .ToList();
-            foreach (var size in distinctSizes) Sizes?.Add(size);
+            // --- Populate Collections ---
+            Categories?.Clear();
+            if (categories != null) // Check if data was actually retrieved
+            {
+                foreach (var cat in categories.OrderBy(c => c.CategoryName))
+                {
+                    Categories?.Add(cat);
+                }
+            }
 
-            var distinctColors = products.SelectMany(p => p.ProductVariants?.Select(v => v.Color) ?? [])
-                                         .Where(c => c != null)
-                                         .DistinctBy(c => c.ColorId)
-                                         .OrderBy(c => c.ColorName)
-                                         .ToList();
-            foreach (var color in distinctColors) Colors?.Add(color);
+
+            Sizes?.Clear();
+            if (sizes != null)
+            {
+                foreach (var size in sizes.OrderBy(s => s.SizeName))
+                {
+                    Sizes?.Add(size);
+                }
+            }
+
+            Colors?.Clear();
+            if (colors != null)
+            {
+                foreach (var color in colors.OrderBy(c => c.ColorName))
+                {
+                    Colors?.Add(color);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"ERROR Loading Filter Options: {ex}");
+            await ShowErrorDialogAsync("Lỗi Tải Bộ Lọc", $"Không thể tải dữ liệu cho các bộ lọc: {ex.Message}");
+            Categories?.Clear();
+            Sizes?.Clear();
+            Colors?.Clear();
+        }
+        finally
+        {
+            IsLoading = false;
         }
     }
 
-    private void ApplyFilters()
+    // --- Pagination Command Implementations ---
+    private bool CanGoToPreviousPage() => CurrentPage > 1 && !IsLoading;
+    private async Task GoToPreviousPageAsync()
     {
-        FilteredProducts?.Clear();
-        if (_allProducts == null)
+        if (CanGoToPreviousPage())
         {
-            ShowEmptyMessage = !_allProducts?.Any() ?? true;
-            return;
+            CurrentPage--;
+            await LoadProductsAsync();
         }
-
-        IEnumerable<Product> filtered = _allProducts;
-
-        // Apply filters sequentially
-        if (!string.IsNullOrWhiteSpace(SearchTerm))
-        {
-            string lowerSearch = SearchTerm.Trim();
-            filtered = filtered.Where(p => p.ProductName.Contains(lowerSearch, StringComparison.InvariantCultureIgnoreCase) ||
-                                            p.ProductId.ToString().Contains(lowerSearch));
-        }
-
-        // --- Check for NON-NULL selections before applying filter ---
-        if (SelectedCategory != null)
-        {
-            filtered = filtered.Where(p => p.CategoryId == SelectedCategory.CategoryId);
-        }
-
-        if (SelectedColor != null)
-        {
-            filtered = filtered.Where(p => p.ProductVariants.Any(v => v.ColorId == SelectedColor.ColorId));
-        }
-
-        if (SelectedSize != null)
-        {
-            filtered = filtered.Where(p => p.ProductVariants.Any(v => v.SizeId == SelectedSize.SizeId));
-        }
-
-        filtered = FilterInStockOnly
-            ? filtered.Where(p => p.ProductVariants.Any(v => v.StockQuantity > 0))
-            : filtered.Where(p => p.ProductVariants.Any(v => v.StockQuantity == 0));
-
-        var results = filtered.ToList();
-        FilteredProducts?.Clear();
-        foreach (var product in results)
-        {
-            FilteredProducts?.Add(product);
-        }
-
-        ShowEmptyMessage = !(FilteredProducts?.Any() ?? false);
     }
 
-    // --- Command Implementations ---
-    private async Task AddProductAsync() =>
-        // TODO: Navigate to AddEditProductPage/ViewModel
-        await ShowNotImplementedDialogAsync("Thêm Sản Phẩm Mới");// On successful add, call await LoadProductsAsync();
+    private bool CanGoToNextPage() => CurrentPage < TotalPages && !IsLoading;
+    private async Task GoToNextPageAsync()
+    {
+        if (CanGoToNextPage())
+        {
+            CurrentPage++;
+            await LoadProductsAsync();
+        }
+    }
+
+    // Helper to update command states when IsLoading or Page numbers change
+    private void UpdateCommandStates()
+    {
+        PreviousPageCommand.RaiseCanExecuteChanged();
+        NextPageCommand.RaiseCanExecuteChanged();
+        LoadDataCommand.RaiseCanExecuteChanged();
+        AddProductCommand.RaiseCanExecuteChanged();
+        EditProductCommand.RaiseCanExecuteChanged();
+        DeleteProductCommand.RaiseCanExecuteChanged();
+        ImportProductsCommand.RaiseCanExecuteChanged();
+        ExportProductsCommand.RaiseCanExecuteChanged();
+    }
+
+    private async Task AddProductAsync()
+    {
+        Debug.WriteLine("Navigating to AddEditProductPage (Add Mode)");
+        bool navigated = _navigationService.Navigate(typeof(Views.AddEditProductPage));
+        if (!navigated)
+        {
+            await ShowErrorDialogAsync("Lỗi Điều Hướng", "Không thể điều hướng đến trang thêm sản phẩm.");
+        }
+    }
 
     private async Task EditProductAsync(Product? product)
     {
         if (product == null) return;
-        // TODO: Navigate to AddEditProductPage/ViewModel, passing product.ProductId
-        await ShowNotImplementedDialogAsync($"Chỉnh Sửa: {product.ProductName}");
-        // On successful edit, call await LoadProductsAsync(); or update the item in _allProducts and refilter
+        Debug.WriteLine($"Navigating to AddEditProductPage (Edit Mode) for ProductId: {product.ProductId}");
+        bool navigated = _navigationService.Navigate(typeof(Views.AddEditProductPage), product.ProductId);
+        if (!navigated)
+        {
+            await ShowErrorDialogAsync("Lỗi Điều Hướng", "Không thể điều hướng đến trang sửa sản phẩm.");
+        }
     }
 
     private async Task DeleteProductAsync(Product? product)
     {
         if (product == null) return;
 
-        var confirmation = await ShowConfirmationDialogAsync(
-            "Xác Nhận Xóa Sản Phẩm",
-            $"Bạn có chắc muốn xóa '{product.ProductName}' và tất cả các phiên bản ({product.ProductVariants.Count}) của nó không? Dữ liệu sẽ mất vĩnh viễn.",
-            "Xóa",
-            "Hủy");
-
-        if (confirmation == ContentDialogResult.Primary)
+        Product? productWithVariants = null;
+        try
         {
             IsLoading = true;
-            string? errorMsg = null;
-            try
-            {
-                await _unitOfWork.Products.DeleteAsync(product);
-                bool saved = await _unitOfWork.SaveChangesAsync();
+            productWithVariants = _filteredProducts!.FirstOrDefault(p => p.ProductId == product.ProductId);
 
-                if (saved)
-                {
-                    _allProducts?.Remove(product);
-                    FilteredProducts?.Remove(product); // Also remove from filtered list directly
-                    ShowEmptyMessage = !(FilteredProducts?.Any() ?? false);
-                }
-                else
-                {
-                    errorMsg = "Không thể lưu thay đổi vào cơ sở dữ liệu.";
-                }
-            }
-            catch (DbUpdateException dbEx) // Catch potential FK constraint issues if cascade isn't perfect
+            if (productWithVariants == null)
             {
-                Debug.WriteLine($"ERROR Deleting Product (DB): {dbEx}");
-                errorMsg = $"Lỗi cơ sở dữ liệu khi xóa: {dbEx.InnerException?.Message ?? dbEx.Message}";
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"ERROR Deleting Product: {ex}");
-                errorMsg = $"Đã xảy ra lỗi không mong muốn: {ex.Message}";
-            }
-            finally
-            {
-                IsLoading = false;
-                if (errorMsg != null)
-                {
-                    await ShowErrorDialogAsync("Lỗi Xóa Sản Phẩm", errorMsg);
-                }
+                await ShowErrorDialogAsync("Lỗi", "Không tìm thấy sản phẩm trong cơ sở dữ liệu để xóa.");
+                return;
             }
         }
-    }
-
-    private async Task EditVariantAsync(ProductVariant? variant)
-    {
-        if (variant == null) return;
-        // TODO: Open a dialog or navigate to edit the specific variant
-        await ShowNotImplementedDialogAsync($"Chỉnh Sửa Phiên Bản ID: {variant.VariantId}");
-        // On success, find the variant in _allProducts and update its properties, INPC should update UI.
-    }
-
-    private async Task DeleteVariantAsync(ProductVariant? variant)
-    {
-        if (variant == null) return;
-
-        // Find the parent product in the UI's current list for context
-        var parentProduct = FilteredProducts?.FirstOrDefault(p => p.ProductId == variant.ProductId);
-        if (parentProduct == null) return; // Should not happen if UI is consistent
-
-        // Avoid delete ProductVariant if it's in an OrderItem
-        var deleteVariant = await _unitOfWork.ProductVariants.GetByIdAsync(variant.VariantId);
-        var canDelete = !deleteVariant!.OrderItems.Any(item => item.VariantId == variant.VariantId);
-        if (!canDelete)
+        catch (Exception ex)
         {
-            await ShowErrorDialogAsync("Cảnh báo: Xóa Phiên Bản", "Không được xóa");
+            Debug.WriteLine($"Error fetching product for delete check: {ex}");
+            await ShowErrorDialogAsync("Lỗi", $"Không thể tải chi tiết sản phẩm để kiểm tra xóa: {ex.Message}");
             return;
         }
+        finally
+        {
+            // Tạm thời tắt loading nếu chỉ tải để kiểm tra, sẽ bật lại nếu xác nhận xóa
+            IsLoading = false;
+        }
 
-        string variantDesc = $"{variant.Color?.ColorName ?? "N/A"} - {variant.Size?.SizeName ?? "N/A"} (ID: {variant.VariantId})";
 
+        // Xác nhận xóa với thông tin số lượng variants đã tải
+        int activeVariantCount = productWithVariants.ProductVariants.Count(v => !v.IsDeleted); // Đếm variant đang hoạt động
         var confirmation = await ShowConfirmationDialogAsync(
-            "Xác Nhận Xóa Phiên Bản",
-            $"Bạn có chắc muốn xóa phiên bản {variantDesc} của sản phẩm '{parentProduct.ProductName}' không?",
+            "Xác Nhận Xóa Sản Phẩm",
+            $"Bạn có chắc muốn xóa '{productWithVariants.ProductName}' và {activeVariantCount} phiên bản đang hoạt động của nó không?", // Thông báo rõ hơn
             "Xóa",
             "Hủy");
 
         if (confirmation == ContentDialogResult.Primary)
         {
-            IsLoading = true;
+            IsLoading = true; // Bật lại loading để thực hiện xóa
             string? errorMsg = null;
+            bool needsReload = false; // Flag để biết có cần tải lại list không
+
+            // --- Bắt đầu Transaction ---
+            await _unitOfWork.BeginTransactionAsync();
+
             try
             {
-                await _unitOfWork.ProductVariants.DeleteAsync(variant); // Use variant repository
+                // Kiểm tra Ràng buộc OrderItem
+                bool hasVariantInOrder = false;
+                if (productWithVariants.ProductVariants.Any()) // Chỉ kiểm tra nếu có variant
+                {
+                    var variantIds = productWithVariants.ProductVariants.Where(v => !v.IsDeleted).Select(v => v.VariantId).ToList();
+                    // Kiểm tra xem có BẤT KỲ variant nào chưa bị xóa mềm trong danh sách ID này tồn tại trong OrderItems không
+                    hasVariantInOrder = await _unitOfWork.OrderItems.AnyAsync(oi => variantIds.Contains(oi.VariantId));
+                }
+
+                if (hasVariantInOrder)
+                {
+                    // --- SOFT DELETE ---
+                    Debug.WriteLine($"Soft deleting Product ID: {productWithVariants.ProductId} due to variants in orders.");
+                    productWithVariants.IsDeleted = true;
+
+                    // Xóa mềm các variant
+                    foreach (var variant in productWithVariants.ProductVariants)
+                    {
+                        variant.IsDeleted = true;
+                    }
+                    // Đánh dấu Product là đã sửa đổi (bao gồm cả thay đổi IsDeleted của variants)
+                    await _unitOfWork.Products.UpdateAsync(productWithVariants);
+                }
+                else
+                {
+                    // --- HARD DELETE ---
+                    Debug.WriteLine($"Hard deleting Product ID: {productWithVariants.ProductId}.");
+                    await _unitOfWork.Products.DeleteAsync(productWithVariants);
+                }
+
+                // Lưu Thay đổi
                 bool saved = await _unitOfWork.SaveChangesAsync();
 
                 if (saved)
                 {
-                    // Remove variant from the parent product's FullObservableCollection
-                    // This will automatically update the UI's ItemsRepeater for that product
-                    parentProduct.ProductVariants.Remove(variant);
-
-                    // Also remove from the master list's corresponding product
-                    var productInAllList = _allProducts?.FirstOrDefault(p => p.ProductId == variant.ProductId);
-                    productInAllList?.ProductVariants.Remove(variant); // Keep master list consistent
+                    // Commit Transaction
+                    await _unitOfWork.CommitTransactionAsync();
+                    await ShowSuccessDialogAsync("Xóa Thành Công", "Sản phẩm đã được xóa thành công.");
+                    needsReload = true; // Đánh dấu cần tải lại danh sách
                 }
                 else
                 {
-                    errorMsg = "Không thể lưu thay đổi vào cơ sở dữ liệu.";
+                    // Rollback Transaction
+                    await _unitOfWork.RollbackTransactionAsync();
+                    errorMsg = "Không thể lưu thay đổi xóa sản phẩm vào cơ sở dữ liệu. Thay đổi đã được hoàn tác.";
                 }
             }
             catch (DbUpdateException dbEx)
             {
-                Debug.WriteLine($"ERROR Deleting Variant (DB): {dbEx}");
-                errorMsg = $"Lỗi cơ sở dữ liệu khi xóa: {dbEx.InnerException?.Message ?? dbEx.Message}";
+                // Rollback Transaction on Error
+                await _unitOfWork.RollbackTransactionAsync();
+                Debug.WriteLine($"ERROR Deleting Product (DB): {dbEx}");
+                errorMsg = dbEx.InnerException is Npgsql.PostgresException pgEx && pgEx.SqlState == "23503"
+                    ? "Lỗi xóa sản phẩm: Không thể xóa vì sản phẩm hoặc biến thể của nó vẫn còn liên kết dữ liệu ở nơi khác (có thể trong đơn hàng chưa xử lý hết hoặc lỗi logic)."
+                    : $"Lỗi cơ sở dữ liệu khi xóa: {dbEx.InnerException?.Message ?? dbEx.Message}. Thay đổi đã được hoàn tác.";
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"ERROR Deleting Variant: {ex}");
-                errorMsg = $"Đã xảy ra lỗi không mong muốn: {ex.Message}";
+                // Rollback Transaction on Error
+                await _unitOfWork.RollbackTransactionAsync();
+                Debug.WriteLine($"ERROR Deleting Product: {ex}");
+                errorMsg = $"Đã xảy ra lỗi không mong muốn khi xóa: {ex.Message}. Thay đổi đã được hoàn tác.";
             }
             finally
             {
-                IsLoading = false;
+                IsLoading = false; // Tắt loading sau khi hoàn tất (thành công hoặc lỗi)
+
                 if (errorMsg != null)
                 {
-                    await ShowErrorDialogAsync("Lỗi Xóa Phiên Bản", errorMsg);
+                    await ShowErrorDialogAsync("Lỗi Xóa Sản Phẩm", errorMsg);
+                }
+
+                // Tải lại Dữ liệu nếu xóa thành công
+                if (needsReload)
+                {
+                    await LoadProductsAsync(); // Load lại trang hiện tại
                 }
             }
         }
     }
-
     private async Task ImportProductsAsync() => await ShowNotImplementedDialogAsync("Nhập File Excel/CSV");
     private async Task ExportProductsAsync() => await ShowNotImplementedDialogAsync("Xuất File Excel/CSV");
 }

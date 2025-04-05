@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 
 namespace CoolWear.Models;
 
@@ -45,7 +47,16 @@ public partial class Product : INotifyPropertyChanged
 
     public virtual ProductCategory? Category { get; set; }
 
-    public virtual ICollection<ProductVariant> ProductVariants { get; set; } = new List<ProductVariant>();
+    public virtual ICollection<ProductVariant> ProductVariants { get; set; } = [];
+
+    // Property mới chỉ trả về các variants chưa bị xóa (IsDeleted = false)
+    [NotMapped] // Quan trọng: không map vào DB
+    public IEnumerable<ProductVariant> ActiveVariants =>
+        ProductVariants?.Where(v => !v.IsDeleted) ?? [];
+
+    // Property mới để dễ dàng binding số lượng variant active
+    [NotMapped] // Quan trọng: không map vào DB
+    public int ActiveVariantsCount => ActiveVariants.Count(); // Tính count từ ActiveVariants
 
     public event PropertyChangedEventHandler? PropertyChanged;
 }

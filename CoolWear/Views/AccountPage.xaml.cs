@@ -1,45 +1,37 @@
 ﻿using CoolWear.Services;
 using CoolWear.ViewModels;
-using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Diagnostics;
 
-namespace CoolWear.Views
+namespace CoolWear.Views;
+
+// AccountPage.xaml.cs
+public sealed partial class AccountPage : Page
 {
-    public sealed partial class AccountPage : Page
+    public AccountViewModel ViewModel { get; }
+
+    public AccountPage()
     {
-        public AccountViewModel ViewModel { get; }
-
-        public AccountPage()
+        InitializeComponent();
+        try
         {
-            InitializeComponent();
-
-            try
-            {
-                ViewModel = ServiceManager.GetKeyedSingleton<AccountViewModel>();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"FATAL ERROR: Could not resolve AccountViewModel. Ensure it's registered in ServiceManager.ConfigureServices(). Details: {ex}");
-                throw; // Rethrow or handle gracefully
-            }
-
-            Loaded += Page_Loaded;
+            ViewModel = ServiceManager.GetKeyedSingleton<AccountViewModel>();
         }
+        catch (Exception) { }
+    }
 
-        private async void Page_Loaded(object sender, RoutedEventArgs e)
+    protected override async void OnNavigatedTo(NavigationEventArgs e)
+    {
+        base.OnNavigatedTo(e);
+        if (ViewModel != null)
         {
-            Loaded -= Page_Loaded; // Prevent multiple loads
-
-            if (ViewModel != null)
-            {
-                await ViewModel.LoadAccountInfoAsync();
-            }
-            else
-            {
-                Debug.WriteLine("ERROR: AccountViewModel is null in Page_Loaded.");
-            }
+            await ViewModel.LoadAccountInfoAsync();
+        }
+        else
+        {
+            Debug.WriteLine("ERROR: AccountViewModel is null in OnNavigatedTo.");
         }
     }
 }

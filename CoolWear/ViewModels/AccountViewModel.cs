@@ -1,10 +1,8 @@
 ﻿using CoolWear.Models;
 using CoolWear.Services;
-using CoolWear.Utilities;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.UI.Xaml;
-using System.Diagnostics;
 
 namespace CoolWear.ViewModels
 {
@@ -49,7 +47,7 @@ namespace CoolWear.ViewModels
             _unitOfWork = unitOfWork;
 
             // Load StoreOwner data on ViewModel initialization
-            GetStoreOwnerAsync(unitOfWork);
+            _ = GetStoreOwnerAsync(_unitOfWork);
         }
 
         private async Task GetStoreOwnerAsync(IUnitOfWork unitOfWork)
@@ -71,10 +69,7 @@ namespace CoolWear.ViewModels
                 Debug.WriteLine("No store owners found");
             }
         }
-        public async Task LoadAccountInfoAsync()
-        {
-            await GetStoreOwnerAsync(_unitOfWork);
-        }
+        public async Task LoadAccountInfoAsync() => await GetStoreOwnerAsync(_unitOfWork);
 
         // Method to handle possible login validation (if needed for your case)
         public bool CanLogin() => !string.IsNullOrEmpty(OwnerName) && !string.IsNullOrEmpty(Email);

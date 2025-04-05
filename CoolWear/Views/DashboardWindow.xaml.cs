@@ -1,3 +1,4 @@
+using CoolWear.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
@@ -11,13 +12,17 @@ namespace CoolWear.Views;
 /// </summary>
 public sealed partial class DashboardWindow : Window
 {
+    private readonly INavigationService _navigationService;
+
     public DashboardWindow()
     {
         InitializeComponent();
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
 
-        // Set the initial page
+        _navigationService = ServiceManager.GetKeyedSingleton<INavigationService>();
+        _navigationService.AppFrame = container; // Assign the Frame control
+
         navigation.SelectedItem = navigation.MenuItems.OfType<NavigationViewItem>().FirstOrDefault();
         Navigate(navigation.SelectedItem as NavigationViewItem);
     }
@@ -25,21 +30,11 @@ public sealed partial class DashboardWindow : Window
     private void Navigation_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
     {
         var invokedItem = args.InvokedItemContainer as NavigationViewItem;
-        if (invokedItem?.Tag == null)
-        {
-            return;
-        }
-
+        if (invokedItem?.Tag == null) return;
         string tag = invokedItem.Tag.ToString() ?? string.Empty;
 
-        if (tag == "Logout")
-        {
-            PerformLogout();
-        }
-        else
-        {
-            Navigate(invokedItem);
-        }
+        if (tag == "Logout") { PerformLogout(); }
+        else { Navigate(invokedItem); }
     }
 
     private void Navigate(NavigationViewItem? item)
@@ -47,15 +42,12 @@ public sealed partial class DashboardWindow : Window
         if (item?.Tag == null) return;
 
         string tag = item.Tag.ToString()!;
-        string pageTypeName = $"{GetType().Namespace}.{tag}";
+        string pageTypeName = $"{GetType().Namespace}.{tag}"; // Assumes Views namespace
         Type? pageType = Type.GetType(pageTypeName);
 
         if (pageType != null)
         {
-            if (container.CurrentSourcePageType != pageType)
-            {
-                container.Navigate(pageType);
-            }
+            _navigationService.Navigate(pageType); // Use service
         }
         else
         {
@@ -66,7 +58,6 @@ public sealed partial class DashboardWindow : Window
 
     private void PerformLogout()
     {
-        Debug.WriteLine("Logout Invoked!");
         var loginWindow = new LoginWindow();
         if (Application.Current is App app)
         {
@@ -78,7 +69,5 @@ public sealed partial class DashboardWindow : Window
     }
 
 
-    private void Navigation_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
-    {
-    }
+    private void Navigation_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args) { }
 }

@@ -57,10 +57,10 @@ public class GenericRepository<T> : IRepository<T> where T : class
         return Task.CompletedTask; // Call SaveChangesAsync() to save
     }
 
+    // Update multiple entities using Specification
     public async Task UpdateAsync(
         ISpecification<T> spec,
         Expression<Func<SetPropertyCalls<T>, SetPropertyCalls<T>>> updateExpression) =>
-        // This method remains for bulk updates if explicitly desired
         await ApplySpecification(spec).ExecuteUpdateAsync(updateExpression);
 
     // Modified DeleteAsync using Specification: Fetch then Remove
@@ -91,9 +91,19 @@ public class GenericRepository<T> : IRepository<T> where T : class
         // Include related entities using strings
         if (spec.IncludeStrings.Any()) // Use IncludeStrings
         {
-            query = spec.IncludeStrings.Aggregate(query, (current, include) => current.Include(include)); // Use string overload
+            query = spec.IncludeStrings.Aggregate(query, (current, include) => current.Include(include));
+        }
+
+        if (spec.Take > 0)
+        {
+            query = query.Skip(spec.Skip).Take(spec.Take);
         }
 
         return query;
     }
+
+    public async Task<int> CountAsync(ISpecification<T> spec) =>
+        // Apply only the criteria for counting
+        await ApplySpecification(spec).CountAsync();
+    public async Task<bool> AnyAsync(Expression<Func<T, bool>> predicate) => await _dbSet.AnyAsync(predicate);
 }

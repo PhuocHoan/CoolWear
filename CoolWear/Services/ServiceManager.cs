@@ -65,6 +65,11 @@ public sealed class ServiceManager
 
         var context = GetKeyedSingleton<PostgresContext>();
 
+        // Register Navigation Service
+        AddKeyedSingleton<INavigationService, NavigationService>();
+
+        var navigationService = GetKeyedSingleton<INavigationService>();
+
         // Register UnitOfWork
         AddKeyedSingleton<IUnitOfWork>(() => new UnitOfWork(context));
 
@@ -74,7 +79,7 @@ public sealed class ServiceManager
         AddKeyedSingleton(() => new LoginViewModel(unitOfWork));
 
         // Register ProductViewModel
-        AddKeyedSingleton(() => new ProductViewModel(unitOfWork));
+        AddKeyedSingleton(() => new ProductViewModel(unitOfWork, navigationService));
 
         // Register CategoryViewModel
         AddKeyedSingleton(() => new CategoryViewModel(unitOfWork));
@@ -87,5 +92,8 @@ public sealed class ServiceManager
 
         // Register AccountViewModel
         AddKeyedSingleton(() => new AccountViewModel(unitOfWork));
+
+        // Register CustomerViewModel
+        AddKeyedSingleton(() => new CustomerViewModel(unitOfWork));
     }
 }

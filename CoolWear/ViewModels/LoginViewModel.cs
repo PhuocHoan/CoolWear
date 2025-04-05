@@ -49,18 +49,18 @@ public partial class LoginViewModel : ViewModelBase
 
         LoginCommand = new AsyncRelayCommand(LoginAsync);
 
-        GetStoreOwnersAsync(unitOfWork);
+        _ = InitializeDataAsync();
     }
 
-    private async void GetStoreOwnersAsync(IUnitOfWork unitOfWork)
+    private async Task InitializeDataAsync()
     {
-        var owners = await unitOfWork.StoreOwners.GetAllAsync();
+        var owners = await _unitOfWork.StoreOwners.GetAllAsync();
         if (owners.Any())
         {
-            _storeOwner = owners.First(); // Assume there is one store owner
+            _storeOwner = owners.First();
             Debug.WriteLine($"Store owner: {_storeOwner.Username}");
 
-            ManagePassword = new(_storeOwner, unitOfWork);
+            ManagePassword = new(_storeOwner, _unitOfWork);
             var result = ManagePassword.UnprotectPassword();
             Username = result.Item1 ?? "";
             Password = result.Item2 ?? "";

@@ -11,12 +11,23 @@ namespace CoolWear.Utilities;
 public interface ISpecification<T>
 {
     /// <summary>
-    /// Gets a collection of filter expressions to be applied to the query.
+    /// Collection of filter expressions to be applied to the query.
     /// </summary>
     IEnumerable<Expression<Func<T, bool>>> Criteria { get; }
 
     /// <summary>
-    /// Gets a collection of include expressions for eager loading related entities.
+    /// Collection of include expressions for eager loading related entities.
     /// </summary>
     IEnumerable<string> IncludeStrings { get; } // String based Includes
+
+    // --- Pagination ---
+    /// <summary>
+    /// Gets the number of items to take (page size).
+    /// </summary>
+    int Take { get; }
+
+    /// <summary>
+    /// Gets the number of items to skip.
+    /// </summary>
+    int Skip { get; }
 }

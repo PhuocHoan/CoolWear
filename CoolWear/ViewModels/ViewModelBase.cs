@@ -1,6 +1,7 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -22,11 +23,16 @@ public abstract class ViewModelBase : INotifyPropertyChanged
     /// Set the specified property and raise the PropertyChanged event if the value has changed.
     /// </summary>
     /// <returns>true if the value was changed, false otherwise.</returns>
-    protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    protected bool SetProperty<T>(
+        ref T field,
+        T value,
+        [CallerMemberName] string? propertyName = null,
+        Action? onChanged = null)
     {
-        if (Equals(field, value)) return false;
+        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
         field = value;
         OnPropertyChanged(propertyName);
+        onChanged?.Invoke();
         return true;
     }
 
@@ -98,6 +104,24 @@ public abstract class ViewModelBase : INotifyPropertyChanged
         {
             Title = "Chức Năng Chưa Sẵn Sàng",
             Content = $"Chức năng '{feature}' đang được phát triển.",
+            CloseButtonText = "Đóng",
+            XamlRoot = xamlRoot
+        };
+        await dialog.ShowAsync();
+    }
+
+    /// <summary>
+    /// Show a success dialog with the specified title and message.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    protected static async Task ShowSuccessDialogAsync(string title, string message)
+    {
+        var xamlRoot = GetXamlRootForDialogs();
+        if (xamlRoot == null) return;
+        var dialog = new ContentDialog
+        {
+            Title = title,
+            Content = message,
             CloseButtonText = "Đóng",
             XamlRoot = xamlRoot
         };
