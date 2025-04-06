@@ -44,9 +44,9 @@ COMMENT ON COLUMN "payment_method"."payment_method_name" IS 'Tên phương thứ
 CREATE TABLE "customer" (
     "customer_id" serial PRIMARY KEY,
     "customer_name" varchar(100) NOT NULL, 
-    "email" varchar(100), 
-    "phone" varchar(20), 
-    "address" varchar(255),
+    "email" varchar(100) UNIQUE, 
+    "phone" varchar(20) NOT NULL UNIQUE, 
+    "address" varchar(255) NOT NULL,
     "create_date" timestamp NOT NULL DEFAULT now(),
     "points" integer NOT NULL DEFAULT 0,
     "is_deleted" boolean NOT NULL DEFAULT false
