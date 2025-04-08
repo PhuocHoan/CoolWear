@@ -116,13 +116,29 @@
 						<DataTemplate x:DataType="viewmodels:VariantEntryViewModel">
 							<Grid ColumnSpacing="10" Padding="5,2" Background="{ThemeResource SystemControlBackgroundListLowBrush}" CornerRadius="4">
 								<Grid.ColumnDefinitions>
-									<ColumnDefinition Width="*"/>
-									<ColumnDefinition Width="*"/>
+									<ColumnDefinition Width="*" MinWidth="120"/>
+									<!-- Color ComboBox -->
+									<ColumnDefinition Width="*" MinWidth="100"/>
+									<!-- Size ComboBox -->
 									<ColumnDefinition Width="120"/>
+									<!-- Stock NumberBox -->
 									<ColumnDefinition Width="Auto"/>
+									<!-- Delete Button -->
 								</Grid.ColumnDefinitions>
-								<TextBlock Grid.Column="0" Text="{x:Bind ColorName}" VerticalAlignment="Center"/>
-								<TextBlock Grid.Column="1" Text="{x:Bind SizeName}" VerticalAlignment="Center"/>
+								<ComboBox Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Stretch"
+										  ItemsSource="{x:Bind AvailableColorsSource, Mode=OneWay}"
+										  SelectedItem="{x:Bind Color, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+										  PlaceholderText="Chọn màu..."
+										  DisplayMemberPath="ColorName"/>
+								<!-- Hiển thị tên màu -->
+
+								<!-- THAY THẾ TextBlock BẰNG ComboBox -->
+								<ComboBox Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Stretch"
+										  ItemsSource="{x:Bind AvailableSizesSource, Mode=OneWay}"
+										  SelectedItem="{x:Bind Size, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+										  PlaceholderText="Chọn size..."
+										  DisplayMemberPath="SizeName"/>
+								<!-- Hiển thị tên size -->
 								<NumberBox Grid.Column="2" Value="{x:Bind StockQuantity, Mode=TwoWay}" Minimum="0" SpinButtonPlacementMode="Inline" VerticalAlignment="Center" HorizontalAlignment="Right"/>
 								<Button Grid.Column="3" Background="Transparent" BorderThickness="0" Padding="4" VerticalAlignment="Center" HorizontalAlignment="Center"
 									Command="{x:Bind RequestRemoveCommand}"

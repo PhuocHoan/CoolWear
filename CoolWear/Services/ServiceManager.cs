@@ -73,27 +73,25 @@ public sealed class ServiceManager
         // Register UnitOfWork
         AddKeyedSingleton<IUnitOfWork>(() => new UnitOfWork(context));
 
-        var unitOfWork = GetKeyedSingleton<IUnitOfWork>();
-
         // Register LoginViewModel
-        AddKeyedSingleton(() => new LoginViewModel(unitOfWork));
+        AddKeyedSingleton(() => new LoginViewModel(GetKeyedSingleton<IUnitOfWork>()));
 
         // Register ProductViewModel
-        AddKeyedSingleton(() => new ProductViewModel(unitOfWork, navigationService));
+        AddKeyedSingleton(() => new ProductViewModel(GetKeyedSingleton<IUnitOfWork>(), navigationService));
 
         // Register CategoryViewModel
-        AddKeyedSingleton(() => new CategoryViewModel(unitOfWork));
+        AddKeyedSingleton(() => new CategoryViewModel(GetKeyedSingleton<IUnitOfWork>()));
 
         // Register ColorViewModel
-        AddKeyedSingleton(() => new ColorViewModel(unitOfWork));
+        AddKeyedSingleton(() => new ColorViewModel(GetKeyedSingleton<IUnitOfWork>()));
 
         // Register SizeViewModel
-        AddKeyedSingleton(() => new SizeViewModel(unitOfWork));
+        AddKeyedSingleton(() => new SizeViewModel(GetKeyedSingleton<IUnitOfWork>()));
 
         // Register AccountViewModel
-        AddKeyedSingleton(() => new AccountViewModel(unitOfWork));
+        AddKeyedSingleton(() => new AccountViewModel(GetKeyedSingleton<IUnitOfWork>()));
 
         // Register CustomerViewModel
-        AddKeyedSingleton(() => new CustomerViewModel(unitOfWork));
+        AddKeyedSingleton(() => new CustomerViewModel(GetKeyedSingleton<IUnitOfWork>()));
     }
 }

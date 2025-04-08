@@ -203,6 +203,7 @@ public partial class PostgresContext : DbContext
 
             entity.HasOne(d => d.Category).WithMany(p => p.Products)
                 .HasForeignKey(d => d.CategoryId)
+                .OnDelete(DeleteBehavior.SetNull) // Để không xóa sản phẩm khi xóa danh mục
                 .HasConstraintName("product_category_id_fkey");
         });
 
@@ -215,7 +216,6 @@ public partial class PostgresContext : DbContext
             entity.HasIndex(e => e.CategoryName, "product_category_category_name_key").IsUnique();
 
             entity.Property(e => e.CategoryId)
-                .ValueGeneratedNever()
                 .HasComment("Mã danh mục sản phẩm, khóa chính")
                 .HasColumnName("category_id");
             entity.Property(e => e.CategoryName)
@@ -292,6 +292,7 @@ public partial class PostgresContext : DbContext
 
             entity.HasOne(d => d.Color).WithMany(p => p.ProductVariants)
                 .HasForeignKey(d => d.ColorId)
+                .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("product_variant_color_id_fkey");
 
             entity.HasOne(d => d.Product).WithMany(p => p.ProductVariants)
@@ -301,6 +302,7 @@ public partial class PostgresContext : DbContext
 
             entity.HasOne(d => d.Size).WithMany(p => p.ProductVariants)
                 .HasForeignKey(d => d.SizeId)
+                .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("product_variant_size_id_fkey");
         });
 

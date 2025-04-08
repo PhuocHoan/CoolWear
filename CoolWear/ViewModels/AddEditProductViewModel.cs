@@ -60,6 +60,16 @@ public partial class VariantEntryViewModel : ViewModelBase
     /// </summary>
     public ICommand RequestRemoveCommand { get; }
 
+    /// <summary>
+    /// Tham chiếu đến danh sách các màu có sẵn từ ViewModel cha.
+    /// </summary>
+    public IEnumerable<ProductColor> AvailableColorsSource { get; set; } = [];
+
+    /// <summary>
+    /// Tham chiếu đến danh sách các size có sẵn từ ViewModel cha.
+    /// </summary>
+    public IEnumerable<ProductSize> AvailableSizesSource { get; set; } = [];
+
     public VariantEntryViewModel() =>
         // Khởi tạo command, nó sẽ gọi ExecuteRequestRemove khi được nhấn
         RequestRemoveCommand = new RelayCommand(ExecuteRequestRemove);
@@ -204,7 +214,7 @@ public partial class AddEditProductViewModel : ViewModelBase
 
     // --- Trạng thái ---
     /// <summary>
-    /// Cờ báo hiệu đang thực hiện thao tác lưu, dùng để hiển thị loading và vô hiệu hóa control.
+    /// Flag báo hiệu đang thực hiện thao tác lưu, dùng để hiển thị loading và vô hiệu hóa control.
     /// </summary>
     private bool _isSaving;
     public bool IsSaving { get => _isSaving; private set { SetProperty(ref _isSaving, value); UpdateAllCommandStates(); } }
@@ -224,11 +234,11 @@ public partial class AddEditProductViewModel : ViewModelBase
     {
         _unitOfWork = unitOfWork;
         // Khởi tạo các Command
-        LoadLookupsCommand = new AsyncRelayCommand(LoadLookupsAsync);
+        LoadLookupsCommand = new AsyncRelayCommand(LoadLookupsAsync, CanLoadLookups);
         AddVariantCommand = new AsyncRelayCommand(AddVariant, CanAddVariant); // CanAddVariant là hàm kiểm tra điều kiện thực thi
         SaveProductCommand = new AsyncRelayCommand(SaveProductInternalAsync, CanSaveProduct); // CanSaveProduct là hàm kiểm tra điều kiện thực thi
-        CancelCommand = new RelayCommand(CancelOperation);
-        SelectImageCommand = new AsyncRelayCommand(SelectImageAsync);
+        CancelCommand = new RelayCommand(CancelOperation, CanCancelOperation);
+        SelectImageCommand = new AsyncRelayCommand(SelectImageAsync, CanSelectImage);
 
         // Đăng ký để cập nhật trạng thái CanExecute của Command khi các thuộc tính liên quan thay đổi
         PropertyChanged += (s, e) => UpdateAllCommandStates();
@@ -293,11 +303,14 @@ public partial class AddEditProductViewModel : ViewModelBase
         UpdateAllCommandStates();     // Cập nhật trạng thái nút
     }
 
+
+    private bool CanLoadLookups() => !IsSaving;
     /// <summary>
     /// Tải dữ liệu cho các ComboBox (Danh mục, Màu sắc, Kích thước) từ database.
     /// </summary>
     public async Task LoadLookupsAsync()
     {
+        if (!CanLoadLookups()) return;
         try
         {
             // Lấy và sắp xếp dữ liệu
@@ -359,11 +372,14 @@ public partial class AddEditProductViewModel : ViewModelBase
                 {
                     VariantsToAdd.Add(new VariantEntryViewModel
                     {
-                        VariantId = variant.VariantId, // Gán ID từ DB
+                        VariantId = variant.VariantId,
                         Color = AvailableColors.FirstOrDefault(c => c.ColorId == variant.ColorId),
                         Size = AvailableSizes.FirstOrDefault(s => s.SizeId == variant.SizeId),
                         StockQuantity = variant.StockQuantity,
-                        ParentViewModel = this // Gán ViewModel cha
+                        ParentViewModel = this,
+                        // --- GÁN THAM CHIẾU DANH SÁCH ---
+                        AvailableColorsSource = this.AvailableColors,
+                        AvailableSizesSource = this.AvailableSizes
                     });
                 }
             }
@@ -431,11 +447,14 @@ public partial class AddEditProductViewModel : ViewModelBase
         // Nếu không chờ xóa và không trùng -> Tạo ViewModel mới và thêm vào danh sách hiển thị
         var newVariantEntry = new VariantEntryViewModel
         {
-            VariantId = 0, // ID = 0 vì là biến thể mới, chưa có trong DB
+            VariantId = 0,
             Color = CurrentVariantColor,
             Size = CurrentVariantSize,
             StockQuantity = CurrentVariantStock,
-            ParentViewModel = this // Gán tham chiếu ViewModel cha
+            ParentViewModel = this,
+            // --- GÁN THAM CHIẾU DANH SÁCH ---
+            AvailableColorsSource = this.AvailableColors,
+            AvailableSizesSource = this.AvailableSizes
         };
         VariantsToAdd.Add(newVariantEntry);
 
@@ -473,11 +492,13 @@ public partial class AddEditProductViewModel : ViewModelBase
         }
     }
 
+    private bool CanSelectImage() => !IsSaving;
     /// <summary>
     /// Mở hộp thoại cho phép người dùng chọn một file ảnh.
     /// </summary>
     private async Task SelectImageAsync()
     {
+        if (!CanSelectImage()) return;
         var picker = new FileOpenPicker
         {
             ViewMode = PickerViewMode.Thumbnail,
@@ -526,6 +547,26 @@ public partial class AddEditProductViewModel : ViewModelBase
     /// </summary>
     private async Task SaveProductInternalAsync()
     {
+        // --- KIỂM TRA TRÙNG LẶP VARIANT TRƯỚC KHI LƯU ---
+        var variantsToCheck = VariantsToAdd
+            .Where(vm => vm.Color != null && vm.Size != null) // Chỉ xét những cái có cả màu và size
+            .Select(vm => new { vm.Color!.ColorId, vm.Size!.SizeId })
+            .ToList();
+
+        var duplicateCheck = variantsToCheck
+            .GroupBy(x => new { x.ColorId, x.SizeId }) // Nhóm theo cặp Color/Size
+            .FirstOrDefault(g => g.Count() > 1);       // Tìm nhóm đầu tiên có nhiều hơn 1 phần tử
+
+        if (duplicateCheck != null)
+        {
+            // Tìm tên màu/size bị trùng để báo lỗi rõ hơn
+            var duplicateColor = AvailableColors.FirstOrDefault(c => c.ColorId == duplicateCheck.Key.ColorId)?.ColorName ?? "N/A";
+            var duplicateSize = AvailableSizes.FirstOrDefault(s => s.SizeId == duplicateCheck.Key.SizeId)?.SizeName ?? "N/A";
+            await ShowErrorDialogAsync("Lỗi Trùng Lặp", $"Không thể lưu. Có nhiều hơn một phiên bản với cùng Màu '{duplicateColor}' và Size '{duplicateSize}'. Vui lòng kiểm tra lại danh sách phiên bản.");
+            return; // Không cho lưu
+        }
+        // --- KẾT THÚC KIỂM TRA TRÙNG LẶP ---
+
         if (!CanSaveProduct())
         {
             await ShowErrorDialogAsync("Chưa Hợp Lệ", "Vui lòng kiểm tra lại thông tin sản phẩm. Tên, danh mục, giá bán (>0) là bắt buộc. Phải có ít nhất một phiên bản và giá nhập phải nhỏ hơn giá bán.");
@@ -561,34 +602,33 @@ public partial class AddEditProductViewModel : ViewModelBase
 
             if (IsEditMode)
             {
-                // --- Chế độ cập nhật sản phẩm ---
-                // Tải sản phẩm hiện có cùng các biến thể của nó
+                // --- UPDATE EXISTING PRODUCT ---
                 var spec = new ProductSpecification();
                 spec.AddCriteria(p => p.ProductId == _productIdToEdit);
-                spec.IncludeVariants(); // phải Include variants để xử lý
+                spec.IncludeVariants();
                 var existingProduct = (await _unitOfWork.Products.GetAsync(spec)).FirstOrDefault()
                     ?? throw new InvalidOperationException($"Sản phẩm ID {_productIdToEdit} không tồn tại.");
 
-                // --- 1. Xử lý các biến thể được đánh dấu chờ xóa ---
+                // --- 1. Xử lý các Variant được đánh dấu chờ xóa ---
                 if (_variantsPendingDeletion.Any())
                 {
-                    // Lấy ID của các biến thể cần xử lý xóa
                     var idsToDelete = _variantsPendingDeletion.Select(vm => vm.VariantId).ToList();
+                    // Lấy các variant cần xóa từ collection ĐANG ĐƯỢC TRACK
                     var variantsToRemoveFromCollection = existingProduct.ProductVariants
                                                                     .Where(v => idsToDelete.Contains(v.VariantId))
                                                                     .ToList();
+
                     foreach (var variantToDelete in variantsToRemoveFromCollection)
                     {
                         bool isInOrder = await _unitOfWork.OrderItems.AnyAsync(oi => oi.VariantId == variantToDelete.VariantId);
                         if (isInOrder)
                         {
-                            // Soft delete: Chỉ sửa trạng thái
-                            variantToDelete.IsDeleted = true;
+                            variantToDelete.IsDeleted = true; // Soft delete
                             Debug.WriteLine($"Soft deleting variant ID: {variantToDelete.VariantId}");
                         }
                         else
                         {
-                            // Hard delete: XÓA KHỎI COLLECTION MẸ
+                            // Hard delete: XÓA KHỎI DATABASE
                             existingProduct.ProductVariants.Remove(variantToDelete);
                             Debug.WriteLine($"Hard deleting variant ID: {variantToDelete.VariantId}");
                         }
@@ -597,16 +637,17 @@ public partial class AddEditProductViewModel : ViewModelBase
                 _variantsPendingDeletion.Clear();
 
                 // --- 2. Xử lý Thêm mới / Cập nhật các biến thể còn lại (hiển thị trên UI) ---
-                // Tạo map các biến thể đang hoạt động trong DB để so sánh (key là Tuple ColorId, SizeId)
+                // Tạo map các biến thể đang hoạt động trong DB
                 var existingActiveVariantsMap = existingProduct.ProductVariants
-                                           .Where(v => !v.IsDeleted) // Chỉ lấy cái chưa xóa mềm
-                                           .ToDictionary(v => Tuple.Create(v.ColorId, v.SizeId));
+                                            .Where(v => !v.IsDeleted) // Chỉ lấy variant chưa xóa mềm
+                                            .ToDictionary(v => Tuple.Create(v.ColorId, v.SizeId)); // Dùng Color/Size key
 
-                // Tạo map các biến thể đang hiển thị trên UI
-                var viewModelVariantsMap = VariantsToAdd
-                                            .ToDictionary(vm => Tuple.Create((int?)vm.Color!.ColorId, (int?)vm.Size!.SizeId));
+                var viewModelVariantsMap = VariantsToAdd // Các variant đang hiển thị
+                                            .ToDictionary(vm => Tuple.Create((int?)vm.Color!.ColorId, (int?)vm.Size!.SizeId)); // Dùng Color/Size key
 
-                // Duyệt qua các biến thể trên UI để tìm cái cần Cập nhật hoặc Thêm mới
+                var variantsToAddCollection = new List<ProductVariant>(); // Tạm chứa variant mới
+
+                // Duyệt qua UI để tìm update/add
                 foreach (var vmVariantKeyPair in viewModelVariantsMap)
                 {
                     var vmKey = vmVariantKeyPair.Key;
@@ -614,25 +655,41 @@ public partial class AddEditProductViewModel : ViewModelBase
 
                     if (existingActiveVariantsMap.TryGetValue(vmKey, out var existingVariant))
                     {
-                        // Tìm thấy trong DB -> Cần CẬP NHẬT (chỉ cập nhật giá trị tồn kho)
                         if (existingVariant.StockQuantity != variantVM.StockQuantity)
                         {
                             existingVariant.StockQuantity = variantVM.StockQuantity;
-                            Debug.WriteLine($"Cập nhật tồn kho cho biến thể ID: {existingVariant.VariantId} thành {variantVM.StockQuantity}");
+                            Debug.WriteLine($"Updating stock for existing variant ID: {existingVariant.VariantId} to {variantVM.StockQuantity}");
                         }
-                        // Đánh dấu đã xử lý (xóa khỏi map)
-                        existingActiveVariantsMap.Remove(vmKey);
+                        existingActiveVariantsMap.Remove(vmKey); // Đánh dấu đã xử lý
                     }
-                    else // Không tìm thấy trong DB -> Biến thể MỚI cần THÊM
+                    else // Không có trong map -> ADD mới vào Database
                     {
                         var newVariant = new ProductVariant
                         {
-                            ColorId = variantVM.Color!.ColorId,
-                            SizeId = variantVM.Size!.SizeId,
+                            ColorId = variantVM.Color?.ColorId,
+                            SizeId = variantVM.Size?.SizeId,
                             StockQuantity = variantVM.StockQuantity,
                         };
+                        // **THÊM VÀO Database**
                         existingProduct.ProductVariants.Add(newVariant);
-                        Debug.WriteLine($"Xác định biến thể mới cần thêm: Màu={variantVM.Color.ColorName}, Size={variantVM.Size.SizeName}");
+                        Debug.WriteLine($"Adding new variant to product's collection: Color={variantVM.ColorName}, Size={variantVM.SizeName}");
+                    }
+                }
+
+                // Các variant còn lại trong existingActiveVariantsMap -> bị xóa khỏi UI -> Xóa mềm/cứng
+                foreach (var variantToRemove in existingActiveVariantsMap.Values)
+                {
+                    bool isInOrder = await _unitOfWork.OrderItems.AnyAsync(oi => oi.VariantId == variantToRemove.VariantId);
+                    if (isInOrder)
+                    {
+                        variantToRemove.IsDeleted = true; // Soft delete
+                        Debug.WriteLine($"Soft deleting variant ID: {variantToRemove.VariantId} (removed from UI)");
+                    }
+                    else
+                    {
+                        // Hard delete: XÓA KHỎI Database
+                        existingProduct.ProductVariants.Remove(variantToRemove);
+                        Debug.WriteLine($"Hard deleting variant ID: {variantToRemove.VariantId} (removed from UI)");
                     }
                 }
 
@@ -641,11 +698,10 @@ public partial class AddEditProductViewModel : ViewModelBase
                 existingProduct.ImportPrice = this.ImportPrice;
                 existingProduct.Price = this.Price;
                 existingProduct.CategoryId = this.SelectedCategory!.CategoryId;
-                // Cập nhật đường dẫn ảnh nếu nó thay đổi so với DB
-                if (imagePathToSave != null)
+                if (imagePathToSave != null) // Chỉ cập nhật nếu có đường dẫn mới
                 {
-                    existingProduct.PublicId = imagePathToSave ?? "ms-appx:///Assets/StoreLogo.png"; // Gán đường dẫn mới hoặc placeholder
-                    Debug.WriteLine($"Cập nhật PublicId của sản phẩm thành: {existingProduct.PublicId}");
+                    existingProduct.PublicId = imagePathToSave;
+                    Debug.WriteLine($"Updating product PublicId to: {existingProduct.PublicId}");
                 }
             }
             else // Chế độ THÊM MỚI
@@ -658,7 +714,7 @@ public partial class AddEditProductViewModel : ViewModelBase
                     ImportPrice = ImportPrice,
                     Price = Price,
                     CategoryId = SelectedCategory!.CategoryId,
-                    PublicId = imagePathToSave ?? "ms-appx:///Assets/StoreLogo.png", // Gán đường dẫn ảnh hoặc placeholder
+                    PublicId = imagePathToSave, // Gán đường dẫn ảnh hoặc placeholder
                     IsDeleted = false,
                     ProductVariants = [] // Khởi tạo danh sách biến thể
                 };
@@ -718,8 +774,16 @@ public partial class AddEditProductViewModel : ViewModelBase
         }
     }
 
+    private bool CanCancelOperation() => !IsSaving; // Không cho hủy khi đang lưu
     /// <summary>
     /// Phát ra event Cancelled để báo hiệu cho View hủy bỏ và điều hướng về trang trước.
     /// </summary>
-    private void CancelOperation() => Cancelled?.Invoke(this, EventArgs.Empty);
+    private void CancelOperation()
+    {
+        if (CanCancelOperation())
+        {
+            Cancelled?.Invoke(this, EventArgs.Empty); // Phát ra event Cancelled
+            Debug.WriteLine("Đã hủy thao tác và quay lại trang trước.");
+        }
+    }
 }

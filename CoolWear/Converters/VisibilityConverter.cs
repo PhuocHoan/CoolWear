@@ -45,3 +45,39 @@ public partial class IntToVisibilityConverter : IValueConverter
     }
     public object ConvertBack(object value, Type targetType, object parameter, string language) => throw new NotImplementedException("Cannot convert Visibility back to an integer count.");
 }
+
+public partial class InverseBoolConverter : IValueConverter
+{
+    /// <summary>
+    /// Chuyển đổi giá trị boolean gốc sang giá trị boolean ngược lại.
+    /// </summary>
+    /// <returns>Giá trị boolean đã đảo ngược, hoặc false nếu đầu vào không phải bool.</returns>
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        // Kiểm tra xem giá trị đầu vào có phải là kiểu bool không
+        if (value is bool b)
+        {
+            // Nếu là bool, trả về giá trị phủ định (ngược lại)
+            return !b;
+        }
+        // Nếu đầu vào không phải bool, trả về false làm giá trị mặc định an toàn
+        return false;
+    }
+
+    /// <summary>
+    /// Chuyển đổi giá trị boolean đã đảo ngược trở lại giá trị gốc.
+    /// (Thường không cần thiết cho binding IsEnabled).
+    /// </summary>
+    /// <returns>Giá trị boolean gốc, hoặc false nếu đầu vào không phải bool.</returns>
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        // Kiểm tra xem giá trị đầu vào có phải là kiểu bool không
+        if (value is bool b)
+        {
+            // Nếu là bool, trả về giá trị phủ định (ngược lại) một lần nữa để về gốc
+            return !b;
+        }
+        // Nếu đầu vào không phải bool, trả về false
+        return false;
+    }
+}

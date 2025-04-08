@@ -6,11 +6,14 @@
       xmlns:local="using:CoolWear.Views"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:models="using:CoolWear.Models"
-	  xmlns:viewmodels="using:CoolWear.ViewModels"
+	  xmlns:viewmodels="using:CoolWear.ViewModels" xmlns:converters="using:CoolWear.Converters"
 	  mc:Ignorable="d"
       Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
 	<Page.Resources>
+		<!-- Converter để ẩn control khi giá trị bool là true (dùng cho pagination) -->
+		<converters:ZeroIsCollapsedConverter x:Key="ZeroIsCollapsedConverter"/>
+		<converters:InverseBoolConverter x:Key="InverseBoolConverter"/>
 		<Style x:Key="ListHeaderTextStyle" TargetType="TextBlock">
 			<Setter Property="FontWeight" Value="SemiBold"/>
 			<Setter Property="VerticalAlignment" Value="Center"/>
@@ -53,6 +56,8 @@
 				<!-- Toolbar -->
 				<RowDefinition Height="*" />
 				<!-- ListView + Overlays -->
+				<RowDefinition Height="Auto" />
+				<!-- Pagination -->
 			</Grid.RowDefinitions>
 
 			<!-- Toolbar (Row 0) -->
@@ -161,8 +166,31 @@
 				<!-- Overlays -->
 				<ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" VerticalAlignment="Center" HorizontalAlignment="Center" Width="50" Height="50" />
 				<TextBlock Text="Không tìm thấy danh mục nào khớp với bộ lọc." Visibility="{x:Bind ViewModel.ShowEmptyMessage, Mode=OneWay}" VerticalAlignment="Center" HorizontalAlignment="Center" Style="{ThemeResource BodyStrongTextBlockStyle}"/>
-
 			</Grid>
+			<!-- Pagination Controls (Row 2) -->
+			<StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10"
+                        HorizontalAlignment="Center" Margin="10"
+                        Visibility="{x:Bind ViewModel.ShowEmptyMessage, Mode=OneWay, Converter={StaticResource ZeroIsCollapsedConverter}}">
+
+				<!-- Nút Quay lại trang trước -->
+				<Button Command="{x:Bind ViewModel.PreviousPageCommand}">
+					<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="" />
+				</Button>
+
+				<!-- Hiển thị thông tin trang -->
+				<TextBlock VerticalAlignment="Center">
+                    <Run Text="Trang"/>
+                    <Run Text="{x:Bind ViewModel.CurrentPage, Mode=OneWay}"/>/<Run Text="{x:Bind ViewModel.TotalPages, Mode=OneWay}"/>
+                    <Run Text="(Tổng số: "/>
+                    <Run Text="{x:Bind ViewModel.TotalItems, Mode=OneWay}"/>
+                    <Run Text="danh mục)"/>
+				</TextBlock>
+
+				<!-- Nút Đi tới trang tiếp theo -->
+				<Button Command="{x:Bind ViewModel.NextPageCommand}">
+					<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="" />
+				</Button>
+			</StackPanel>
 		</Grid>
 	</Grid>
 </Page>

@@ -183,7 +183,7 @@
 
 										<TextBlock Grid.Column="2" Text="{x:Bind ProductName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" FontWeight="SemiBold" HorizontalAlignment="Center"/>
 
-										<TextBlock Grid.Column="3" Text="{x:Bind Category.CategoryName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" HorizontalAlignment="Center"/>
+										<TextBlock Grid.Column="3" Text="{x:Bind Category.CategoryName, FallbackValue='N/A', TargetNullValue='N/A'}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" HorizontalAlignment="Center"/>
 
 										<TextBlock Grid.Column="4" Text="{x:Bind ImportPrice, Converter={StaticResource CurrencyFormatConverter}}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
 
@@ -232,8 +232,8 @@
 															<ColumnDefinition Width="*"/>
 														</Grid.ColumnDefinitions>
 														<TextBlock Grid.Column="0" Text="{x:Bind VariantId}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-														<TextBlock Grid.Column="1" Text="{x:Bind Color.ColorName}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-														<TextBlock Grid.Column="2" Text="{x:Bind Size.SizeName}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+														<TextBlock Grid.Column="1" Text="{x:Bind Color.ColorName, FallbackValue='N/A', TargetNullValue='N/A'}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+														<TextBlock Grid.Column="2" Text="{x:Bind Size.SizeName, FallbackValue='N/A', TargetNullValue='N/A'}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
 														<TextBlock Grid.Column="3" Text="{x:Bind StockQuantity}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
 													</Grid>
 												</DataTemplate>
@@ -271,7 +271,6 @@
 				<Button Command="{x:Bind ViewModel.NextPageCommand}" >
 					<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="" />
 				</Button>
-
 			</StackPanel>
 		</Grid>
 	</Grid>

@@ -1,14 +1,14 @@
 -- Bảng danh mục sản phẩm
 CREATE TABLE "product_category" (
-    "category_id" integer PRIMARY KEY,
+    "category_id" serial PRIMARY KEY,
     "category_name" varchar(50) NOT NULL UNIQUE,
     "product_type" varchar(20) NOT NULL
 );
 
 COMMENT ON TABLE "product_category" IS 'Bảng danh mục sản phẩm';
-COMMENT ON COLUMN "product_category"."category_id" IS 'Mã danh mục sản phẩm, khóa chính';
+COMMENT ON COLUMN "product_category"."category_id" IS 'Mã danh mục sản phẩm, khóa chính, tự động tăng';
 COMMENT ON COLUMN "product_category"."category_name" IS 'Tên danh mục sản phẩm, duy nhất';
-COMMENT ON COLUMN "product_category"."product_type" IS 'Loại sản phẩm (áo, quần,...)';
+COMMENT ON COLUMN "product_category"."product_type" IS 'Loại sản phẩm (áo, quần)';
 
 -- Bảng màu sắc sản phẩm
 CREATE TABLE "product_color" (
@@ -90,7 +90,7 @@ CREATE TABLE "product" (
     "product_name" varchar(100) NOT NULL UNIQUE,
     "import_price" integer NOT NULL,
     "price" integer NOT NULL,
-    "category_id" integer, -- Có thể Null để delete category mà không delete product.
+    "category_id" integer,
     "public_id" varchar(255) NOT NULL,
     "is_deleted" boolean NOT NULL DEFAULT false,
     FOREIGN KEY ("category_id") REFERENCES "product_category" ("category_id")
@@ -109,8 +109,8 @@ COMMENT ON COLUMN "product"."is_deleted" IS 'Trạng thái xóa sản phẩm, m�
 CREATE TABLE "product_variant" (
     "variant_id" serial PRIMARY KEY,
     "product_id" integer NOT NULL,
-    "color_id" integer, -- Có thể Null để delete color mà không delete product.
-    "size_id" integer, -- Có thể Null để delete size mà không delete product.
+    "color_id" integer,
+    "size_id" integer,
     "stock_quantity" integer NOT NULL,
     "is_deleted" boolean NOT NULL DEFAULT false,
     UNIQUE ("product_id", "color_id", "size_id"),
@@ -169,12 +169,12 @@ COMMENT ON COLUMN "order_item"."quantity" IS 'Số lượng sản phẩm';
 COMMENT ON COLUMN "order_item"."unit_price" IS 'Đơn giá';
 
 -- Insert sample data into product_category
-INSERT INTO "product_category" ("category_id", "category_name", "product_type") VALUES
-(1, 'Áo Thun', 'áo'),
-(2, 'Áo dài tay', 'áo'),
-(3, 'Áo Polo', 'áo'),
-(11, 'Quần Jean', 'quần'),
-(12, 'Quần Jogger', 'quần');
+INSERT INTO "product_category" ("category_name", "product_type") VALUES
+('Áo Thun', 'áo'),
+('Áo dài tay', 'áo'),
+('Áo Polo', 'áo'),
+('Quần Jean', 'quần'),
+('Quần Jogger', 'quần');
 
 -- Insert sample data into product_color
 INSERT INTO "product_color" ("color_name") VALUES

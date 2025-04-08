@@ -157,12 +157,12 @@ public partial class ProductViewModel : ViewModelBase
         ];
 
         // Initialize Commands
-        LoadDataCommand = new AsyncRelayCommand(InitializeDataAsync);
-        AddProductCommand = new AsyncRelayCommand(AddProductAsync);
-        EditProductCommand = new AsyncRelayCommand<Product>(EditProductAsync);
-        DeleteProductCommand = new AsyncRelayCommand<Product>(DeleteProductAsync);
-        ImportProductsCommand = new AsyncRelayCommand(ImportProductsAsync); // Chưa cài đặt
-        ExportProductsCommand = new AsyncRelayCommand(ExportProductsAsync); // Chưa cài đặt
+        LoadDataCommand = new AsyncRelayCommand(InitializeDataAsync, CanLoadData);
+        AddProductCommand = new AsyncRelayCommand(AddProductAsync, CanAddProduct);
+        EditProductCommand = new AsyncRelayCommand<Product>(EditProductAsync, CanEditProduct);
+        DeleteProductCommand = new AsyncRelayCommand<Product>(DeleteProductAsync, CanDeleteProduct);
+        ImportProductsCommand = new AsyncRelayCommand(ImportProductsAsync, () => !IsLoading); // Chưa cài đặt
+        ExportProductsCommand = new AsyncRelayCommand(ExportProductsAsync, () => !IsLoading); // Chưa cài đặt
         PreviousPageCommand = new AsyncRelayCommand(GoToPreviousPageAsync, CanGoToPreviousPage);
         NextPageCommand = new AsyncRelayCommand(GoToNextPageAsync, CanGoToNextPage);
 
@@ -193,8 +193,10 @@ public partial class ProductViewModel : ViewModelBase
     }
 
     // --- Data Loading and Filtering ---
+    private bool CanLoadData() => !IsLoading;
     public async Task InitializeDataAsync()
     {
+        if (!CanLoadData()) return;
         // Load filter options first
         await LoadFilterOptionsAsync();
         await ResetFiltersAndLoadAsync();
@@ -230,7 +232,6 @@ public partial class ProductViewModel : ViewModelBase
         if (IsLoading) return;
         IsLoading = true;
         ShowEmptyMessage = false;
-        string errorMessage = string.Empty;
 
         try
         {
@@ -273,7 +274,7 @@ public partial class ProductViewModel : ViewModelBase
         catch (Exception ex)
         {
             Debug.WriteLine($"ERROR Loading Products: {ex}");
-            errorMessage = $"Không thể tải danh sách sản phẩm: {ex.Message}";
+            await ShowErrorDialogAsync("Lỗi Tải Dữ Liệu", $"Không thể tải danh sách sản phẩm: {ex.Message}");
             ShowEmptyMessage = true;
             FilteredProducts?.Clear();
             TotalItems = 0;
@@ -282,16 +283,13 @@ public partial class ProductViewModel : ViewModelBase
         finally
         {
             IsLoading = false;
-
-            if (!string.IsNullOrEmpty(errorMessage))
-            {
-                await ShowErrorDialogAsync("Lỗi Tải Dữ Liệu", errorMessage);
-            }
         }
     }
 
     public async Task LoadFilterOptionsAsync()
     {
+        if (IsLoading) return;
+        IsLoading = true;
         try
         {
             // --- Execute sequentially ---
@@ -308,7 +306,6 @@ public partial class ProductViewModel : ViewModelBase
                     Categories?.Add(cat);
                 }
             }
-
 
             Sizes?.Clear();
             if (sizes != null)
@@ -331,10 +328,10 @@ public partial class ProductViewModel : ViewModelBase
         catch (Exception ex)
         {
             Debug.WriteLine($"ERROR Loading Filter Options: {ex}");
-            await ShowErrorDialogAsync("Lỗi Tải Bộ Lọc", $"Không thể tải dữ liệu cho các bộ lọc: {ex.Message}");
             Categories?.Clear();
             Sizes?.Clear();
             Colors?.Clear();
+            await ShowErrorDialogAsync("Lỗi Tải Dữ Liệu", $"Không thể tải danh sách bộ lọc: {ex.Message}");
         }
         finally
         {
@@ -376,8 +373,10 @@ public partial class ProductViewModel : ViewModelBase
         ExportProductsCommand.RaiseCanExecuteChanged();
     }
 
+    private bool CanAddProduct() => !IsLoading;
     private async Task AddProductAsync()
     {
+        if (!CanAddProduct()) return;
         Debug.WriteLine("Navigating to AddEditProductPage (Add Mode)");
         bool navigated = _navigationService.Navigate(typeof(Views.AddEditProductPage));
         if (!navigated)
@@ -386,9 +385,10 @@ public partial class ProductViewModel : ViewModelBase
         }
     }
 
+    private bool CanEditProduct(Product? product) => !IsLoading && product != null;
     private async Task EditProductAsync(Product? product)
     {
-        if (product == null) return;
+        if (!CanEditProduct(product)) return;
         Debug.WriteLine($"Navigating to AddEditProductPage (Edit Mode) for ProductId: {product.ProductId}");
         bool navigated = _navigationService.Navigate(typeof(Views.AddEditProductPage), product.ProductId);
         if (!navigated)
@@ -397,9 +397,10 @@ public partial class ProductViewModel : ViewModelBase
         }
     }
 
+    private bool CanDeleteProduct(Product? product) => !IsLoading && product != null;
     private async Task DeleteProductAsync(Product? product)
     {
-        if (product == null) return;
+        if (!CanDeleteProduct(product)) return;
 
         Product? productWithVariants = null;
         try

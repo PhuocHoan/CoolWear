@@ -31,6 +31,8 @@ POSTGRES_PASSWORD=1234
 
   - Tạo toàn bộ database mapping từ database sang dotnet (scaffolding database using efcore):
     - dotnet ef dbcontext scaffold "Host=localhost;Database=coolwear;Username=postgres;Password=1234" Npgsql.EntityFrameworkCore.PostgreSQL --output-dir Models --context PostgresContext --no-onconfiguring --context-dir Data --force
+    - dotnet build -p:Platform=x64
+    - dotnet ef migrations add AllowNullForeignKeysForAttributes --msbuildparams "/p:Platform=x64"
 
 - knex migration
 
