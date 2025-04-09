@@ -1,10 +1,10 @@
-using CoolWear.Services;
+﻿using CoolWear.Services;
 using CoolWear.ViewModels;
-using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Diagnostics;
-
+using System.Threading.Tasks;
 
 namespace CoolWear.Views;
 /// <summary>
@@ -21,27 +21,56 @@ public sealed partial class ColorsPage : Page
         try
         {
             ViewModel = ServiceManager.GetKeyedSingleton<ColorViewModel>();
+            DataContext = ViewModel;
+            ViewModel.RequestShowDialog += ShowAddEditColorDialogAsync;
         }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"FATAL ERROR: Could not resolve ColorViewModel. Ensure it's registered in ServiceManager.ConfigureServices(). Details: {ex}");
-            throw; // Rethrow or handle gracefully
-        }
-
-        Loaded += Page_Loaded;
+        catch (Exception) { }
     }
 
-    private async void Page_Loaded(object sender, RoutedEventArgs e)
+    // Hủy đăng ký khi rời khỏi trang để tránh memory leak
+    protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
-        Loaded -= Page_Loaded; // Prevent multiple loads
-
+        base.OnNavigatedFrom(e);
         if (ViewModel != null)
         {
-            await ViewModel.LoadColorsAsync();
+            ViewModel.RequestShowDialog -= ShowAddEditColorDialogAsync;
         }
-        else
+    }
+
+    // Tải dữ liệu ban đầu khi điều hướng đến trang
+    protected override async void OnNavigatedTo(NavigationEventArgs e)
+    {
+        base.OnNavigatedTo(e);
+        Debug.WriteLine("ColorsPage: OnNavigatedTo");
+
+        if (ViewModel != null && !ViewModel.IsLoading)
         {
-            Debug.WriteLine("ERROR: ColorViewModel is null in Page_Loaded.");
+            await ViewModel.InitializeDataAsync();
         }
+        else if (ViewModel == null)
+        {
+            Debug.WriteLine("LỖI: ViewModel bị null trong OnNavigatedTo.");
+        }
+    }
+
+    /// <summary>
+    /// Phương thức được gọi bởi ViewModel để hiển thị ContentDialog Add/Edit.
+    /// </summary>
+    /// <returns>Kết quả người dùng nhấn nút (Primary, Secondary, None).</returns>
+    private async Task<ContentDialogResult> ShowAddEditColorDialogAsync()
+    {
+        // Đảm bảo XamlRoot được thiết lập
+        AddEditColorDialog.XamlRoot = this.XamlRoot;
+
+        // Hiển thị dialog và chờ kết quả
+        ContentDialogResult result = await AddEditColorDialog.ShowAsync();
+
+        if (result == ContentDialogResult.Primary)
+        {
+            // Gọi hàm lưu trong ViewModel
+            _ = await ViewModel.SaveColorAsync();
+        }
+
+        return result;
     }
 }

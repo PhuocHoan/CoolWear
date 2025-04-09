@@ -1,6 +1,5 @@
 using CoolWear.Utilities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,6 +24,10 @@ public class GenericRepository<T> : IRepository<T> where T : class
     public async Task<T?> GetByIdAsync(int id) => await _dbSet.FindAsync(id);
 
     public async Task<IEnumerable<T>> GetAsync(ISpecification<T> spec) => await ApplySpecification(spec).ToListAsync();
+    public async Task<int> CountAsync(ISpecification<T> spec) =>
+        // Apply only the criteria for counting
+        await ApplySpecification(spec).CountAsync();
+    public async Task<bool> AnyAsync(Expression<Func<T, bool>> predicate) => await _dbSet.AnyAsync(predicate);
 
     public async Task AddAsync(T entity)
     {
@@ -57,24 +60,6 @@ public class GenericRepository<T> : IRepository<T> where T : class
         return Task.CompletedTask; // Call SaveChangesAsync() to save
     }
 
-    // Update multiple entities using Specification
-    public async Task UpdateAsync(
-        ISpecification<T> spec,
-        Expression<Func<SetPropertyCalls<T>, SetPropertyCalls<T>>> updateExpression) =>
-        await ApplySpecification(spec).ExecuteUpdateAsync(updateExpression);
-
-    // Modified DeleteAsync using Specification: Fetch then Remove
-    public async Task DeleteAsync(ISpecification<T> spec)
-    {
-        // Fetch entities matching the specification
-        var entitiesToDelete = await ApplySpecification(spec).ToListAsync();
-
-        if (entitiesToDelete.Any())
-        {
-            _dbSet.RemoveRange(entitiesToDelete); // Call SaveChangesAsync() to save
-        }
-    }
-
     private IQueryable<T> ApplySpecification(ISpecification<T> spec)
     {
         var query = _dbSet.AsQueryable();
@@ -101,9 +86,4 @@ public class GenericRepository<T> : IRepository<T> where T : class
 
         return query;
     }
-
-    public async Task<int> CountAsync(ISpecification<T> spec) =>
-        // Apply only the criteria for counting
-        await ApplySpecification(spec).CountAsync();
-    public async Task<bool> AnyAsync(Expression<Func<T, bool>> predicate) => await _dbSet.AnyAsync(predicate);
 }

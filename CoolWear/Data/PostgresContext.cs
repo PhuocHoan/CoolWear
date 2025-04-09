@@ -43,6 +43,7 @@ public partial class PostgresContext : DbContext
                 .HasColumnName("customer_id");
             entity.Property(e => e.Address)
                 .HasMaxLength(255)
+                .IsRequired()
                 .HasComment("Địa chỉ khách hàng")
                 .HasColumnName("address");
             entity.Property(e => e.CreateDate)
@@ -64,6 +65,7 @@ public partial class PostgresContext : DbContext
                 .HasColumnName("is_deleted");
             entity.Property(e => e.Phone)
                 .HasMaxLength(20)
+                .IsRequired()
                 .HasComment("Số điện thoại khách hàng")
                 .HasColumnName("phone");
             entity.Property(e => e.Points)

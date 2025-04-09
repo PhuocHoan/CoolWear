@@ -64,6 +64,24 @@
 			<!-- Pagination -->
 		</Grid.RowDefinitions>
 
+		<ContentDialog x:Name="AddEditColorDialog" 
+			   Title="{x:Bind ViewModel.DialogTitle, Mode=OneWay}" 
+			   PrimaryButtonText="Lưu" 
+			   CloseButtonText="Hủy" 
+			   DefaultButton="Primary"  
+			   IsPrimaryButtonEnabled="{x:Bind ViewModel.IsDialogSaving, Mode=OneWay, Converter={StaticResource InverseBoolConverter}}">
+			<StackPanel Spacing="10">
+				<!-- TextBox Tên Màu -->
+				<TextBox Header="Tên Màu (*)"
+				 MaxLength="50"
+				 Text="{x:Bind ViewModel.DialogColorName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+				<!-- ProgressRing (hiển thị khi đang lưu) -->
+				<ProgressRing HorizontalAlignment="Center"
+					  IsActive="{x:Bind ViewModel.IsDialogSaving, Mode=OneWay}" />
+			</StackPanel>
+		</ContentDialog>
+
 		<!-- Toolbar (Row 0) -->
 		<StackPanel 
 			Orientation="Horizontal" 
@@ -235,11 +253,11 @@
 
 			<!-- Hiển thị thông tin trang -->
 			<TextBlock VerticalAlignment="Center">
-        <Run Text="Trang"/>
-        <Run Text="{x:Bind ViewModel.CurrentPage, Mode=OneWay}"/>/<Run Text="{x:Bind ViewModel.TotalPages, Mode=OneWay}"/>
-        <Run Text="(Tổng số: "/>
-        <Run Text="{x:Bind ViewModel.TotalItems, Mode=OneWay}"/>
-        <Run Text="danh mục)"/>
+				<Run Text="Trang"/>
+				<Run Text="{x:Bind ViewModel.CurrentPage, Mode=OneWay}"/>/<Run Text="{x:Bind ViewModel.TotalPages, Mode=OneWay}"/>
+				<Run Text="(Tổng số: "/>
+				<Run Text="{x:Bind ViewModel.TotalItems, Mode=OneWay}"/>
+				<Run Text="danh mục)"/>
 			</TextBlock>
 
 			<!-- Nút Đi tới trang tiếp theo -->

@@ -27,12 +27,12 @@ public partial class Customer : INotifyPropertyChanged
     /// <summary>
     /// Số điện thoại khách hàng
     /// </summary>
-    public string? Phone { get; set; }
+    public string Phone { get; set; }
 
     /// <summary>
     /// Địa chỉ khách hàng
     /// </summary>
-    public string? Address { get; set; }
+    public string Address { get; set; }
 
     /// <summary>
     /// Ngày tạo tài khoản, mặc định là thời điểm hiện tại

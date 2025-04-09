@@ -2,8 +2,11 @@
 using CoolWear.Services;
 using CoolWear.Utilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Controls;
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
@@ -31,16 +34,18 @@ public partial class ProductViewModel : ViewModelBase
     // --- Dependencies ---
     private readonly IUnitOfWork _unitOfWork;
     private readonly INavigationService _navigationService; // Inject service
+    private readonly DispatcherQueue _dispatcherQueue;
+    private bool _isResettingFilters = false;
 
     // --- Constants ---
     private const int DefaultPageSize = 2;
 
     // --- Backing Fields ---
-    private FullObservableCollection<Product>? _filteredProducts;
-    private FullObservableCollection<ProductCategory>? _categories;
-    private FullObservableCollection<ProductSize>? _sizes;
-    private FullObservableCollection<ProductColor>? _colors;
-    public FullObservableCollection<StockFilterOption> StockFilterOptions { get; }
+    private ObservableCollection<Product>? _filteredProducts;
+    private ObservableCollection<ProductCategory>? _categories;
+    private ObservableCollection<ProductSize>? _sizes;
+    private ObservableCollection<ProductColor>? _colors;
+    public ObservableCollection<StockFilterOption> StockFilterOptions { get; }
 
     private ProductCategory? _selectedCategory;
     private ProductSize? _selectedSize;
@@ -57,22 +62,22 @@ public partial class ProductViewModel : ViewModelBase
     private int _totalPages;
 
     // --- Properties ---
-    public FullObservableCollection<Product>? FilteredProducts
+    public ObservableCollection<Product>? FilteredProducts
     {
         get => _filteredProducts;
         private set => SetProperty(ref _filteredProducts, value);
     }
-    public FullObservableCollection<ProductCategory>? Categories
+    public ObservableCollection<ProductCategory>? Categories
     {
         get => _categories;
         private set => SetProperty(ref _categories, value);
     }
-    public FullObservableCollection<ProductSize>? Sizes
+    public ObservableCollection<ProductSize>? Sizes
     {
         get => _sizes;
         private set => SetProperty(ref _sizes, value);
     }
-    public FullObservableCollection<ProductColor>? Colors
+    public ObservableCollection<ProductColor>? Colors
     {
         get => _colors;
         private set => SetProperty(ref _colors, value);
@@ -143,6 +148,9 @@ public partial class ProductViewModel : ViewModelBase
         _unitOfWork = unitOfWork;
         _navigationService = navigationService; // Store service
 
+        // LẤY DISPATCHER QUEUE CỦA LUỒNG UI HIỆN TẠI KHI TẠO VIEWMODEL
+        _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
+
         // Initialize Collections
         FilteredProducts = [];
         Categories = [];
@@ -172,9 +180,10 @@ public partial class ProductViewModel : ViewModelBase
     // --- Event Handler for Filter Changes ---
     private async void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (IsLoading)
+        // Bỏ qua nếu đang loading HOẶC đang reset filter
+        if (IsLoading || _isResettingFilters)
         {
-            Debug.WriteLine($"ViewModel_PropertyChanged for {e.PropertyName}: Ignored because IsLoading is true.");
+            Debug.WriteLine($"ViewModel_PropertyChanged for {e.PropertyName}: Ignored because IsLoading or IsResettingFilters is true.");
             return;
         }
 
@@ -205,6 +214,7 @@ public partial class ProductViewModel : ViewModelBase
     public async Task ResetFiltersAndLoadAsync()
     {
         if (IsLoading) return;
+        _isResettingFilters = true; // Bật cờ báo đang reset
 
         SearchTerm = null;
         SelectedCategory = null;
@@ -213,6 +223,7 @@ public partial class ProductViewModel : ViewModelBase
         SelectedStockFilter = StockFilterOptions.FirstOrDefault(opt => opt.Value == null);
         CurrentPage = 1;
 
+        _isResettingFilters = false; // TẮT cờ sau khi reset xong
         await LoadProductsAsync();
     }
 
@@ -231,7 +242,6 @@ public partial class ProductViewModel : ViewModelBase
     {
         if (IsLoading) return;
         IsLoading = true;
-        ShowEmptyMessage = false;
 
         try
         {
@@ -261,15 +271,21 @@ public partial class ProductViewModel : ViewModelBase
                 includeDetails: true
             );
 
-            var products = await _unitOfWork.Products.GetAsync(dataSpec);
+            var products = await _unitOfWork.Products.GetAsync(dataSpec); // Lệnh này chạy trên luồng nền (background thread), vì có await async
 
-            FilteredProducts?.Clear();
-            foreach (var product in products)
+            // === CẬP NHẬT COLLECTION TRÊN LUỒNG UI ===
+            _dispatcherQueue.TryEnqueue(() =>
             {
-                FilteredProducts?.Add(product);
-            }
-
-            ShowEmptyMessage = TotalItems == 0;
+                FilteredProducts?.Clear();
+                if (products != null)
+                {
+                    foreach (var product in products)
+                    {
+                        FilteredProducts?.Add(product);
+                    }
+                }
+                ShowEmptyMessage = !(FilteredProducts?.Any() ?? false);
+            });
         }
         catch (Exception ex)
         {
@@ -290,53 +306,67 @@ public partial class ProductViewModel : ViewModelBase
     {
         if (IsLoading) return;
         IsLoading = true;
+        List<ProductCategory>? categoriesData = null;
+        List<ProductSize>? sizesData = null;
+        List<ProductColor>? colorsData = null;
+        string? errorMsg = null;
+
         try
         {
-            // --- Execute sequentially ---
-            var categories = await _unitOfWork.ProductCategories.GetAllAsync();
-            var sizes = await _unitOfWork.ProductSizes.GetAllAsync();
-            var colors = await _unitOfWork.ProductColors.GetAllAsync();
-
-            // --- Populate Collections ---
-            Categories?.Clear();
-            if (categories != null) // Check if data was actually retrieved
-            {
-                foreach (var cat in categories.OrderBy(c => c.CategoryName))
-                {
-                    Categories?.Add(cat);
-                }
-            }
-
-            Sizes?.Clear();
-            if (sizes != null)
-            {
-                foreach (var size in sizes.OrderBy(s => s.SizeName))
-                {
-                    Sizes?.Add(size);
-                }
-            }
-
-            Colors?.Clear();
-            if (colors != null)
-            {
-                foreach (var color in colors.OrderBy(c => c.ColorName))
-                {
-                    Colors?.Add(color);
-                }
-            }
+            // --- Tải dữ liệu trên luồng nền ---
+            categoriesData = [.. (await _unitOfWork.ProductCategories.GetAllAsync()).OrderBy(c => c.CategoryName)];
+            sizesData = [.. (await _unitOfWork.ProductSizes.GetAllAsync()).OrderBy(s => s.SizeName)];
+            colorsData = [.. (await _unitOfWork.ProductColors.GetAllAsync()).OrderBy(c => c.ColorName)];
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"ERROR Loading Filter Options: {ex}");
-            Categories?.Clear();
-            Sizes?.Clear();
-            Colors?.Clear();
-            await ShowErrorDialogAsync("Lỗi Tải Dữ Liệu", $"Không thể tải danh sách bộ lọc: {ex.Message}");
+            errorMsg = $"Không thể tải dữ liệu cho các bộ lọc: {ex.Message}";
+            // Không Clear collection ở đây vì đang ở luồng nền
         }
         finally
         {
             IsLoading = false;
         }
+
+        // --- Cập nhật các ObservableCollection trên luồng UI ---
+        _dispatcherQueue.TryEnqueue(() =>
+        {
+            try
+            {
+                Categories?.Clear();
+                if (categoriesData != null)
+                {
+                    foreach (var cat in categoriesData) Categories?.Add(cat);
+                }
+
+                Sizes?.Clear();
+                if (sizesData != null)
+                {
+                    foreach (var size in sizesData) Sizes?.Add(size);
+                }
+
+                Colors?.Clear();
+                if (colorsData != null)
+                {
+                    foreach (var color in colorsData) Colors?.Add(color);
+                }
+            }
+            catch (Exception uiEx)
+            {
+                Debug.WriteLine($"Error updating filter collections on UI thread: {uiEx}");
+            }
+
+            if (!string.IsNullOrEmpty(errorMsg))
+            {
+                // Dùng _ = để không block luồng UI nếu ShowErrorDialogAsync là async
+                _ = ShowErrorDialogAsync("Lỗi Tải Bộ Lọc", errorMsg);
+                // Xóa sạch collection nếu có lỗi
+                Categories?.Clear();
+                Sizes?.Clear();
+                Colors?.Clear();
+            }
+        });
     }
 
     // --- Pagination Command Implementations ---

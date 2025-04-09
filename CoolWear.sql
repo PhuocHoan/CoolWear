@@ -47,7 +47,7 @@ CREATE TABLE "customer" (
     "email" varchar(100) UNIQUE, 
     "phone" varchar(20) NOT NULL UNIQUE, 
     "address" varchar(255) NOT NULL,
-    "create_date" timestamp NOT NULL DEFAULT now(),
+    "create_date" TIMESTAMP NOT NULL DEFAULT now(),
     "points" integer NOT NULL DEFAULT 0,
     "is_deleted" boolean NOT NULL DEFAULT false
 );

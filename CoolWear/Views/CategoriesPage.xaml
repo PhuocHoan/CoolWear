@@ -37,6 +37,29 @@
 			<ColumnDefinition Width="*" />
 		</Grid.ColumnDefinitions>
 
+		<ContentDialog x:Name="AddEditCategoryDialog" 
+					   Title="{x:Bind ViewModel.DialogTitle, Mode=OneWay}" 
+					   PrimaryButtonText="Lưu" 
+					   CloseButtonText="Hủy" 
+					   DefaultButton="Primary"  
+					   IsPrimaryButtonEnabled="{x:Bind ViewModel.IsDialogSaving, Mode=OneWay, Converter={StaticResource InverseBoolConverter}}">
+			<StackPanel Spacing="10">
+				<!-- TextBox Tên Danh Mục -->
+				<TextBox Header="Tên Danh Mục (*)"
+						 MaxLength="50"
+						 Text="{x:Bind ViewModel.DialogCategoryName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+				<!-- TextBox Loại Sản Phẩm -->
+				<TextBox Header="Loại Sản Phẩm (*)"
+						 MaxLength="20"
+						 PlaceholderText="Ví dụ: Áo, Quần"
+						 Text="{x:Bind ViewModel.DialogProductType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+				<!-- ProgressRing (hiển thị khi đang lưu) -->
+				<ProgressRing HorizontalAlignment="Center"
+							  IsActive="{x:Bind ViewModel.IsDialogSaving, Mode=OneWay}" />
+			</StackPanel>
+		</ContentDialog>
+
 		<!-- Filter Panel (Column 0) -->
 		<ScrollViewer Grid.Column="0" Background="#F8F8F8" VerticalScrollBarVisibility="Auto">
 			<StackPanel Padding="10" Spacing="16">

@@ -2,24 +2,26 @@
 using CoolWear.Services;
 using CoolWear.Utilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Controls;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
-
 namespace CoolWear.ViewModels;
-
 public partial class CategoryViewModel : ViewModelBase
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly DispatcherQueue _dispatcherQueue; // Thêm DispatcherQueue
+    private bool _isResettingFilters = false;
     private const int DefaultPageSize = 2; // Số danh mục trên mỗi trang
 
     // Backing fields
-    private FullObservableCollection<ProductCategory>? _filteredCategories;
+    private ObservableCollection<ProductCategory>? _filteredCategories;
     private ObservableCollection<string>? _productTypes; // For filter product type
     private string? _selectedProductType;
     private string? _searchTerm;
@@ -44,7 +46,7 @@ public partial class CategoryViewModel : ViewModelBase
     private ProductCategory? _editingCategory = null;
 
     // Public properties for UI binding
-    public FullObservableCollection<ProductCategory>? FilteredCategories
+    public ObservableCollection<ProductCategory>? FilteredCategories
     {
         get => _filteredCategories;
         private set => SetProperty(ref _filteredCategories, value);
@@ -147,6 +149,7 @@ public partial class CategoryViewModel : ViewModelBase
     public CategoryViewModel(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
+        _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
         FilteredCategories = [];
         ProductTypes = [];
@@ -168,7 +171,7 @@ public partial class CategoryViewModel : ViewModelBase
     // --- Event Handler for Filter Changes ---
     private async void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (IsLoading)
+        if (IsLoading || _isResettingFilters)
         {
             Debug.WriteLine($"ViewModel_PropertyChanged for {e.PropertyName}: Ignored because IsLoading is true.");
             return;
@@ -198,10 +201,13 @@ public partial class CategoryViewModel : ViewModelBase
     public async Task ResetFiltersAndLoadAsync()
     {
         if (IsLoading) return;
+        _isResettingFilters = true; // Đánh dấu đang reset bộ lọc
 
         SearchTerm = null;
+        SelectedProductType = null;
         CurrentPage = 1;
 
+        _isResettingFilters = false; // Đánh dấu đã reset bộ lọc
         await LoadCategoriesAsync();
     }
 
@@ -212,59 +218,41 @@ public partial class CategoryViewModel : ViewModelBase
     {
         if (IsLoading) return;
         IsLoading = true;
-        ShowEmptyMessage = false;
 
         try
         {
-            // 1. Tạo Specification để ĐẾM tổng số item khớp bộ lọc
-            var countSpec = new CategorySpecification(
-                searchTerm: SearchTerm,
-                productType: SelectedProductType
-            // Không cần skip/take khi đếm
-            );
+            // Đếm và lấy dữ liệu trên luồng nền
+            var countSpec = new CategorySpecification(SearchTerm, SelectedProductType);
             TotalItems = await _unitOfWork.ProductCategories.CountAsync(countSpec);
 
-            // 2. Tính toán phân trang
             TotalPages = TotalItems > 0 ? (int)Math.Ceiling((double)TotalItems / PageSize) : 1;
-            // Đảm bảo trang hiện tại hợp lệ
             if (CurrentPage > TotalPages) CurrentPage = TotalPages;
             if (CurrentPage < 1) CurrentPage = 1;
-
-            // 3. Tạo Specification để LẤY dữ liệu cho trang hiện tại
             int skip = (CurrentPage - 1) * PageSize;
-            var dataSpec = new CategorySpecification(
-                searchTerm: SearchTerm,
-                productType: SelectedProductType,
-                skip: skip,
-                take: PageSize
-            );
 
-            // 4. Lấy dữ liệu từ UnitOfWork
+            var dataSpec = new CategorySpecification(SearchTerm, SelectedProductType, skip, PageSize);
             var categories = await _unitOfWork.ProductCategories.GetAsync(dataSpec);
 
-            // 5. Cập nhật FullObservableCollection để UI hiển thị
-            FilteredCategories?.Clear(); // Xóa dữ liệu trang cũ
-            if (categories != null)
+            // Cập nhật UI trên luồng chính
+            _dispatcherQueue.TryEnqueue(() =>
             {
-                foreach (var category in categories)
+                FilteredCategories?.Clear();
+                if (categories != null)
                 {
-                    FilteredCategories?.Add(category);
+                    foreach (var category in categories) FilteredCategories?.Add(category);
                 }
-            }
-
-            // 6. Cập nhật trạng thái hiển thị thông báo rỗng
-            ShowEmptyMessage = TotalItems == 0;
+                // Cập nhật các thuộc tính liên quan đến phân trang và hiển thị
+                ShowEmptyMessage = !(FilteredCategories?.Any() ?? false);
+            });
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"LỖI Tải Danh mục: {ex}");
+            Debug.WriteLine($"ERROR Loading Categories: {ex}");
             await ShowErrorDialogAsync("Lỗi Tải Dữ Liệu", $"Không thể tải danh sách danh mục: {ex.Message}");
-            // Đặt lại trạng thái khi có lỗi
+            ShowEmptyMessage = true;
             FilteredCategories?.Clear();
             TotalItems = 0;
             TotalPages = 1;
-            CurrentPage = 1;
-            ShowEmptyMessage = true;
         }
         finally
         {
@@ -287,38 +275,47 @@ public partial class CategoryViewModel : ViewModelBase
     /// </summary>
     private async Task LoadFilterOptionsAsync()
     {
+        if (IsLoading) return;
+        IsLoading = true; // Đánh dấu đang tải dữ liệu
+        List<string>? distinctTypesData = null;
+        string? errorMsg = null;
         try
         {
-            // Lấy tất cả danh mục chỉ để lấy ra các loại sản phẩm duy nhất
             var allCategories = await _unitOfWork.ProductCategories.GetAllAsync();
-
-            ProductTypes?.Clear();
-            ProductTypes?.Add("Tất cả loại sản phẩm"); // Thêm tùy chọn mặc định
-
             if (allCategories != null && allCategories.Any())
             {
-                var distinctTypes = allCategories
+                distinctTypesData = [.. allCategories
                     .Select(c => c.ProductType)
                     .Where(pt => !string.IsNullOrEmpty(pt))
                     .Distinct()
-                    .OrderBy(pt => pt);
-
-                foreach (var type in distinctTypes)
-                {
-                    ProductTypes?.Add(type);
-                }
+                    .OrderBy(pt => pt)];
             }
-            // Đặt giá trị mặc định cho ComboBox
-            SelectedProductType = ProductTypes?.FirstOrDefault();
         }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Lỗi tải tùy chọn bộ lọc: {ex}");
-        }
+        catch (Exception ex) { Debug.WriteLine($"Lỗi tải tùy chọn bộ lọc: {ex}"); errorMsg = ex.Message; }
         finally
         {
-            IsLoading = false;
+            IsLoading = false; // Đánh dấu đã tải xong
         }
+
+        // Cập nhật UI trên luồng chính
+        _dispatcherQueue.TryEnqueue(() =>
+        {
+            ProductTypes?.Clear();
+            ProductTypes?.Add("Tất cả loại sản phẩm");
+            if (distinctTypesData != null)
+            {
+                foreach (var type in distinctTypesData) ProductTypes.Add(type);
+            }
+            SelectedProductType = ProductTypes?.FirstOrDefault();
+
+            if (!string.IsNullOrEmpty(errorMsg))
+            {
+                _ = ShowErrorDialogAsync("Lỗi Tải Bộ Lọc", errorMsg);
+                ProductTypes?.Clear();
+                ProductTypes?.Add("Tất cả loại sản phẩm");
+                SelectedProductType = ProductTypes?.FirstOrDefault();
+            }
+        });
     }
 
     // --- Pagination Command Implementations ---
@@ -575,7 +572,6 @@ public partial class CategoryViewModel : ViewModelBase
             }
         }
     }
-
     private async Task ImportAsync() => await ShowNotImplementedDialogAsync("Nhập File Excel/CSV");
     private async Task ExportAsync() => await ShowNotImplementedDialogAsync("Xuất File Excel/CSV");
 }

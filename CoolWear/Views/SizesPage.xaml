@@ -6,47 +6,50 @@
     xmlns:local="using:CoolWear.Views"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-	xmlns:models="using:CoolWear.Models"
+	xmlns:models="using:CoolWear.Models" xmlns:converters="using:CoolWear.Converters"
 	mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
 	<Page.Resources>
+		<!-- Converter để ẩn control khi giá trị bool là true (dùng cho pagination) -->
+		<converters:ZeroIsCollapsedConverter x:Key="ZeroIsCollapsedConverter"/>
+		<converters:InverseBoolConverter x:Key="InverseBoolConverter"/>
 		<Style 
 			x:Key="ListHeaderTextStyle" 
 			TargetType="TextBlock">
 			<Setter 
-			Property="FontWeight" 
-			Value="SemiBold"/>
+				Property="FontWeight" 
+				Value="SemiBold"/>
 			<Setter 
-			Property="VerticalAlignment" 
-			Value="Center"/>
+				Property="VerticalAlignment" 
+				Value="Center"/>
 		</Style>
 		<Style 
 			x:Key="NoPaddingListViewItemStyle" 
 			TargetType="ListViewItem">
 			<Setter 
-			Property="Padding" 
-			Value="0"/>
+				Property="Padding" 
+				Value="0"/>
 			<Setter 
-			Property="Margin" 
-			Value="0"/>
+				Property="Margin" 
+				Value="0"/>
 			<Setter 
-			Property="MinHeight" 
-			Value="40"/>
+				Property="MinHeight" 
+				Value="40"/>
 			<!-- Give items a minimum height -->
 			<Setter 
-			Property="HorizontalContentAlignment" 
-			Value="Stretch"/>
+				Property="HorizontalContentAlignment" 
+				Value="Stretch"/>
 			<Setter 
-			Property="VerticalContentAlignment" 
-			Value="Stretch"/>
+				Property="VerticalContentAlignment" 
+				Value="Stretch"/>
 			<Setter 
-			Property="BorderThickness" 
-			Value="0,0,0,1"/>
+				Property="BorderThickness" 
+				Value="0,0,0,1"/>
 			<!-- Add separator line -->
 			<Setter
-			Property="BorderBrush" 
-			Value="{ThemeResource SystemListLowColor}"/>
+				Property="BorderBrush" 
+				Value="{ThemeResource SystemListLowColor}"/>
 		</Style>
 	</Page.Resources>
 
@@ -57,65 +60,85 @@
 			<!-- Toolbar -->
 			<RowDefinition Height="*" />
 			<!-- ListView + Overlays -->
+			<RowDefinition Height="Auto" />
+			<!-- Pagination -->
 		</Grid.RowDefinitions>
+
+		<ContentDialog x:Name="AddEditSizeDialog" 
+			   Title="{x:Bind ViewModel.DialogTitle, Mode=OneWay}" 
+			   PrimaryButtonText="Lưu" 
+			   CloseButtonText="Hủy" 
+			   DefaultButton="Primary"  
+			   IsPrimaryButtonEnabled="{x:Bind ViewModel.IsDialogSaving, Mode=OneWay, Converter={StaticResource InverseBoolConverter}}">
+			<StackPanel Spacing="10">
+				<!-- TextBox Tên Size -->
+				<TextBox Header="Tên Size (*)"
+				 MaxLength="50"
+				 Text="{x:Bind ViewModel.DialogSizeName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+				<!-- ProgressRing (hiển thị khi đang lưu) -->
+				<ProgressRing HorizontalAlignment="Center"
+					  IsActive="{x:Bind ViewModel.IsDialogSaving, Mode=OneWay}" />
+			</StackPanel>
+		</ContentDialog>
 
 		<!-- Toolbar (Row 0) -->
 		<StackPanel 
-		Orientation="Horizontal" 
-		Grid.Row="0" 
-		Padding="10" 
-		Spacing="8" 
-		Background="#EAEAEA">
+			Orientation="Horizontal" 
+			Grid.Row="0" 
+			Padding="10" 
+			Spacing="8" 
+			Background="#EAEAEA">
 			<TextBox x:Name="SearchBox"
-                 Width="300"
-                 PlaceholderText="Tìm kiếm theo Tên hoặc Mã size..."
-                 Text="{x:Bind ViewModel.SearchTerm, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                 Margin="0,0,10,0" />
+                     Width="300"
+                     PlaceholderText="Tìm kiếm theo Tên hoặc Mã size..."
+                     Text="{x:Bind ViewModel.SearchTerm, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     Margin="0,0,10,0" />
 			<Button 
-			ToolTipService.ToolTip="Thêm size mới" 
-			Command="{x:Bind ViewModel.AddSizeCommand}">
+				ToolTipService.ToolTip="Thêm size mới" 
+				Command="{x:Bind ViewModel.AddSizeCommand}">
 				<StackPanel 
-				Orientation="Horizontal" 
-				Spacing="5">
+					Orientation="Horizontal" 
+					Spacing="5">
 					<FontIcon 
-					FontFamily="{StaticResource SymbolThemeFontFamily}" 
-					Glyph="&#xE710;"/>
+						FontFamily="{StaticResource SymbolThemeFontFamily}" 
+						Glyph="&#xE710;"/>
 					<TextBlock Text="Thêm mới"/>
 				</StackPanel>
 			</Button>
 			<Button 
-			ToolTipService.ToolTip="Nhập size từ file Excel/CSV" 
-			Command="{x:Bind ViewModel.ImportSizesCommand}">
+				ToolTipService.ToolTip="Nhập size từ file Excel/CSV" 
+				Command="{x:Bind ViewModel.ImportSizesCommand}">
 				<StackPanel 
-				Orientation="Horizontal" 
-				Spacing="5">
+					Orientation="Horizontal" 
+					Spacing="5">
 					<FontIcon 
-					FontFamily="{StaticResource SymbolThemeFontFamily}" 
-					Glyph="&#xE896;"/>
+						FontFamily="{StaticResource SymbolThemeFontFamily}" 
+						Glyph="&#xE896;"/>
 					<TextBlock Text="Nhập file"/>
 				</StackPanel>
 			</Button>
 			<Button 
-			ToolTipService.ToolTip="Xuất danh sách size ra file" 
-			Command="{x:Bind ViewModel.ExportSizesCommand}">
+				ToolTipService.ToolTip="Xuất danh sách size ra file" 
+				Command="{x:Bind ViewModel.ExportSizesCommand}">
 				<StackPanel 
-				Orientation="Horizontal" 
-				Spacing="5">
+					Orientation="Horizontal" 
+					Spacing="5">
 					<FontIcon 
-					FontFamily="{StaticResource SymbolThemeFontFamily}" 
-					Glyph="&#xE78C;"/>
+						FontFamily="{StaticResource SymbolThemeFontFamily}" 
+						Glyph="&#xE78C;"/>
 					<TextBlock Text="Xuất file"/>
 				</StackPanel>
 			</Button>
 			<Button 
-			ToolTipService.ToolTip="Tải lại danh sách" 
-			Command="{x:Bind ViewModel.LoadSizesCommand}">
+				ToolTipService.ToolTip="Tải lại danh sách" 
+				Command="{x:Bind ViewModel.LoadSizesCommand}">
 				<StackPanel 
-				Orientation="Horizontal" 
-				Spacing="5">
+					Orientation="Horizontal" 
+					Spacing="5">
 					<FontIcon 
-					FontFamily="{StaticResource SymbolThemeFontFamily}" 
-					Glyph="&#xE72C;"/>
+						FontFamily="{StaticResource SymbolThemeFontFamily}" 
+						Glyph="&#xE72C;"/>
 					<TextBlock Text="Tải lại"/>
 				</StackPanel>
 			</Button>
@@ -126,12 +149,12 @@
 
 			<!-- ListView -->
 			<ListView x:Name="ItemsListView"
-                  Margin="10,5,10,10"
-                  ItemsSource="{x:Bind ViewModel.FilteredSizes, Mode=OneWay}"
-                  SelectionMode="None"
-                  IsItemClickEnabled="False"
-                  ScrollViewer.VerticalScrollBarVisibility="Auto"
-                  ItemContainerStyle="{StaticResource NoPaddingListViewItemStyle}">
+                      Margin="10,5,10,10"
+                      ItemsSource="{x:Bind ViewModel.FilteredSizes, Mode=OneWay}"
+                      SelectionMode="None"
+                      IsItemClickEnabled="False"
+                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+                      ItemContainerStyle="{StaticResource NoPaddingListViewItemStyle}">
 
 				<ListView.HeaderTemplate>
 					<DataTemplate>
@@ -171,31 +194,31 @@
 
 							<!-- Column 3: Actions -->
 							<StackPanel 
-							Grid.Column="2" 
-							Orientation="Horizontal" 
-							Spacing="5" 
-							VerticalAlignment="Center" 
-							HorizontalAlignment="Center">
+								Grid.Column="2" 
+								Orientation="Horizontal" 
+								Spacing="5" 
+								VerticalAlignment="Center" 
+								HorizontalAlignment="Center">
 								<Button 
-								Padding="5" 
-								ToolTipService.ToolTip="Chỉnh sửa size" 
-								Command="{Binding DataContext.EditSizeCommand, ElementName=ItemsListView}" 
-								CommandParameter="{x:Bind}">
+									Padding="5" 
+									ToolTipService.ToolTip="Chỉnh sửa size" 
+									Command="{Binding DataContext.EditSizeCommand, ElementName=ItemsListView}" 
+									CommandParameter="{x:Bind}">
 									<FontIcon 
-									FontFamily="{StaticResource SymbolThemeFontFamily}" 
-									Glyph="&#xE70F;" 
-									FontSize="16"/>
+										FontFamily="{StaticResource SymbolThemeFontFamily}" 
+										Glyph="&#xE70F;" 
+										FontSize="16"/>
 								</Button>
 								<Button 
-								Padding="5" 
-								ToolTipService.ToolTip="Xóa size" 
-								Background="IndianRed" 
-								Command="{Binding DataContext.DeleteSizeCommand, ElementName=ItemsListView}" 
-								CommandParameter="{x:Bind}">
+									Padding="5" 
+									ToolTipService.ToolTip="Xóa size" 
+									Background="IndianRed" 
+									Command="{Binding DataContext.DeleteSizeCommand, ElementName=ItemsListView}" 
+									CommandParameter="{x:Bind}">
 									<FontIcon 
-									FontFamily="{StaticResource SymbolThemeFontFamily}" 
-									Glyph="&#xE74D;" 
-									FontSize="16"/>
+										FontFamily="{StaticResource SymbolThemeFontFamily}" 
+										Glyph="&#xE74D;" 
+										FontSize="16"/>
 								</Button>
 							</StackPanel>
 						</Grid>
@@ -205,18 +228,42 @@
 
 			<!-- Overlays -->
 			<ProgressRing 
-			IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" 
-			VerticalAlignment="Center" 
-			HorizontalAlignment="Center" 
-			Width="50" 
-			Height="50" />
+				IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" 
+				VerticalAlignment="Center" 
+				HorizontalAlignment="Center" 
+				Width="50" 
+				Height="50" />
 			<TextBlock 
-			Text="Không tìm thấy size nào khớp với bộ lọc." 
-			Visibility="{x:Bind ViewModel.ShowEmptyMessage, Mode=OneWay}" 
-			VerticalAlignment="Center" 
-			HorizontalAlignment="Center" 
-			Style="{ThemeResource BodyStrongTextBlockStyle}"/>
+				Text="Không tìm thấy size nào khớp với bộ lọc." 
+				Visibility="{x:Bind ViewModel.ShowEmptyMessage, Mode=OneWay}" 
+				VerticalAlignment="Center" 
+				HorizontalAlignment="Center" 
+				Style="{ThemeResource BodyStrongTextBlockStyle}"/>
 
 		</Grid>
+		<!-- Pagination Controls (Row 2) -->
+		<StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10"
+            HorizontalAlignment="Center" Margin="10"
+            Visibility="{x:Bind ViewModel.ShowEmptyMessage, Mode=OneWay, Converter={StaticResource ZeroIsCollapsedConverter}}">
+
+			<!-- Nút Quay lại trang trước -->
+			<Button Command="{x:Bind ViewModel.PreviousPageCommand}">
+				<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="" />
+			</Button>
+
+			<!-- Hiển thị thông tin trang -->
+			<TextBlock VerticalAlignment="Center">
+				<Run Text="Trang"/>
+				<Run Text="{x:Bind ViewModel.CurrentPage, Mode=OneWay}"/>/<Run Text="{x:Bind ViewModel.TotalPages, Mode=OneWay}"/>
+				<Run Text="(Tổng số: "/>
+				<Run Text="{x:Bind ViewModel.TotalItems, Mode=OneWay}"/>
+				<Run Text="danh mục)"/>
+			</TextBlock>
+
+			<!-- Nút Đi tới trang tiếp theo -->
+			<Button Command="{x:Bind ViewModel.NextPageCommand}">
+				<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="" />
+			</Button>
+		</StackPanel>
 	</Grid>
 </Page>

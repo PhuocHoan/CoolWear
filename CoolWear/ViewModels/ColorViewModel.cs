@@ -2,10 +2,13 @@
 using CoolWear.Services;
 using CoolWear.Utilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Controls;
 using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
@@ -13,10 +16,12 @@ namespace CoolWear.ViewModels;
 public partial class ColorViewModel : ViewModelBase
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly DispatcherQueue _dispatcherQueue;
+    private bool _isResettingFilters = false;
     private const int DefaultPageSize = 2; // Số màu sắc trên mỗi trang
 
     // Backing fields
-    private FullObservableCollection<ProductColor>? _filteredColors;
+    private ObservableCollection<ProductColor>? _filteredColors;
     private string? _searchTerm;
     private bool _isLoading;
     private bool _showEmptyMessage;
@@ -38,7 +43,7 @@ public partial class ColorViewModel : ViewModelBase
     private ProductColor? _editingColor = null;
 
     // Public properties for UI binding
-    public FullObservableCollection<ProductColor>? FilteredColors
+    public ObservableCollection<ProductColor>? FilteredColors
     {
         get => _filteredColors;
         private set => SetProperty(ref _filteredColors, value);
@@ -124,23 +129,26 @@ public partial class ColorViewModel : ViewModelBase
     public ColorViewModel(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
+        _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
         FilteredColors = [];
 
-        LoadColorsCommand = new AsyncRelayCommand(InitializeDataAsync, () => !IsLoading);
-        AddColorCommand = new AsyncRelayCommand(PrepareAddDialogAsync, () => !IsLoading);
-        EditColorCommand = new AsyncRelayCommand<ProductColor>(PrepareEditDialogAsync, (col) => col != null && !IsLoading);
-        DeleteColorCommand = new AsyncRelayCommand<ProductColor>(DeleteColorAsync, (col) => col != null && !IsLoading);
+        LoadColorsCommand = new AsyncRelayCommand(InitializeDataAsync, CanLoadData);
+        AddColorCommand = new AsyncRelayCommand(PrepareAddDialogAsync, CanPrepareAddDialog);
+        EditColorCommand = new AsyncRelayCommand<ProductColor>(PrepareEditDialogAsync, CanPrepareEditDialog);
+        DeleteColorCommand = new AsyncRelayCommand<ProductColor>(DeleteColorAsync, CanDeleteColor);
         ImportColorsCommand = new AsyncRelayCommand(ImportAsync, () => !IsLoading); // Stubbed
         ExportColorsCommand = new AsyncRelayCommand(ExportAsync, () => !IsLoading); // Stubbed
         PreviousPageCommand = new AsyncRelayCommand(GoToPreviousPageAsync, CanGoToPreviousPage);
         NextPageCommand = new AsyncRelayCommand(GoToNextPageAsync, CanGoToNextPage);
+
+        PropertyChanged += ViewModel_PropertyChanged; // Đăng ký sự kiện PropertyChanged
     }
 
     // --- Event Handler for Filter Changes ---
     private async void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (IsLoading)
+        if (IsLoading || _isResettingFilters)
         {
             Debug.WriteLine($"ViewModel_PropertyChanged for {e.PropertyName}: Ignored because IsLoading is true.");
             return;
@@ -157,13 +165,16 @@ public partial class ColorViewModel : ViewModelBase
     }
 
     // --- Data Loading & Filtering ---
+    private bool CanLoadData() => !IsLoading;
     public async Task InitializeDataAsync()
     {
-        if (IsLoading) return;
+        if (!CanLoadData()) return;
+        _isResettingFilters = true; // Đặt lại trạng thái sau khi đã reset
 
         SearchTerm = null;
         CurrentPage = 1;
 
+        _isResettingFilters = false; // Đặt lại trạng thái sau khi đã reset
         await LoadColorsAsync();
     }
 
@@ -171,56 +182,39 @@ public partial class ColorViewModel : ViewModelBase
     {
         if (IsLoading) return;
         IsLoading = true;
-        ShowEmptyMessage = false;
 
         try
         {
-            // 1. Tạo Specification để ĐẾM tổng số item khớp bộ lọc
-            var countSpec = new ColorSpecification(
-                searchTerm: SearchTerm
-            );
+            var countSpec = new ColorSpecification(SearchTerm);
             TotalItems = await _unitOfWork.ProductColors.CountAsync(countSpec);
 
-            // 2. Tính toán phân trang
             TotalPages = TotalItems > 0 ? (int)Math.Ceiling((double)TotalItems / PageSize) : 1;
-            // Đảm bảo trang hiện tại hợp lệ
             if (CurrentPage > TotalPages) CurrentPage = TotalPages;
             if (CurrentPage < 1) CurrentPage = 1;
-
-            // 3. Tạo Specification để LẤY dữ liệu cho trang hiện tại
             int skip = (CurrentPage - 1) * PageSize;
-            var dataSpec = new ColorSpecification(
-                searchTerm: SearchTerm,
-                skip: skip,
-                take: PageSize
-            );
 
-            // 4. Lấy dữ liệu từ UnitOfWork
+            var dataSpec = new ColorSpecification(SearchTerm, skip, PageSize);
             var colors = await _unitOfWork.ProductColors.GetAsync(dataSpec);
 
-            // 5. Cập nhật FullObservableCollection để UI hiển thị
-            FilteredColors?.Clear(); // Xóa dữ liệu trang cũ
-            if (colors != null)
+            // Cập nhật UI trên luồng chính
+            _dispatcherQueue.TryEnqueue(() =>
             {
-                foreach (var color in colors)
+                FilteredColors?.Clear();
+                if (colors != null)
                 {
-                    FilteredColors?.Add(color);
+                    foreach (var color in colors) FilteredColors?.Add(color);
                 }
-            }
-
-            // 6. Cập nhật trạng thái hiển thị thông báo rỗng
-            ShowEmptyMessage = TotalItems == 0;
+                ShowEmptyMessage = !(FilteredColors?.Any() ?? false);
+            });
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"LỖI Tải Màu sắc: {ex}");
+            Debug.WriteLine($"ERROR Loading Colors: {ex}");
             await ShowErrorDialogAsync("Lỗi Tải Dữ Liệu", $"Không thể tải danh sách màu sắc: {ex.Message}");
-            // Đặt lại trạng thái khi có lỗi
+            ShowEmptyMessage = true;
             FilteredColors?.Clear();
             TotalItems = 0;
             TotalPages = 1;
-            CurrentPage = 1;
-            ShowEmptyMessage = true;
         }
         finally
         {
@@ -261,8 +255,10 @@ public partial class ColorViewModel : ViewModelBase
     /// <summary>
     /// Chuẩn bị dữ liệu và yêu cầu View hiển thị dialog để Thêm mới.
     /// </summary>
+    private bool CanPrepareAddDialog() => !IsLoading; // Chỉ cho phép khi không đang tải
     public async Task PrepareAddDialogAsync()
     {
+        if (!CanPrepareAddDialog()) return; // Ngăn chặn nếu đang tải
         _editingColor = null; // Đảm bảo đang ở chế độ Add
         DialogTitle = "Thêm Màu Sắc Mới";
         DialogColorName = "";   // Xóa trắng các ô nhập liệu
@@ -280,9 +276,10 @@ public partial class ColorViewModel : ViewModelBase
     /// <summary>
     /// Chuẩn bị dữ liệu và yêu cầu View hiển thị dialog để Chỉnh sửa.
     /// </summary>
+    private bool CanPrepareEditDialog(ProductColor? colorToEdit) => !IsLoading && colorToEdit != null;
     private async Task PrepareEditDialogAsync(ProductColor? colorToEdit)
     {
-        if (colorToEdit == null) return;
+        if (!CanPrepareEditDialog(colorToEdit)) return;
 
         _editingColor = colorToEdit; // Lưu lại color đang sửa
         DialogTitle = "Chỉnh Sửa Màu Sắc";
@@ -414,9 +411,10 @@ public partial class ColorViewModel : ViewModelBase
     }
 
     // --- Command Implementations (Delete, Import, Export) ---
+    private bool CanDeleteColor(ProductColor? color) => !IsLoading && color != null;
     private async Task DeleteColorAsync(ProductColor? color)
     {
-        if (color == null) return;
+        if (!CanDeleteColor(color)) return;
 
         var confirmation = await ShowConfirmationDialogAsync(
             "Xác Nhận Xóa Màu Sắc",

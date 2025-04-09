@@ -2,9 +2,11 @@
 using CoolWear.Services;
 using CoolWear.Utilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -104,6 +106,7 @@ public partial class VariantEntryViewModel : ViewModelBase
 public partial class AddEditProductViewModel : ViewModelBase
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly DispatcherQueue _dispatcherQueue; // Thêm DispatcherQueue
 
     // --- Thuộc tính của Sản phẩm đang được chỉnh sửa ---
     /// <summary>
@@ -160,20 +163,20 @@ public partial class AddEditProductViewModel : ViewModelBase
     /// <summary>
     /// Danh sách các Danh mục để hiển thị trong ComboBox.
     /// </summary>
-    public FullObservableCollection<ProductCategory> AvailableCategories { get; } = [];
+    public ObservableCollection<ProductCategory> AvailableCategories { get; } = [];
     /// <summary>
     /// Danh sách các Màu sắc để hiển thị trong ComboBox.
     /// </summary>
-    public FullObservableCollection<ProductColor> AvailableColors { get; } = [];
+    public ObservableCollection<ProductColor> AvailableColors { get; } = [];
     /// <summary>
     /// Danh sách các Kích thước để hiển thị trong ComboBox.
     /// </summary>
-    public FullObservableCollection<ProductSize> AvailableSizes { get; } = [];
+    public ObservableCollection<ProductSize> AvailableSizes { get; } = [];
 
     /// <summary>
     /// Danh sách các biến thể đang được hiển thị trên giao diện người dùng (bao gồm cả biến thể mới thêm và biến thể đã có khi Edit).
     /// </summary>
-    public FullObservableCollection<VariantEntryViewModel> VariantsToAdd { get; } = [];
+    public ObservableCollection<VariantEntryViewModel> VariantsToAdd { get; } = [];
 
     /// <summary>
     /// Danh sách lưu trữ các biến thể ĐÃ TỒN TẠI trong DB mà người dùng đã nhấn nút xóa trên UI.
@@ -233,6 +236,8 @@ public partial class AddEditProductViewModel : ViewModelBase
     public AddEditProductViewModel(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
+        _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
+
         // Khởi tạo các Command
         LoadLookupsCommand = new AsyncRelayCommand(LoadLookupsAsync, CanLoadLookups);
         AddVariantCommand = new AsyncRelayCommand(AddVariant, CanAddVariant); // CanAddVariant là hàm kiểm tra điều kiện thực thi
@@ -311,28 +316,42 @@ public partial class AddEditProductViewModel : ViewModelBase
     public async Task LoadLookupsAsync()
     {
         if (!CanLoadLookups()) return;
+        List<ProductCategory>? categoriesData = null;
+        List<ProductColor>? colorsData = null;
+        List<ProductSize>? sizesData = null;
+        string? errorMsg = null;
+
         try
         {
-            // Lấy và sắp xếp dữ liệu
-            var categories = (await _unitOfWork.ProductCategories.GetAllAsync()).OrderBy(x => x.CategoryName).ToList();
-            var colors = (await _unitOfWork.ProductColors.GetAllAsync()).OrderBy(x => x.ColorName).ToList();
-            var sizes = (await _unitOfWork.ProductSizes.GetAllAsync()).OrderBy(x => x.SizeName).ToList();
-
-            // Cập nhật các ObservableCollection để ComboBox tự động cập nhật
-            AvailableCategories.Clear();
-            foreach (var c in categories) AvailableCategories.Add(c);
-
-            AvailableColors.Clear();
-            foreach (var c in colors) AvailableColors.Add(c);
-
-            AvailableSizes.Clear();
-            foreach (var s in sizes) AvailableSizes.Add(s);
+            // Lấy dữ liệu trên luồng nền
+            categoriesData = [.. (await _unitOfWork.ProductCategories.GetAllAsync()).OrderBy(x => x.CategoryName)];
+            colorsData = [.. (await _unitOfWork.ProductColors.GetAllAsync()).OrderBy(x => x.ColorName)];
+            sizesData = [.. (await _unitOfWork.ProductSizes.GetAllAsync()).OrderBy(x => x.SizeName)];
         }
-        catch (Exception ex)
+        catch (Exception ex) { Debug.WriteLine($"Lỗi tải lookup: {ex}"); errorMsg = ex.Message; }
+
+        // Cập nhật collection trên luồng UI
+        _dispatcherQueue.TryEnqueue(() =>
         {
-            Debug.WriteLine($"Lỗi tải dữ liệu lookup cho Thêm/Sửa Sản phẩm: {ex}");
-            await ShowErrorDialogAsync("Lỗi Tải Dữ Liệu", "Không thể tải danh mục, màu sắc hoặc size.");
-        }
+            try
+            {
+                AvailableCategories.Clear();
+                if (categoriesData != null) foreach (var c in categoriesData) AvailableCategories.Add(c);
+
+                AvailableColors.Clear();
+                if (colorsData != null) foreach (var c in colorsData) AvailableColors.Add(c);
+
+                AvailableSizes.Clear();
+                if (sizesData != null) foreach (var s in sizesData) AvailableSizes.Add(s);
+            }
+            catch (Exception uiEx) { Debug.WriteLine($"Lỗi cập nhật collection lookup trên UI: {uiEx}"); }
+
+            if (!string.IsNullOrEmpty(errorMsg))
+            {
+                _ = ShowErrorDialogAsync("Lỗi Tải Dữ Liệu", "Không thể tải danh mục, màu sắc hoặc size.");
+                AvailableCategories.Clear(); AvailableColors.Clear(); AvailableSizes.Clear();
+            }
+        });
     }
 
     /// <summary>
@@ -341,33 +360,43 @@ public partial class AddEditProductViewModel : ViewModelBase
     /// <param name="productId">ID của sản phẩm cần tải.</param>
     public async Task LoadProductAsync(int productId)
     {
-        if (productId <= 0) return;
+        if (productId <= 0 && IsSaving) return;
 
-        _productIdToEdit = productId; // Lưu lại ID đang sửa
+        _productIdToEdit = productId;
         PageTitle = "Chỉnh Sửa Sản Phẩm";
-        IsSaving = true;
-        _variantsPendingDeletion.Clear(); // Xóa danh sách chờ xóa cũ
-        VariantsToAdd.Clear();          // Xóa danh sách biến thể hiển thị cũ
+        _variantsPendingDeletion.Clear();
+
+        Product? product = null;
+        string? errorMsg = null;
 
         try
         {
-            // Tạo Specification để lấy sản phẩm và các biến thể liên quan
             var spec = new ProductSpecification();
             spec.AddCriteria(p => p.ProductId == productId);
-            spec.IncludeVariantsWithDetails(); // Đảm bảo đã include variants, color, size
-            var product = (await _unitOfWork.Products.GetAsync(spec)).FirstOrDefault();
+            spec.IncludeVariantsWithDetails();
+            product = (await _unitOfWork.Products.GetAsync(spec)).FirstOrDefault();
+
+            if (product == null)
+            {
+                errorMsg = $"Không tìm thấy sản phẩm với ID: {productId}";
+            }
+        }
+        catch (Exception ex) { Debug.WriteLine($"Lỗi tải sản phẩm {productId}: {ex}"); errorMsg = ex.Message; }
+
+        // Cập nhật UI trên luồng chính
+        _dispatcherQueue.TryEnqueue(async () =>
+        {
+            VariantsToAdd.Clear(); // Clear ở đây, trên luồng UI
 
             if (product != null)
             {
-                // Điền thông tin cơ bản của sản phẩm
                 ProductName = product.ProductName;
                 ImportPrice = product.ImportPrice;
                 Price = product.Price;
                 SelectedCategory = AvailableCategories.FirstOrDefault(c => c.CategoryId == product.CategoryId);
-                ImageUrlPreview = product.PublicId; // Hiển thị ảnh từ DB (đường dẫn local hoặc URL)
-                SelectedImagePath = null; // Reset đường dẫn ảnh cục bộ mới chọn
+                ImageUrlPreview = product.PublicId;
+                SelectedImagePath = null;
 
-                // Load các biến thể chưa bị xóa mềm vào danh sách hiển thị
                 foreach (var variant in product.ProductVariants.Where(v => !v.IsDeleted))
                 {
                     VariantsToAdd.Add(new VariantEntryViewModel
@@ -377,31 +406,21 @@ public partial class AddEditProductViewModel : ViewModelBase
                         Size = AvailableSizes.FirstOrDefault(s => s.SizeId == variant.SizeId),
                         StockQuantity = variant.StockQuantity,
                         ParentViewModel = this,
-                        // --- GÁN THAM CHIẾU DANH SÁCH ---
                         AvailableColorsSource = this.AvailableColors,
                         AvailableSizesSource = this.AvailableSizes
                     });
                 }
             }
-            else
+
+            IsSaving = false;
+            UpdateAllCommandStates();
+
+            if (!string.IsNullOrEmpty(errorMsg))
             {
-                // Xử lý trường hợp không tìm thấy sản phẩm
-                await ShowErrorDialogAsync("Lỗi Tải Sản Phẩm", $"Không tìm thấy sản phẩm với ID: {productId}");
-                CancelOperation(); // Quay lại trang trước
+                await ShowErrorDialogAsync("Lỗi Tải Sản Phẩm", errorMsg);
+                if (product == null) CancelOperation();
             }
-        }
-        catch (Exception ex)
-        {
-            // Xử lý lỗi khi tải dữ liệu
-            Debug.WriteLine($"Lỗi tải sản phẩm {productId}: {ex}");
-            await ShowErrorDialogAsync("Lỗi Tải Sản Phẩm", $"Đã xảy ra lỗi khi tải sản phẩm: {ex.Message}");
-            CancelOperation(); // Quay lại trang trước
-        }
-        finally
-        {
-            IsSaving = false; // Tắt loading
-            UpdateAllCommandStates(); // Cập nhật trạng thái nút
-        }
+        });
     }
 
     /// <summary>
