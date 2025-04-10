@@ -58,7 +58,7 @@ POSTGRES_PASSWORD=1234
 
 - Đơn hàng:
 
-  - Có 4 trạng thái: Đang xử lý (dùng khi giao hàng), hoàn thành, Đã hủy, Đã hoàn trả
+  - Có 4 trạng thái: Đang xử lý (dùng khi giao hàng), Hoàn thành, Đã hủy, Đã hoàn trả
   - Khi trạng thái đang xử lí thì có thể chuyển thành hoàn thành hoặc đã hủy
 
 - Delete operation:
@@ -79,17 +79,28 @@ POSTGRES_PASSWORD=1234
 
 - Trang bán hàng:
 
-  - Trong giao diện bán hàng sẽ có nút "thanh toán" và nút "giao hàng" ("giao hàng" là khi giao hàng đến nơi thì chủ mới lấy tiền của khách)
-    - Khi nhấn nút "thanh toán" thì sẽ tạo đơn hàng với trạng thái "đã hoàn thành"
-    - Mặc định nút giao hàng sẽ bị disable, nếu như khách hàng nhập số điện thoại vào hộp tìm kiếm thì nút giao hàng sẽ được enable. Khi nhấn nút "giao hàng" thì sẽ check nếu tài khoản với số điện thoại đó không tồn tại thì show dialog báo lỗi, nếu có thì tạo đơn hàng với trạng thái "đang xử lý".
-      - Khi giao hàng thành công, người chủ sẽ vào trang order để sửa đơn hàng đó thành "đã hoàn thành" (tìm kiếm theo mã hóa đơn)
-      - Khi giao hàng không thành công (bị hủy đơn), người chủ sẽ vào trang order để sửa đơn hàng đó thành "đã hủy" (tìm kiếm theo mã hóa đơn) và sẽ tự động cộng điểm cho khách hàng (điểm sẽ được cộng vào tài khoản của khách hàng), số sản phẩm trong đơn hàng sẽ được cộng vào kho hàng (số lượng sản phẩm trong kho sẽ được cộng thêm số lượng sản phẩm trong đơn hàng) (**1**)
+  - Trong giao diện bán hàng sẽ có nút "thanh toán"
+    Bấm thanh toán sẽ hiển thị content dialog như sau:
+
+    - Phương thức: combo box tiền mặt/chuyển khoản
+
+    - Vận chuyển: checkbox vận chuyển
+      - Có, và có tài khoản thì -> có vận chuyển và tích điểm (1)
+      - Có, kh tài khoản -> exception và show error dialog (2)
+      - Không, và có tài khoản thì -> không vận chuyển và chỉ tích điểm (3)
+      - Không, không có tài khoản -> không vận chuyển và không tích điểm, customer_id trong hóa đơn = null (4)
+    - button Thanh toán:
+      - (1) -> tạo hóa đơn với status "Đang xử lý"
+      - (3), (4) -> tạo hóa đơn với status "Hoàn thành"
+      - (2) -> show error dialog
 
 - Trang order: (chỉ có thể sửa chửa đơn hàng, không thể xóa đơn hàng; Tạo đơn hàng thì nằm trong trang bán hàng)
 
   - Khi chỉnh sửa đơn hàng (trạng thái đơn hàng).
     - Khi khách hàng hoàn trả sản phẩm, người chủ sẽ vào trang order để sửa đơn hàng đó thành "đã hoàn trả" (tìm kiếm theo mã hóa đơn)
     - Khi chỉnh sửa đơn hàng thành "đã hoàn trả" thì sẽ tự động cộng điểm cho khách hàng (điểm sẽ được cộng vào tài khoản của khách hàng), số sản phẩm trong đơn hàng sẽ được cộng vào kho hàng (số lượng sản phẩm trong kho sẽ được cộng thêm số lượng sản phẩm trong đơn hàng) (**1**)
+    - Khi giao hàng thành công, người chủ sẽ vào trang order để sửa đơn hàng đó thành "đã hoàn thành" (tìm kiếm theo mã hóa đơn)
+    - Khi giao hàng không thành công (bị hủy đơn), người chủ sẽ vào trang order để sửa đơn hàng đó thành "đã hủy" (tìm kiếm theo mã hóa đơn) và sẽ tự động cộng điểm cho khách hàng (điểm sẽ được cộng vào tài khoản của khách hàng), số sản phẩm trong đơn hàng sẽ được cộng vào kho hàng (số lượng sản phẩm trong kho sẽ được cộng thêm số lượng sản phẩm trong đơn hàng) (**1**)
 
 - Report:
 
