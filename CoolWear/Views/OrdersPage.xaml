@@ -5,11 +5,307 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:CoolWear.Views"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:converters="using:CoolWear.Converters" xmlns:models="using:CoolWear.Models"
+	mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Grid>
+	<Page.Resources>
+		<converters:ZeroIsCollapsedConverter x:Key="ZeroIsCollapsedConverter"/>
+		<converters:InverseBoolConverter x:Key="InverseBoolConverter"/>
+		<converters:DateTimeFormatConverter x:Key="DateTimeFormatConverter" Format="dd/MM/yyyy HH:mm"/>
+		<converters:CurrencyFormatConverter x:Key="CurrencyFormatConverter"/>
+		<converters:NullableIntToDoubleConverter x:Key="NullableIntToDoubleConverter"/>
+		<!-- Thêm converter tiền tệ -->
+		<Style x:Key="ListHeaderTextStyle" TargetType="TextBlock">
+			<Setter Property="FontWeight" Value="SemiBold"/>
+			<Setter Property="VerticalAlignment" Value="Center"/>
+		</Style>
+		<Style x:Key="NoPaddingListViewItemStyle" TargetType="ListViewItem">
+			<Setter Property="Padding" Value="0"/>
+			<Setter Property="Margin" Value="0"/>
+			<Setter Property="MinHeight" Value="40"/>
+			<!-- Give items a minimum height -->
+			<Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+			<Setter Property="VerticalContentAlignment" Value="Stretch"/>
+			<Setter Property="BorderThickness" Value="0,0,0,1"/>
+			<!-- Add separator line -->
+			<Setter Property="BorderBrush" Value="{ThemeResource SystemListLowColor}"/>
+		</Style>
+	</Page.Resources>
 
-    </Grid>
+	<Grid>
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="220" />
+			<ColumnDefinition Width="*" />
+		</Grid.ColumnDefinitions>
+
+		<!-- === DIALOG CẬP NHẬT TRẠNG THÁI === -->
+		<ContentDialog
+			x:Name="EditOrderStatusDialog"
+			Title="{x:Bind ViewModel.DialogTitle, Mode=OneWay}"
+			PrimaryButtonText="Lưu" CloseButtonText="Hủy" DefaultButton="Primary"
+			IsPrimaryButtonEnabled="{x:Bind ViewModel.IsDialogSaving, Mode=OneWay, Converter={StaticResource InverseBoolConverter}}">
+
+			<StackPanel Spacing="15">
+				<!-- Hiển thị thông tin đơn hàng gốc (chỉ đọc) -->
+				<TextBlock FontWeight="SemiBold">
+					<Run Text="Đơn hàng #:"/>
+					<Run Text="{x:Bind ViewModel.EditingOrder.OrderId, Mode=OneWay}"/>
+					<Run Text="- KH:"/>
+					<Run Text="{x:Bind ViewModel.EditingOrder.Customer.CustomerName, Mode=OneWay, FallbackValue='Khách vãng lai'}"/>
+				</TextBlock>
+
+				<!-- ComboBox chọn trạng thái mới -->
+				<ComboBox Header="Trạng Thái Mới (*)" HorizontalAlignment="Stretch"
+						  ItemsSource="{x:Bind ViewModel.AvailableDialogStatuses, Mode=OneWay}"
+						  SelectedItem="{x:Bind ViewModel.SelectedDialogStatus, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+						  PlaceholderText="Chọn trạng thái...">
+					<!-- ItemTemplate đơn giản hiển thị chuỗi -->
+				</ComboBox>
+
+				<ProgressRing IsActive="{x:Bind ViewModel.IsDialogSaving, Mode=OneWay}" HorizontalAlignment="Center"/>
+			</StackPanel>
+		</ContentDialog>
+		<!-- === KẾT THÚC DIALOG === -->
+
+		<!-- === FILTER PANEL === -->
+		<ScrollViewer Grid.Column="0" Background="#F8F8F8" VerticalScrollBarVisibility="Auto">
+			<StackPanel Padding="10" Spacing="16">
+				<TextBlock Text="Trạng Thái" FontWeight="Bold"/>
+				<ComboBox ItemsSource="{x:Bind ViewModel.AvailableStatuses, Mode=OneWay}"
+                          SelectedItem="{x:Bind ViewModel.SelectedStatus, Mode=TwoWay}"
+                          HorizontalAlignment="Stretch"/>
+
+				<TextBlock Text="Thanh Toán" FontWeight="Bold" Margin="0,10,0,5"/>
+				<ComboBox ItemsSource="{x:Bind ViewModel.AvailablePaymentMethods, Mode=OneWay}"
+                          SelectedItem="{x:Bind ViewModel.SelectedPaymentMethod, Mode=TwoWay}"
+                          PlaceholderText="Tất cả phương thức"
+                          DisplayMemberPath="PaymentMethodName"
+                          HorizontalAlignment="Stretch"/>
+
+				<TextBlock Text="Tổng Tiền (Net total)" FontWeight="Bold" Margin="0,10,0,5"/>
+				<Grid ColumnSpacing="10">
+					<Grid.RowDefinitions>
+						<RowDefinition Height="*"/>
+						<RowDefinition Height="*"/>
+					</Grid.RowDefinitions>
+					<NumberBox Grid.Row="0" Header="Từ:" Minimum="0" SmallChange="10000"
+                               Value="{x:Bind ViewModel.MinNetTotal, Mode=TwoWay, Converter={StaticResource NullableIntToDoubleConverter}}"
+                               SpinButtonPlacementMode="Inline"/>
+					<NumberBox Grid.Row="1" Header="Đến:" Minimum="0" SmallChange="10000"
+                               Value="{x:Bind ViewModel.MaxNetTotal, Mode=TwoWay, Converter={StaticResource NullableIntToDoubleConverter}}"
+                               SpinButtonPlacementMode="Inline"/>
+				</Grid>
+
+				<TextBlock Text="Ngày Tạo" FontWeight="Bold" Margin="0,10,0,5"/>
+				<DatePicker Header="Từ Ngày:" SelectedDate="{x:Bind ViewModel.StartDate, Mode=TwoWay}" HorizontalAlignment="Stretch"/>
+				<DatePicker Header="Đến Ngày:" SelectedDate="{x:Bind ViewModel.EndDate, Mode=TwoWay}" HorizontalAlignment="Stretch"/>
+
+				<Button Content="Áp Dụng Bộ Lọc" Command="{x:Bind ViewModel.ApplyFiltersCommand}" HorizontalAlignment="Stretch" Margin="0,15,0,0"/>
+				<Button Content="Xóa Bộ Lọc" Command="{x:Bind ViewModel.ClearFiltersCommand}" Style="{ThemeResource AccentButtonStyle}" Opacity="0.8" HorizontalAlignment="Stretch" Margin="0,5,0,0"/>
+			</StackPanel>
+		</ScrollViewer>
+
+		<!-- === MAIN CONTENT === -->
+		<Grid Grid.Column="1">
+			<Grid.RowDefinitions>
+				<RowDefinition Height="Auto" />
+				<!-- Toolbar -->
+				<RowDefinition Height="*" />
+				<!-- ListView -->
+				<RowDefinition Height="Auto" />
+				<!-- Pagination -->
+			</Grid.RowDefinitions>
+
+			<!-- Toolbar -->
+			<StackPanel Grid.Row="0" Orientation="Horizontal" Padding="10" Spacing="8" Background="#EAEAEA">
+				<TextBox x:Name="SearchBox" Width="300" PlaceholderText="Tìm kiếm theo Mã Đơn Hàng..."
+                         Text="{x:Bind ViewModel.SearchTerm, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,10,0"/>
+				<Button ToolTipService.ToolTip="Tải lại/Xóa bộ lọc" Command="{x:Bind ViewModel.LoadOrdersCommand}">
+					<StackPanel Orientation="Horizontal" Spacing="5">
+						<FontIcon Glyph=""/>
+						<TextBlock Text="Tải lại"/>
+					</StackPanel>
+				</Button>
+			</StackPanel>
+
+			<!-- ListView + Overlays -->
+			<Grid Grid.Row="1">
+				<ListView x:Name="ItemsListView" Margin="10,5,10,10"
+                          ItemsSource="{x:Bind ViewModel.FilteredOrders, Mode=OneWay}"
+                          SelectionMode="None" IsItemClickEnabled="False"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                          ItemContainerStyle="{StaticResource NoPaddingListViewItemStyle}">
+					<ListView.HeaderTemplate>
+						<DataTemplate>
+							<Grid Padding="10,8,10,8" Background="{ThemeResource SystemControlBackgroundListLowBrush}">
+								<Grid.ColumnDefinitions>
+									<ColumnDefinition Width="150"/>
+									<!-- Mã ĐH -->
+									<ColumnDefinition Width="150"/>
+									<!-- Mã KH -->
+									<ColumnDefinition Width="150"/>
+									<!-- Ngày Tạo -->
+									<ColumnDefinition Width="120"/>
+									<!-- Tạm tính -->
+									<ColumnDefinition Width="120"/>
+									<!-- Tổng cộng -->
+									<ColumnDefinition Width="120"/>
+									<!-- Thanh toán -->
+									<ColumnDefinition Width="150"/>
+									<!-- Điểm SD -->
+									<ColumnDefinition Width="120"/>
+									<!-- Trạng thái -->
+									<ColumnDefinition Width="80"/>
+									<!-- Thao tác -->
+								</Grid.ColumnDefinitions>
+								<TextBlock Grid.Column="0" Text="Mã Đơn Hàng" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Center"/>
+								<TextBlock Grid.Column="1" Text="Mã Khách Hàng" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Center"/>
+								<TextBlock Grid.Column="2" Text="Ngày Tạo" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Center"/>
+								<TextBlock Grid.Column="3" Text="Tạm Tính" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Right"/>
+								<TextBlock Grid.Column="4" Text="Tổng Cộng" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Right"/>
+								<TextBlock Grid.Column="5" Text="Thanh Toán" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Center"/>
+								<TextBlock Grid.Column="6" Text="Điểm Sử Dụng" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Right"/>
+								<TextBlock Grid.Column="7" Text="Trạng Thái" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Center"/>
+								<TextBlock Grid.Column="8" Text="Sửa" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Center"/>
+							</Grid>
+						</DataTemplate>
+					</ListView.HeaderTemplate>
+
+					<ListView.ItemTemplate>
+						<DataTemplate x:DataType="models:Order">
+							<Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Margin="0,5,0,5">
+								<Expander.Header>
+									<Grid Padding="10,5,10,5" MinHeight="40">
+										<Grid.ColumnDefinitions>
+											<ColumnDefinition Width="80"/>
+											<ColumnDefinition Width="80"/>
+											<ColumnDefinition Width="150"/>
+											<ColumnDefinition Width="120"/>
+											<ColumnDefinition Width="120"/>
+											<ColumnDefinition Width="120"/>
+											<ColumnDefinition Width="80"/>
+											<ColumnDefinition Width="120"/>
+											<ColumnDefinition Width="80"/>
+										</Grid.ColumnDefinitions>
+										<TextBlock Grid.Column="0" Text="{x:Bind OrderId}" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,0,-40,0"/>
+										<TextBlock Grid.Column="1" Text="{x:Bind CustomerId, FallbackValue='-', TargetNullValue='-'}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="-40,0,-50,0"/>
+										<TextBlock Grid.Column="2" Text="{x:Bind OrderDate, Converter={StaticResource DateTimeFormatConverter}}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="-50,0,-105,0"/>
+										<TextBlock Grid.Column="3" Text="{x:Bind Subtotal, Converter={StaticResource CurrencyFormatConverter}}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="-105,0,-125,0"/>
+										<TextBlock Grid.Column="4" Text="{x:Bind NetTotal, Converter={StaticResource CurrencyFormatConverter}}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="-125,0,-120,0"/>
+										<TextBlock Grid.Column="5" Text="{x:Bind PaymentMethod.PaymentMethodName}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="-120,0,-90,0"/>
+										<TextBlock Grid.Column="6" Text="{x:Bind PointUsed}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="-95,0,-150,0"/>
+										<TextBlock Grid.Column="7" Text="{x:Bind Status}" VerticalAlignment="Center" HorizontalAlignment="Right" FontWeight="SemiBold" Margin="-150,0,-175,0"/>
+										<StackPanel Grid.Column="8" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="-175,0,-170,0">
+											<Button Padding="5" ToolTipService.ToolTip="Sửa trạng thái đơn hàng"
+                                                    Command="{Binding DataContext.EditOrderCommand, ElementName=ItemsListView}"
+                                                    CommandParameter="{x:Bind}">
+												<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="" FontSize="16"/>
+											</Button>
+										</StackPanel>
+									</Grid>
+								</Expander.Header>
+								<Expander.Content>
+									<!-- Nội dung chi tiết OrderItem -->
+									<Grid Margin="40,10,10,10">
+										<Grid.RowDefinitions>
+											<RowDefinition Height="Auto"/>
+											<RowDefinition Height="*"/>
+										</Grid.RowDefinitions>
+										<!-- Header cho OrderItems -->
+										<Grid Grid.Row="0" Padding="5" Margin="0,0,0,5" Background="{ThemeResource SystemControlBackgroundListLowBrush}">
+											<Grid.ColumnDefinitions>
+												<ColumnDefinition Width="80"/>
+												<!-- Item ID -->
+												<ColumnDefinition Width="*" MinWidth="200"/>
+												<!-- Tên SP -->
+												<ColumnDefinition Width="100"/>
+												<!-- Màu -->
+												<ColumnDefinition Width="80"/>
+												<!-- Size -->
+												<ColumnDefinition Width="80"/>
+												<!-- Số Lượng -->
+												<ColumnDefinition Width="120"/>
+												<!-- Đơn giá -->
+											</Grid.ColumnDefinitions>
+											<TextBlock Grid.Column="0" Text="Mã Item" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Center"/>
+											<TextBlock Grid.Column="1" Text="Tên Sản Phẩm" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Center"/>
+											<TextBlock Grid.Column="2" Text="Màu Sắc" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Center"/>
+											<TextBlock Grid.Column="3" Text="Size" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Center"/>
+											<TextBlock Grid.Column="4" Text="Số Lượng" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Center"/>
+											<TextBlock Grid.Column="5" Text="Đơn Giá" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Center"/>
+										</Grid>
+										<!-- ItemsRepeater cho OrderItems -->
+										<ItemsRepeater Grid.Row="1" ItemsSource="{x:Bind OrderItems, Mode=OneWay}">
+											<ItemsRepeater.ItemTemplate>
+												<DataTemplate x:DataType="models:OrderItem">
+													<Grid Padding="5" BorderThickness="0,0,0,1" BorderBrush="{ThemeResource SystemControlBackgroundBaseLowBrush}">
+														<Grid.ColumnDefinitions>
+															<ColumnDefinition Width="80"/>
+															<ColumnDefinition Width="*" MinWidth="200"/>
+															<ColumnDefinition Width="100"/>
+															<ColumnDefinition Width="80"/>
+															<ColumnDefinition Width="80"/>
+															<ColumnDefinition Width="120"/>
+														</Grid.ColumnDefinitions>
+														<TextBlock Grid.Column="0" Text="{x:Bind OrderItemId}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+														<TextBlock Grid.Column="1" Text="{x:Bind Variant.Product.ProductName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" HorizontalAlignment="Center"/>
+														<TextBlock Grid.Column="2" Text="{x:Bind Variant.Color.ColorName, FallbackValue='N/A', TargetNullValue='N/A'}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+														<TextBlock Grid.Column="3" Text="{x:Bind Variant.Size.SizeName, FallbackValue='N/A', TargetNullValue='N/A'}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+														<TextBlock Grid.Column="4" Text="{x:Bind Quantity}" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,0,10,0"/>
+														<TextBlock Grid.Column="5" Text="{x:Bind UnitPrice, Converter={StaticResource CurrencyFormatConverter}}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+													</Grid>
+												</DataTemplate>
+											</ItemsRepeater.ItemTemplate>
+										</ItemsRepeater>
+										<TextBlock Text="Đơn hàng này không có chi tiết sản phẩm." Grid.Row="1"
+                                                    Visibility="{x:Bind OrderItems.Count, Converter={StaticResource ZeroIsCollapsedConverter}, Mode=OneWay}"
+                                                    Margin="5" FontStyle="Italic"/>
+									</Grid>
+								</Expander.Content>
+							</Expander>
+						</DataTemplate>
+					</ListView.ItemTemplate>
+				</ListView>
+				<!-- Overlays -->
+				<ProgressRing 
+					IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" 
+					VerticalAlignment="Center" 
+					HorizontalAlignment="Center" 
+					Width="50" 
+					Height="50" />
+				<TextBlock 
+					Text="Không tìm thấy đơn hàng nào khớp với bộ lọc." 
+					Visibility="{x:Bind ViewModel.ShowEmptyMessage, Mode=OneWay}" 
+					VerticalAlignment="Center" 
+					HorizontalAlignment="Center" 
+					Style="{ThemeResource BodyStrongTextBlockStyle}"/>
+			</Grid>
+
+			<!-- Pagination -->
+			<StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10"
+						HorizontalAlignment="Center" Margin="10"
+						Visibility="{x:Bind ViewModel.ShowEmptyMessage, Mode=OneWay, Converter={StaticResource ZeroIsCollapsedConverter}}">
+
+				<!-- Nút Quay lại trang trước -->
+				<Button Command="{x:Bind ViewModel.PreviousPageCommand}">
+					<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="" />
+				</Button>
+
+				<!-- Hiển thị thông tin trang -->
+				<TextBlock VerticalAlignment="Center">
+					<Run Text="Trang"/>
+					<Run Text="{x:Bind ViewModel.CurrentPage, Mode=OneWay}"/>/<Run Text="{x:Bind ViewModel.TotalPages, Mode=OneWay}"/>
+					<Run Text="(Tổng số: "/>
+					<Run Text="{x:Bind ViewModel.TotalItems, Mode=OneWay}"/>
+					<Run Text="đơn hàng)"/>
+				</TextBlock>
+
+				<!-- Nút Đi tới trang tiếp theo -->
+				<Button Command="{x:Bind ViewModel.NextPageCommand}">
+					<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="" />
+				</Button>
+			</StackPanel>
+		</Grid>
+	</Grid>
 </Page>

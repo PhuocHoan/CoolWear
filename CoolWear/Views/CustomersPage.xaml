@@ -166,11 +166,11 @@
 									<!-- Thao tác -->
 								</Grid.ColumnDefinitions>
 								<TextBlock Grid.Column="0" Text="Mã KH" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Center"/>
-								<TextBlock Grid.Column="1" Text="Tên Khách Hàng" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Left"/>
-								<TextBlock Grid.Column="2" Text="Email" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Left"/>
+								<TextBlock Grid.Column="1" Text="Tên Khách Hàng" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Center"/>
+								<TextBlock Grid.Column="2" Text="Email" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Center"/>
 								<TextBlock Grid.Column="3" Text="Số Điện Thoại" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Center"/>
 								<TextBlock Grid.Column="4" Text="Ngày Tạo" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Center"/>
-								<TextBlock Grid.Column="5" Text="Điểm" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Right"/>
+								<TextBlock Grid.Column="5" Text="Điểm" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Center"/>
 								<TextBlock Grid.Column="6" Text="Thao tác" Style="{StaticResource ListHeaderTextStyle}" HorizontalAlignment="Center"/>
 							</Grid>
 						</DataTemplate>
@@ -190,11 +190,11 @@
 								</Grid.ColumnDefinitions>
 
 								<TextBlock Grid.Column="0" Text="{x:Bind CustomerId}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-								<TextBlock Grid.Column="1" Text="{x:Bind CustomerName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" FontWeight="SemiBold"/>
-								<TextBlock Grid.Column="2" Text="{x:Bind Email, FallbackValue='N/A', TargetNullValue='N/A'}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+								<TextBlock Grid.Column="1" Text="{x:Bind CustomerName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+								<TextBlock Grid.Column="2" Text="{x:Bind Email, FallbackValue='-', TargetNullValue='-'}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" HorizontalAlignment="Center"/>
 								<TextBlock Grid.Column="3" Text="{x:Bind Phone}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
 								<TextBlock Grid.Column="4" Text="{x:Bind CreateDate, Converter={StaticResource DateTimeFormatConverter}}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-								<TextBlock Grid.Column="5" Text="{x:Bind Points}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
+								<TextBlock Grid.Column="5" Text="{x:Bind Points}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
 								<StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="5" VerticalAlignment="Center" HorizontalAlignment="Center">
 									<Button Padding="5" ToolTipService.ToolTip="Chỉnh sửa khách hàng"
                                             Command="{Binding DataContext.EditCustomerCommand, ElementName=ItemsListView}"

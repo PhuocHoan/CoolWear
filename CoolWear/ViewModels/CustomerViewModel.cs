@@ -100,9 +100,9 @@ public partial class CustomerViewModel : ViewModelBase
         ApplyFiltersCommand = new AsyncRelayCommand(ApplyFiltersAndLoadAsync, () => !IsLoading);
         ClearFiltersCommand = new AsyncRelayCommand(ResetFiltersAndLoadAsync, () => !IsLoading);
         PreviousPageCommand = new AsyncRelayCommand(GoToPreviousPageAsync, CanGoToPreviousPage);
-        ImportCustomersCommand = new AsyncRelayCommand(ImportAsync, () => !IsLoading);
-        ExportCustomersCommand = new AsyncRelayCommand(ExportAsync, () => !IsLoading);
         NextPageCommand = new AsyncRelayCommand(GoToNextPageAsync, CanGoToNextPage);
+        ImportCustomersCommand = new AsyncRelayCommand(ImportCustomersAsync, () => !IsLoading);
+        ExportCustomersCommand = new AsyncRelayCommand(ExportCustomersAsync, () => !IsLoading);
 
         PropertyChanged += ViewModel_PropertyChanged;
     }
@@ -116,7 +116,7 @@ public partial class CustomerViewModel : ViewModelBase
         {
             case nameof(SearchTerm):
             case nameof(PageSize): // Thay đổi PageSize cũng nên load lại trang 1
-                await ResetPageAndLoadAsync();
+                await ApplyFiltersAndLoadAsync();
                 break;
         }
     }
@@ -205,16 +205,6 @@ public partial class CustomerViewModel : ViewModelBase
             IsLoading = false;
         }
 
-    }
-
-    /// <summary>
-    /// Reset về trang 1 và tải lại với filter HIỆN TẠI (dùng khi PageSize/SearchTerm thay đổi).
-    /// </summary>
-    private async Task ResetPageAndLoadAsync()
-    {
-        if (IsLoading) return;
-        CurrentPage = 1;
-        await LoadCustomersAsync();
     }
 
     // --- Pagination ---
@@ -440,6 +430,6 @@ public partial class CustomerViewModel : ViewModelBase
             }
         }
     }
-    private async Task ImportAsync() => await ShowNotImplementedDialogAsync("Nhập File Excel/CSV");
-    private async Task ExportAsync() => await ShowNotImplementedDialogAsync("Xuất File Excel/CSV");
+    private async Task ImportCustomersAsync() => await ShowNotImplementedDialogAsync("Nhập File Excel/CSV");
+    private async Task ExportCustomersAsync() => await ShowNotImplementedDialogAsync("Xuất File Excel/CSV");
 }

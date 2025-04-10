@@ -59,7 +59,8 @@ POSTGRES_PASSWORD=1234
 - Đơn hàng:
 
   - Có 4 trạng thái: Đang xử lý (dùng khi giao hàng), Hoàn thành, Đã hủy, Đã hoàn trả
-  - Khi trạng thái đang xử lí thì có thể chuyển thành hoàn thành hoặc đã hủy
+  - Khi trạng thái Đang xử lí thì có thể chuyển thành Hoàn thành hoặc Đã hủy
+  - Khi trạng thái Hoàn thành thì có thể chuyển thành Đã hoàn trả
 
 - Delete operation:
 
@@ -90,9 +91,10 @@ POSTGRES_PASSWORD=1234
       - Không, và có tài khoản thì -> không vận chuyển và chỉ tích điểm (3)
       - Không, không có tài khoản -> không vận chuyển và không tích điểm, customer_id trong hóa đơn = null (4)
     - button Thanh toán:
-      - (1) -> tạo hóa đơn với status "Đang xử lý"
-      - (3), (4) -> tạo hóa đơn với status "Hoàn thành"
+      - (1) -> tạo hóa đơn với status "Đang xử lý", chưa cộng điểm cho khách hàng (nếu có tài khoản)
+      - (3), (4) -> tạo hóa đơn với status "Hoàn thành", cộng điểm cho khách hàng (nếu có tài khoản)
       - (2) -> show error dialog
+    - Khi tạo hóa đơn, sẽ tự động tạo order mới trong bảng order, các order_item mới dựa trên các biến thể mua trong đơn hàng, giảm số lượng của các biến thể trong bảng biến thể (product_variant), cộng điểm dựa trên button Thanh toán ở trên.
 
 - Trang order: (chỉ có thể sửa chửa đơn hàng, không thể xóa đơn hàng; Tạo đơn hàng thì nằm trong trang bán hàng)
 
@@ -106,11 +108,11 @@ POSTGRES_PASSWORD=1234
 
   - Doanh thu:
 
-    - Doanh thu theo ngày = tổng net_total trong ngày của các đơn đã hoàn thành
-    - Doanh thu theo tháng = tổng net_total trong tháng của các đơn đã hoàn thành
-    - Doanh thu theo năm = tổng net_total trong năm của các đơn đã hoàn thành
-
-  - Hiển thị số đơn đã hoàn thành, số đơn đã hủy, số đơn đã hoàn trả trong ngày hôm nay
+    - Mặc định là sẽ hiển thị theo ngày trước, có thể chọn theo tháng hoặc theo năm.
+      - Bấm vào doanh thu theo ngày/tháng/năm sẽ hiển thị doanh thu theo ngày/tháng/năm và Hiển thị số đơn đã hoàn thành, số đơn đã hủy, số đơn đã hoàn trả trong ngày hôm nay/tháng này/năm này
+      - Doanh thu theo ngày = tổng net_total trong ngày của các đơn đã hoàn thành
+      - Doanh thu theo tháng = tổng net_total trong tháng nay của các đơn đã hoàn thành
+      - Doanh thu theo năm = tổng net_total trong năm nay của các đơn đã hoàn thành
 
   - Biểu đồ:
     - Doanh thu

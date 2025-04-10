@@ -115,7 +115,7 @@
 						<TextBlock Text="Xuất file"/>
 					</StackPanel>
 				</Button>
-				<Button ToolTipService.ToolTip="Tải lại danh sách" Command="{x:Bind ViewModel.LoadDataCommand}">
+				<Button ToolTipService.ToolTip="Tải lại danh sách" Command="{x:Bind ViewModel.LoadProductsCommand}">
 					<StackPanel Orientation="Horizontal" Spacing="5">
 						<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE72C;"/>
 						<TextBlock Text="Tải lại"/>

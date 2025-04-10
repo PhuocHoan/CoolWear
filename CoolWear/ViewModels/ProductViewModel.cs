@@ -11,6 +11,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows.Input;
 
 namespace CoolWear.ViewModels;
 
@@ -132,14 +133,14 @@ public partial class ProductViewModel : ViewModelBase
     }
 
     // --- Commands ---
-    public AsyncRelayCommand LoadDataCommand { get; }
-    public AsyncRelayCommand AddProductCommand { get; }
-    public AsyncRelayCommand<Product> EditProductCommand { get; }
-    public AsyncRelayCommand<Product> DeleteProductCommand { get; }
-    public AsyncRelayCommand ImportProductsCommand { get; }
-    public AsyncRelayCommand ExportProductsCommand { get; }
-    public AsyncRelayCommand PreviousPageCommand { get; }
-    public AsyncRelayCommand NextPageCommand { get; }
+    public ICommand LoadProductsCommand { get; }
+    public ICommand AddProductCommand { get; }
+    public ICommand EditProductCommand { get; }
+    public ICommand DeleteProductCommand { get; }
+    public ICommand ImportProductsCommand { get; }
+    public ICommand ExportProductsCommand { get; }
+    public ICommand PreviousPageCommand { get; }
+    public ICommand NextPageCommand { get; }
 
 
     // --- Constructor ---
@@ -165,7 +166,7 @@ public partial class ProductViewModel : ViewModelBase
         ];
 
         // Initialize Commands
-        LoadDataCommand = new AsyncRelayCommand(InitializeDataAsync, CanLoadData);
+        LoadProductsCommand = new AsyncRelayCommand(InitializeDataAsync, CanLoadData);
         AddProductCommand = new AsyncRelayCommand(AddProductAsync, CanAddProduct);
         EditProductCommand = new AsyncRelayCommand<Product>(EditProductAsync, CanEditProduct);
         DeleteProductCommand = new AsyncRelayCommand<Product>(DeleteProductAsync, CanDeleteProduct);
@@ -393,14 +394,14 @@ public partial class ProductViewModel : ViewModelBase
     // Helper to update command states when IsLoading or Page numbers change
     private void UpdateCommandStates()
     {
-        PreviousPageCommand.RaiseCanExecuteChanged();
-        NextPageCommand.RaiseCanExecuteChanged();
-        LoadDataCommand.RaiseCanExecuteChanged();
-        AddProductCommand.RaiseCanExecuteChanged();
-        EditProductCommand.RaiseCanExecuteChanged();
-        DeleteProductCommand.RaiseCanExecuteChanged();
-        ImportProductsCommand.RaiseCanExecuteChanged();
-        ExportProductsCommand.RaiseCanExecuteChanged();
+        (PreviousPageCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+        (NextPageCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+        (LoadProductsCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+        (AddProductCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+        (EditProductCommand as AsyncRelayCommand<Product>)?.RaiseCanExecuteChanged();
+        (DeleteProductCommand as AsyncRelayCommand<Product>)?.RaiseCanExecuteChanged();
+        (ImportProductsCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+        (ExportProductsCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
     }
 
     private bool CanAddProduct() => !IsLoading;

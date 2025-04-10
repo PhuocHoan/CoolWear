@@ -39,14 +39,14 @@ public partial class Order
     public int PointUsed { get; set; }
 
     /// <summary>
-    /// Trạng thái đơn hàng, mặc định là &quot;Đang xử lý&quot;
+    /// Trạng thái đơn hàng, mặc định là Đang xử lý;
     /// </summary>
     public string Status { get; set; } = null!;
 
     /// <summary>
     /// Tổng tiền đơn hàng sau khi giảm giá
     /// </summary>
-    public int? NetTotal { get; set; }
+    public int NetTotal { get; set; }
 
     public virtual Customer? Customer { get; set; }
 

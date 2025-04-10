@@ -1,13 +1,63 @@
+﻿using CoolWear.Services;
+using CoolWear.ViewModels;
 using Microsoft.UI.Xaml.Controls;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
+using Microsoft.UI.Xaml.Navigation;
+using System;
+using System.Threading.Tasks;
 
 namespace CoolWear.Views;
-/// <summary>
-/// An empty page that can be used on its own or navigated to within a Frame.
-/// </summary>
+
 public sealed partial class OrdersPage : Page
 {
-    public OrdersPage() => this.InitializeComponent();
+    public OrderViewModel ViewModel { get; }
+
+    public OrdersPage()
+    {
+        InitializeComponent();
+        try
+        {
+            ViewModel = ServiceManager.GetKeyedSingleton<OrderViewModel>();
+            DataContext = ViewModel;
+            ViewModel.RequestShowDialog += ShowEditOrderStatusDialogAsync;
+        }
+        catch (Exception) { }
+    }
+
+    protected override async void OnNavigatedTo(NavigationEventArgs e)
+    {
+        base.OnNavigatedTo(e);
+        if (ViewModel != null && !ViewModel.IsLoading)
+        {
+            await ViewModel.InitializeDataAsync();
+        }
+    }
+
+    protected override void OnNavigatedFrom(NavigationEventArgs e)
+    {
+        base.OnNavigatedFrom(e);
+        if (ViewModel != null)
+        {
+            ViewModel.RequestShowDialog -= ShowEditOrderStatusDialogAsync; // Hủy đăng ký
+        }
+    }
+
+    /// <summary>
+    /// Hiển thị dialog chỉnh sửa trạng thái đơn hàng.
+    /// </summary>
+    private async Task<ContentDialogResult> ShowEditOrderStatusDialogAsync()
+    {
+        // Đảm bảo XamlRoot được thiết lập
+        EditOrderStatusDialog.XamlRoot = this.XamlRoot;
+
+        // Hiển thị dialog và chờ kết quả
+        ContentDialogResult result = await EditOrderStatusDialog.ShowAsync();
+
+        if (result == ContentDialogResult.Primary)
+        {
+            // Gọi hàm lưu trong ViewModel
+            _ = await ViewModel.SaveOrderStatusAsync();
+        }
+
+        return result;
+    }
 }
