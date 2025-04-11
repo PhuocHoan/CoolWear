@@ -80,6 +80,7 @@ POSTGRES_PASSWORD=1234
 
 - Trang bán hàng:
 
+  - Có thanh tìm kiếm theo số điện thoại khách hàng, nếu không nhập gì thì hiển thị danh sách tài khoản khách hàng hiện có. Khi bấm vào 1 tài khoản thì là chọn tài khoản đó để thanh toán.
   - Trong giao diện bán hàng sẽ có nút "thanh toán"
     Bấm thanh toán sẽ hiển thị content dialog như sau:
 
@@ -90,11 +91,19 @@ POSTGRES_PASSWORD=1234
       - Có, kh tài khoản -> exception và show error dialog (2)
       - Không, và có tài khoản thì -> không vận chuyển và chỉ tích điểm (3)
       - Không, không có tài khoản -> không vận chuyển và không tích điểm, customer_id trong hóa đơn = null (4)
+    - Hiển thị số điểm thưởng hiện có:
+      - Nếu có tài khoản thì tài khoản sẽ có thể có điểm thưởng >= 0
+      - Nếu không có tài khoản thì sẽ không có điểm thưởng nhưng vẫn hiển thị là 0
+    - Dùng điểm thưởng: NumberBox
+      - Nhập số điểm thưởng cần dùng
     - button Thanh toán:
+      - Đầu tiên check nếu:
+        - Nếu có tài khoản thì check nếu số điểm thưởng cần dùng lớn hơn số điểm thưởng hiện có thì sẽ show error dialog (2)
+        - Nếu không có tài khoản mà số điểm thưởng cần dùng > 0 thì sẽ show error dialog (2)
       - (1) -> tạo hóa đơn với status "Đang xử lý", chưa cộng điểm cho khách hàng (nếu có tài khoản)
       - (3), (4) -> tạo hóa đơn với status "Hoàn thành", cộng điểm cho khách hàng (nếu có tài khoản)
       - (2) -> show error dialog
-    - Khi tạo hóa đơn, sẽ tự động tạo order mới trong bảng order, các order_item mới dựa trên các biến thể mua trong đơn hàng, giảm số lượng của các biến thể trong bảng biến thể (product_variant), cộng điểm dựa trên button Thanh toán ở trên.
+    - Khi tạo hóa đơn, sẽ tự động tạo order mới trong bảng order, các order_item mới dựa trên các biến thể mua trong đơn hàng, giảm số lượng của các biến thể trong bảng biến thể (product_variant), cộng điểm dựa trên button Thanh toán ở trên. Nhớ là khi có dùng điểm thưởng thì sẽ trừ đi số tiền tương ứng với số điểm thưởng đã dùng trong hóa đơn (net_total). Subtotal thì là tổng tiền ban đầu chưa trừ số tiền tương ứng số điểm thưởng cần dùng.
 
 - Trang order: (chỉ có thể sửa chửa đơn hàng, không thể xóa đơn hàng; Tạo đơn hàng thì nằm trong trang bán hàng)
 
