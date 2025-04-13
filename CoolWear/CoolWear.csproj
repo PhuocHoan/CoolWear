@@ -31,6 +31,7 @@
 		<None Remove="Views\OrdersPage.xaml" />
 		<None Remove="Views\ProductsPage.xaml" />
 		<None Remove="Views\ReportPage.xaml" />
+		<None Remove="Views\SellPage.xaml" />
 		<None Remove="Views\SizesPage.xaml" />
 	</ItemGroup>
 
@@ -68,6 +69,11 @@
 		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
 		<PackageReference Include="PropertyChanged.Fody" Version="4.1.0" />
 		<PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.4" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Page Update="Views\SellPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </Page>
 	</ItemGroup>
 	<ItemGroup>
 	  <Page Update="Views\AddEditProductPage.xaml">
