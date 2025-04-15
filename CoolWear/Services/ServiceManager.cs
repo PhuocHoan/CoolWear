@@ -99,5 +99,8 @@ public sealed class ServiceManager
 
         // Register ReportViewModel
         AddKeyedSingleton(() => new ReportViewModel(GetKeyedSingleton<IUnitOfWork>()));
+
+        // Register SellViewModel
+        AddKeyedSingleton(() => new SellViewModel(GetKeyedSingleton<IUnitOfWork>()));
     }
 }

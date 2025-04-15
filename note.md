@@ -115,20 +115,25 @@ POSTGRES_PASSWORD=1234
 
 - Report:
 
-  - Doanh thu:
+  - radio button dùng để chọn theo ngày / tháng / năm và 1 datepicker.
 
-    - Mặc định là sẽ hiển thị theo ngày trước, có thể chọn theo tháng hoặc theo năm.
-      - Bấm vào lợi nhuận theo ngày/tháng/năm sẽ hiển thị lợi nhuận theo ngày/tháng/năm và Hiển thị số đơn đã hoàn thành, số đơn đã hủy, số đơn đã hoàn trả trong ngày hôm nay/tháng này/năm này
-      - Lợi nhuận theo ngày = tổng net_total trong ngày của các đơn đã hoàn thành - tổng import_price của các sản phẩm có trong các đơn đã hoàn thành trong ngày hôm nay
-      - Lợi nhuận theo tháng = tổng net_total trong tháng của các đơn đã hoàn thành - tổng import_price của các sản phẩm có trong các đơn đã hoàn thành trong tháng này
-      - Lợi nhuận theo năm = tổng net_total trong năm của các đơn đã hoàn thành - tổng import_price của các sản phẩm có trong các đơn đã hoàn thành trong năm này
+  - Nếu radio button là:
 
-  - Biểu đồ:
-    - Doanh thu
-      - Doanh thu theo ngày (10 ngày gần nhất)
-      - Doanh thu theo tháng (12 tháng)
-      - Doanh thu theo năm (5 năm gần nhất)
-    - Sản phẩm bán chạy
-      - Hiển thị 10 sản phẩm bán chạy nhất trong ngày/tháng/năm (theo số lượng mua)
+    - Ngày: thì trong datepicker sẽ enable cho phép chọn ngày/tháng/năm và dùng ngày/tháng/năm đó để báo cáo doanh thu
+    - Tháng: thì trong datepicker sẽ enable cho phép chọn tháng/năm và disable ngày và dùng tháng/năm đó để báo cáo doanh thu
+    - Năm: thì trong datepicker sẽ enable cho phép chọn năm và disable ngày/tháng và dùng năm đó để báo cáo doanh thu
+
+  - Mặc định mới vào thì radio button sẽ là ngày, và datepicker sẽ là ngày hôm nay
+
+  - Báo cáo doanh thu: gồm tổng doanh thu, tổng lợi nhuận, tổng số hóa đơn Hoàn thành, Đang xử lý, Đã hoàn trả, Đã hủy trong thời gian đã chọn (ví dụ: ngày 1/4/2025; tháng 3/2025; năm 2024)
+  - Biểu đồ phụ thuộc vào lựa chọn thời gian ở trên:
+
+    - Doanh thu: tổng doanh thu trong thời gian đã chọn (ngày/tháng/năm)
+    - Sản phẩm bán chạy: sản phẩm có số lượng bán chạy nhất trong thời gian đã chọn (ngày/tháng/năm)
+    - Nếu chọn ngày thì sẽ là 10 ngày gần nhất bao gồm ngày đã chọn
+    - Nếu chọn tháng thì sẽ là 12 tháng gần nhất bao gồm tháng đã chọn
+    - Nếu chọn năm thì sẽ là 5 năm gần nhất bao gồm năm đã chọn
+
+    - Ví dụ nếu chọn ngày 1/4/2025 thì báo cáo doanh thu sẽ lấy báo cáo trong ngày 1/4/2025. Biểu đồ doanh thu lấy 10 ngày gần nhất gồm ngày 1/4/2025 và 9 ngày trước đó. Biểu đồ sản phẩm bán chạy sẽ lấy 10 sản phẩm bán chạy nhất trong 10 ngày gần nhất gồm ngày 1/4/2025 và 9 ngày trước đó.
 
 - Bug:

@@ -30,7 +30,12 @@
 
 			<NavigationView.MenuItems>
 				<!-- Use FontIcon with Segoe MDL2 Assets glyphs -->
-				<NavigationViewItem Content="Sản phẩm" Tag="ProductsPage">
+                <NavigationViewItem Content="Bán hàng" Tag="SellPage">
+                    <NavigationViewItem.Icon>
+                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE7BF;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="Sản phẩm" Tag="ProductsPage">
 					<NavigationViewItem.Icon>
 						<FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE8EC;"/>
 					</NavigationViewItem.Icon>
