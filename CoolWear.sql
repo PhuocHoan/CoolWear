@@ -13,22 +13,26 @@ COMMENT ON COLUMN "product_category"."product_type" IS 'Loại sản phẩm (áo
 -- Bảng màu sắc sản phẩm
 CREATE TABLE "product_color" (
     "color_id" serial PRIMARY KEY,
-    "color_name" varchar(20) NOT NULL UNIQUE
+    "color_name" varchar(20) NOT NULL UNIQUE,
+    "is_deleted" boolean NOT NULL DEFAULT false,
 );
 
 COMMENT ON TABLE "product_color" IS 'Bảng màu sắc sản phẩm';
 COMMENT ON COLUMN "product_color"."color_id" IS 'Mã màu sắc, khóa chính, tự động tăng';
 COMMENT ON COLUMN "product_color"."color_name" IS 'Tên màu sắc, duy nhất';
+COMMENT ON COLUMN "product_color"."is_deleted" IS 'Trạng thái xóa màu sắc, mặc định là chưa (false)';
 
 -- Bảng kích thước sản phẩm
 CREATE TABLE "product_size" (
     "size_id" serial PRIMARY KEY,
-    "size_name" varchar(10) NOT NULL UNIQUE
+    "size_name" varchar(10) NOT NULL UNIQUE,
+    "is_deleted" boolean NOT NULL DEFAULT false,
 );
 
 COMMENT ON TABLE "product_size" IS 'Bảng kích thước sản phẩm';
 COMMENT ON COLUMN "product_size"."size_id" IS 'Mã kích thước, khóa chính, tự động tăng';
 COMMENT ON COLUMN "product_size"."size_name" IS 'Tên kích thước, duy nhất';
+COMMENT ON COLUMN "product_size"."is_deleted" IS 'Trạng thái xóa kích thước, mặc định là chưa (false)';
 
 -- Bảng phương thức thanh toán
 CREATE TABLE "payment_method" (
@@ -204,34 +208,79 @@ INSERT INTO "store_owner" ("owner_name", "email", "phone", "address", "username"
 ('Nguyễn Văn Chủ', 'chu@example.com', '0901234567', '123 Đường ABC, Quận 1, TP.HCM', 'admin', '123');
 
 -- Insert sample data into product
+-- Note: Assuming category_ids are 1, 3, 11 based on the order of insertion into product_category. Adjust if needed.
 INSERT INTO "product" ("product_name", "import_price", "price", "category_id", "public_id") VALUES
 ('Áo Thun', 70000, 159000, 1, '/Assets/AT.220.NAU.1.webp'),
-('Quần Jean', 350000, 439000, 11, '/Assets/quan-jeans-nam-dang-straight-sieu-nhe-xanh-wash-1.webp'),
+('Quần Jean', 350000, 439000, 4, '/Assets/quan-jeans-nam-dang-straight-sieu-nhe-xanh-wash-1.webp'), -- Assuming 'Quần Jean' is category_id 4
 ('Áo Polo', 200000, 279000, 3, '/Assets/ao-polo-the-thao-active-premium-thoang-khi-exdry-xam-1.jpg');
 
 -- Insert sample data into product_variant
+-- Note: Assuming product_ids are 1, 2, 3 and color/size ids match the insertion order. Adjust if needed.
 INSERT INTO "product_variant" ("product_id", "color_id", "size_id", "stock_quantity") VALUES
-(1, 1, 1, 50),  -- Áo Thun Đen S
-(1, 1, 2, 40),  -- Áo Thun Đen M
-(1, 2, 1, 30),  -- Áo Thun Trắng S
-(1, 2, 2, 20),  -- Áo Thun Trắng M
-(2, 3, 5, 25),  -- Quần Jean Xanh navy 28
-(2, 3, 6, 35),  -- Quần Jean Xanh navy 30
-(2, 1, 5, 15),  -- Quần Jean Đen 28
-(2, 1, 6, 10),  -- Quần Jean Đen 30
-(3, 4, 3, 20),  -- Áo Polo Đỏ L
-(3, 4, 4, 15),  -- Áo Polo Đỏ XL
-(3, 5, 3, 25),  -- Áo Polo Xanh lá L
-(3, 5, 4, 30);  -- Áo Polo Xanh lá XL
+(1, 1, 1, 50),  -- Áo Thun Đen S (product_id=1, color_id=1, size_id=1)
+(1, 1, 2, 40),  -- Áo Thun Đen M (product_id=1, color_id=1, size_id=2)
+(1, 2, 1, 30),  -- Áo Thun Trắng S (product_id=1, color_id=2, size_id=1)
+(1, 2, 2, 20),  -- Áo Thun Trắng M (product_id=1, color_id=2, size_id=2)
+(2, 3, 5, 25),  -- Quần Jean Xanh navy 28 (product_id=2, color_id=3, size_id=5)
+(2, 3, 6, 35),  -- Quần Jean Xanh navy 30 (product_id=2, color_id=3, size_id=6)
+(2, 1, 5, 15),  -- Quần Jean Đen 28 (product_id=2, color_id=1, size_id=5)
+(2, 1, 6, 10),  -- Quần Jean Đen 30 (product_id=2, color_id=1, size_id=6)
+(3, 4, 3, 20),  -- Áo Polo Đỏ L (product_id=3, color_id=4, size_id=3)
+(3, 4, 4, 15),  -- Áo Polo Đỏ XL (product_id=3, color_id=4, size_id=4)
+(3, 5, 3, 25),  -- Áo Polo Xanh lá L (product_id=3, color_id=5, size_id=3)
+(3, 5, 4, 30);  -- Áo Polo Xanh lá XL (product_id=3, color_id=5, size_id=4)
 
--- Insert sample data into order
-INSERT INTO "order" ("order_date", "customer_id", "total_amount", "payment_method_id", "point_used", "status") VALUES
-('2024-01-01 10:00:00', 1, 400000, 1, 0, 'Đang xử lý'),
-('2024-01-02 11:00:00', 2, 240000, 2, 0, 'Đang xử lý');
+-- Insert sample data into order (Initial incorrect values, will be updated)
+-- Note: Assuming customer_ids are 1, 2 and payment_method_ids are 1, 2. Adjust if needed.
+INSERT INTO "order" ("order_date", "customer_id", "subtotal", "net_total", "payment_method_id", "point_used", "status") VALUES
+('2024-01-01 10:00:00', 1, 0, 0, 1, 0, 'Đang xử lý'), -- Placeholder totals for order 1
+('2024-01-02 11:00:00', 2, 0, 0, 2, 0, 'Đang xử lý'); -- Placeholder totals for order 2
 
--- Insert sample data into order_item
+-- Insert sample data into order_item (Initial incorrect prices, will be updated)
+-- Note: Assuming order_ids are 1, 2 and variant_ids match the insertion order above. Adjust if needed.
 INSERT INTO "order_item" ("order_id", "variant_id", "quantity", "unit_price") VALUES
-(1, 1, 2, 100000),  -- 2 Áo Thun Đen S
-(1, 6, 1, 200000),  -- 1 Quần Jean Xanh navy 30
-(2, 9, 1, 140000),  -- 1 Áo Polo Đỏ L
-(2, 4, 1, 100000);  -- 1 Áo Thun Trắng M
+(1, 1, 2, 0),  -- 2 Áo Thun Đen S (variant_id=1) - Placeholder price
+(1, 6, 1, 0),  -- 1 Quần Jean Xanh navy 30 (variant_id=6) - Placeholder price
+(2, 9, 1, 0),  -- 1 Áo Polo Đỏ L (variant_id=9) - Placeholder price
+(2, 4, 1, 0);  -- 1 Áo Thun Trắng M (variant_id=4) - Placeholder price
+
+-- Update sample data for order 1 and its items
+-- Order 1: 2 Áo Thun Đen S (159000 * 2) + 1 Quần Jean Xanh navy 30 (439000 * 1)
+-- Subtotal = 318000 + 439000 = 757000
+-- Net Total = 757000 (0 points used)
+UPDATE "order" SET "subtotal" = 757000, "net_total" = 757000 WHERE "order_id" = 1;
+UPDATE "order_item" SET "unit_price" = 159000 WHERE "order_item_id" = 1; -- Áo Thun Đen S
+UPDATE "order_item" SET "unit_price" = 439000 WHERE "order_item_id" = 2; -- Quần Jean Xanh navy 30
+
+-- Update sample data for order 2 and its items
+-- Order 2: 1 Áo Polo Đỏ L (279000 * 1) + 1 Áo Thun Trắng M (159000 * 1)
+-- Subtotal = 279000 + 159000 = 438000
+-- Net Total = 438000 (0 points used)
+UPDATE "order" SET "subtotal" = 438000, "net_total" = 438000 WHERE "order_id" = 2;
+UPDATE "order_item" SET "unit_price" = 279000 WHERE "order_item_id" = 3; -- Áo Polo Đỏ L
+UPDATE "order_item" SET "unit_price" = 159000 WHERE "order_item_id" = 4; -- Áo Thun Trắng M
+
+-- Thêm đơn hàng mới (Order 3)
+-- Customer 1, 1 Áo Thun Đen M (159000), 1 Quần Jean Đen 28 (439000), Momo, 50 points used, Hoàn thành
+-- Subtotal = 159000 + 439000 = 598000
+-- Net Total = 598000 - (50 * 1000) = 548000 (Assuming 1 point = 1000đ)
+INSERT INTO "order" ("order_date", "customer_id", "subtotal", "net_total", "payment_method_id", "point_used", "status") VALUES
+('2024-03-10 14:30:00', 1, 598000, 548000, 2, 50, 'Hoàn thành');
+
+-- Thêm đơn hàng mới (Order 4)
+-- Guest, 2 Áo Polo Xanh lá XL (279000 * 2), Tiền mặt, 0 points used, Đã hủy
+-- Subtotal = 279000 * 2 = 558000
+-- Net Total = 558000
+INSERT INTO "order" ("order_date", "customer_id", "subtotal", "net_total", "payment_method_id", "point_used", "status") VALUES
+('2024-04-01 09:15:00', NULL, 558000, 558000, 1, 0, 'Đã hủy');
+
+-- Thêm chi tiết cho đơn hàng mới (Order 3 Items)
+-- Note: Assuming order_id is 3 and variant_ids are 2, 7. Adjust if needed.
+INSERT INTO "order_item" ("order_id", "variant_id", "quantity", "unit_price") VALUES
+(3, 2, 1, 159000),  -- 1 Áo Thun Đen M (variant_id = 2)
+(3, 7, 1, 439000);  -- 1 Quần Jean Đen 28 (variant_id = 7)
+
+-- Thêm chi tiết cho đơn hàng mới (Order 4 Items)
+-- Note: Assuming order_id is 4 and variant_id is 12. Adjust if needed.
+INSERT INTO "order_item" ("order_id", "variant_id", "quantity", "unit_price") VALUES
+(4, 12, 2, 279000); -- 2 Áo Polo Xanh lá XL (variant_id = 12)

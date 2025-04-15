@@ -9,6 +9,10 @@ public class ColorSpecification : GenericSpecification<ProductColor>
         int? skip = null,
         int? take = null)
     {
+        // --- Lọc Cơ bản ---
+        // Chỉ lấy color chưa bị xóa
+        AddCriteria(c => !c.IsDeleted);
+
         // Lọc theo Từ khóa tìm kiếm (ID hoặc Tên)
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {

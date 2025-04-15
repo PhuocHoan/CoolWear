@@ -18,53 +18,21 @@ public partial class DateTimeFormatConverter : IValueConverter
         // Xác định DateTime đầu vào
         if (value is DateTime dt)
         {
-            dateTimeInput = dt;
-        }
-        else if (value is DateTimeOffset dto)
-        {
-            // Nếu là DateTimeOffset, lấy giờ Local hoặc Utc tùy nhu cầu
-            dateTimeInput = dto.LocalDateTime; // Lấy giờ local từ Offset
+            dateTimeInput = dt.ToLocalTime();
         }
         else
         {
             return string.Empty;
         }
 
-        DateTime dateTimeToFormat;
-
-        // --- XỬ LÝ CHUYỂN ĐỔI MÚI GIỜ ---
-        switch (dateTimeInput.Kind)
-        {
-            case DateTimeKind.Utc:
-                // Nếu Kind là UTC, chuyển sang Local
-                dateTimeToFormat = dateTimeInput.ToLocalTime();
-                break;
-            case DateTimeKind.Local:
-                // Nếu Kind đã là Local, dùng luôn
-                dateTimeToFormat = dateTimeInput;
-                break;
-            case DateTimeKind.Unspecified:
-            default:
-                // *** Giả định quan trọng ***: Nếu Kind là Unspecified (khi đọc từ DB 'timestamp without time zone')
-                // thì giá trị này thực chất đang lưu giờ UTC. Cần chuyển nó sang Local.
-                // Để làm điều này, trước tiên phải chỉ định nó là UTC.
-                var utcDateTime = DateTime.SpecifyKind(dateTimeInput, DateTimeKind.Utc);
-                dateTimeToFormat = utcDateTime.ToLocalTime();
-                break;
-        }
-        // --- KẾT THÚC XỬ LÝ MÚI GIỜ ---
-
-
-        string formatString = parameter as string ?? this.Format;
-
         try
         {
             // Định dạng DateTime đã được chuyển sang Local
-            return dateTimeToFormat.ToString(formatString, CultureInfo.CurrentCulture);
+            return dateTimeInput.ToString(Format, CultureInfo.CurrentCulture);
         }
         catch (FormatException ex)
         {
-            Debug.WriteLine($"Lỗi định dạng ngày tháng: {ex.Message}. Format='{formatString}'");
+            Debug.WriteLine($"Lỗi định dạng ngày tháng: {ex.Message}. Format='{Format}'");
             return value.ToString() ?? string.Empty; // Trả về giá trị gốc nếu lỗi format
         }
     }

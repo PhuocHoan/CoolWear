@@ -18,6 +18,11 @@ public partial class ProductSize : INotifyPropertyChanged
     /// </summary>
     public string SizeName { get; set; } = null!;
 
+    /// <summary>
+    /// Trạng thái xóa kích thước, mặc định là chưa (false)
+    /// </summary>
+    public bool IsDeleted { get; set; }
+
     public virtual ICollection<ProductVariant> ProductVariants { get; set; } = new List<ProductVariant>();
 
     public event PropertyChangedEventHandler? PropertyChanged;

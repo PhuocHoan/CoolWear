@@ -14,6 +14,7 @@
 	<Page.Resources>
 		<converters:CurrencyFormatConverter x:Key="CurrencyFormatConverter"/>
 		<converters:ZeroIsCollapsedConverter x:Key="ZeroIsCollapsedConverter"/>
+		<converters:BoolToBrushConverter x:Key="BoolToBrushConverterRedIfTrue" TrueBrush="Red"/>
 		<Style x:Key="ListHeaderTextStyle" TargetType="TextBlock">
 			<Setter Property="FontWeight" Value="SemiBold"/>
 			<Setter Property="VerticalAlignment" Value="Center"/>
@@ -232,8 +233,15 @@
 															<ColumnDefinition Width="*"/>
 														</Grid.ColumnDefinitions>
 														<TextBlock Grid.Column="0" Text="{x:Bind VariantId}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-														<TextBlock Grid.Column="1" Text="{x:Bind Color.ColorName, FallbackValue='N/A', TargetNullValue='N/A'}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-														<TextBlock Grid.Column="2" Text="{x:Bind Size.SizeName, FallbackValue='N/A', TargetNullValue='N/A'}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+														<TextBlock Grid.Column="1"
+																   Text="{x:Bind Color.ColorName, FallbackValue='N/A', TargetNullValue='N/A'}"
+																   Foreground="{x:Bind Color.IsDeleted, Converter={StaticResource BoolToBrushConverterRedIfTrue}, Mode=OneWay}"
+																   VerticalAlignment="Center" HorizontalAlignment="Center"/>
+
+														<TextBlock Grid.Column="2"
+																   Text="{x:Bind Size.SizeName, FallbackValue='N/A', TargetNullValue='N/A'}"
+																   Foreground="{x:Bind Size.IsDeleted, Converter={StaticResource BoolToBrushConverterRedIfTrue}, Mode=OneWay}"
+																   VerticalAlignment="Center" HorizontalAlignment="Center"/>
 														<TextBlock Grid.Column="3" Text="{x:Bind StockQuantity}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
 													</Grid>
 												</DataTemplate>

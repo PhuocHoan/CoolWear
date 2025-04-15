@@ -18,6 +18,11 @@ public partial class ProductColor : INotifyPropertyChanged
     /// </summary>
     public string ColorName { get; set; } = null!;
 
+    /// <summary>
+    /// Trạng thái xóa màu sắc, mặc định là chưa (false)
+    /// </summary>
+    public bool IsDeleted { get; set; }
+
     public virtual ICollection<ProductVariant> ProductVariants { get; set; } = new List<ProductVariant>();
     public event PropertyChangedEventHandler? PropertyChanged;
 }

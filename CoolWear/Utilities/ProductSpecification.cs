@@ -6,7 +6,8 @@ namespace CoolWear.Utilities;
 
 public class ProductSpecification : GenericSpecification<Product>
 {
-    public ProductSpecification() { }
+    public ProductSpecification() =>
+        AddCriteria(p => !p.IsDeleted);
 
     public ProductSpecification(
         string? searchTerm = null,

@@ -157,11 +157,13 @@ public partial class OrderViewModel : ViewModelBase
     {
         if (IsLoading) return;
         IsLoading = true;
+        DateTime? startDateUtc = StartDate?.Date.ToUniversalTime(); // Lấy đầu ngày giờ UTC
+        DateTime? endDateUtc = EndDate?.Date.ToUniversalTime(); // Lấy đầu ngày giờ UTC
 
         try
         {
-            var countSpec = new OrderSpecification(SearchTerm, SelectedStatus, StartDate?.ToUniversalTime().DateTime,
-                EndDate?.ToUniversalTime().DateTime, SelectedPaymentMethod?.PaymentMethodId,
+            var countSpec = new OrderSpecification(SearchTerm, SelectedStatus, startDateUtc,
+                endDateUtc, SelectedPaymentMethod?.PaymentMethodId,
                 MinNetTotal, MaxNetTotal, includeDetails: false);
             TotalItems = await _unitOfWork.Orders.CountAsync(countSpec);
 
@@ -171,8 +173,8 @@ public partial class OrderViewModel : ViewModelBase
             int skip = (CurrentPage - 1) * PageSize;
 
             // IncludeDetails = true để lấy thông tin cần thiết
-            var dataSpec = new OrderSpecification(SearchTerm, SelectedStatus, StartDate?.ToUniversalTime().DateTime,
-                EndDate?.ToUniversalTime().DateTime, SelectedPaymentMethod?.PaymentMethodId,
+            var dataSpec = new OrderSpecification(SearchTerm, SelectedStatus, startDateUtc,
+                endDateUtc, SelectedPaymentMethod?.PaymentMethodId,
                 MinNetTotal, MaxNetTotal, skip, PageSize, includeDetails: true);
             var orders = await _unitOfWork.Orders.GetAsync(dataSpec);
             // Cập nhật UI trên luồng chính
@@ -273,9 +275,6 @@ public partial class OrderViewModel : ViewModelBase
                 _availableDialogStatuses.Add("Đã hoàn trả");
                 break;
         }
-
-        // Cần gọi OnPropertyChanged để ComboBox trong Dialog cập nhật ItemsSource
-        OnPropertyChanged(nameof(AvailableDialogStatuses));
 
         if (RequestShowDialog != null) { await RequestShowDialog.Invoke(); }
     }

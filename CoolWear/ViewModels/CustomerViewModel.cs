@@ -170,10 +170,12 @@ public partial class CustomerViewModel : ViewModelBase
     {
         if (IsLoading) return;
         IsLoading = true;
+        DateTime? startDateUtc = StartDate?.Date.ToUniversalTime();
+        DateTime? endDateUtc = EndDate?.Date.ToUniversalTime();
 
         try
         {
-            var countSpec = new CustomerSpecification(SearchTerm, MinPoints, MaxPoints, StartDate?.ToUniversalTime().DateTime, EndDate?.ToUniversalTime().DateTime);
+            var countSpec = new CustomerSpecification(SearchTerm, MinPoints, MaxPoints, startDateUtc, endDateUtc);
             TotalItems = await _unitOfWork.Customers.CountAsync(countSpec); // Sửa Repository
 
             TotalPages = TotalItems > 0 ? (int)Math.Ceiling((double)TotalItems / PageSize) : 1;
@@ -181,7 +183,7 @@ public partial class CustomerViewModel : ViewModelBase
             if (CurrentPage < 1) CurrentPage = 1;
             int skip = (CurrentPage - 1) * PageSize;
 
-            var dataSpec = new CustomerSpecification(SearchTerm, MinPoints, MaxPoints, StartDate?.ToUniversalTime().DateTime, EndDate?.ToUniversalTime().DateTime, skip, PageSize);
+            var dataSpec = new CustomerSpecification(SearchTerm, MinPoints, MaxPoints, startDateUtc, endDateUtc, skip, PageSize);
             var customers = await _unitOfWork.Customers.GetAsync(dataSpec);
             // Cập nhật UI trên luồng chính
             _dispatcherQueue.TryEnqueue(() =>
@@ -289,6 +291,7 @@ public partial class CustomerViewModel : ViewModelBase
                     Email = email,
                     Phone = phone,
                     Address = address,
+                    CreateDate = DateTime.UtcNow,
                 };
                 await _unitOfWork.Customers.AddAsync(newCustomer);
             }

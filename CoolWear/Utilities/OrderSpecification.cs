@@ -5,6 +5,7 @@ namespace CoolWear.Utilities;
 
 public class OrderSpecification : GenericSpecification<Order>
 {
+    public OrderSpecification() { }
     public OrderSpecification(
         string? searchTerm = null,   // Tìm theo OrderId
         string? status = null,       // Lọc theo trạng thái
@@ -26,12 +27,13 @@ public class OrderSpecification : GenericSpecification<Order>
         // Lọc theo Ngày Tạo (so sánh với giá trị UTC)
         if (startDateUtc.HasValue)
         {
-            AddCriteria(o => o.OrderDate >= startDateUtc.Value.Date);
+            var startDateUnspecified = DateTime.SpecifyKind(startDateUtc.Value, DateTimeKind.Unspecified);
+            AddCriteria(o => o.OrderDate >= startDateUnspecified);
         }
         if (endDateUtc.HasValue)
         {
-            var endOfDayUtc = endDateUtc.Value.Date.AddDays(1);
-            AddCriteria(o => o.OrderDate < endOfDayUtc);
+            var endDayUnspecified = DateTime.SpecifyKind(endDateUtc.Value, DateTimeKind.Unspecified);
+            AddCriteria(o => o.OrderDate < endDayUnspecified);
         }
 
         // Lọc theo Từ khóa Tìm kiếm (chỉ theo OrderId)
@@ -84,5 +86,30 @@ public class OrderSpecification : GenericSpecification<Order>
         {
             ApplyPaging(skip.Value, take.Value);
         }
+    }
+
+    public OrderSpecification CompletedOrderRevenue(DateTime startDateUtc, DateTime endDateUtc)
+    {
+        var startUnspecified = DateTime.SpecifyKind(startDateUtc, DateTimeKind.Unspecified);
+        var endUnspecified = DateTime.SpecifyKind(endDateUtc, DateTimeKind.Unspecified);
+        // Lọc đơn hàng hoàn thành trong khoảng thời gian
+        AddCriteria(o => o.Status == "Hoàn thành" &&
+                             o.OrderDate >= startUnspecified &&
+                             o.OrderDate < endUnspecified);
+
+        // Include thông tin cần thiết để tính lợi nhuận
+        AddInclude(nameof(Order.OrderItems));
+        AddInclude($"{nameof(Order.OrderItems)}.{nameof(OrderItem.Variant)}");
+        AddInclude($"{nameof(Order.OrderItems)}.{nameof(OrderItem.Variant)}.{nameof(ProductVariant.Product)}");
+        return this;
+    }
+
+    public OrderSpecification OrderStatusCount(DateTime startDateUtc, DateTime endDateUtc)
+    {
+        var startUnspecified = DateTime.SpecifyKind(startDateUtc, DateTimeKind.Unspecified);
+        var endUnspecified = DateTime.SpecifyKind(endDateUtc, DateTimeKind.Unspecified);
+        // Chỉ lọc theo khoảng thời gian
+        AddCriteria(o => o.OrderDate >= startUnspecified && o.OrderDate < endUnspecified); // Chỉ để lấy trạng thái đơn hàng
+        return this;
     }
 }

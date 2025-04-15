@@ -316,8 +316,12 @@ public partial class ProductViewModel : ViewModelBase
         {
             // --- Tải dữ liệu trên luồng nền ---
             categoriesData = [.. (await _unitOfWork.ProductCategories.GetAllAsync()).OrderBy(c => c.CategoryName)];
-            sizesData = [.. (await _unitOfWork.ProductSizes.GetAllAsync()).OrderBy(s => s.SizeName)];
-            colorsData = [.. (await _unitOfWork.ProductColors.GetAllAsync()).OrderBy(c => c.ColorName)];
+
+            var colorSpec = new ColorSpecification();
+            colorsData = [.. (await _unitOfWork.ProductColors.GetAsync(colorSpec)).OrderBy(c => c.ColorName)];
+
+            var sizeSpec = new SizeSpecification();
+            sizesData = [.. (await _unitOfWork.ProductSizes.GetAsync(sizeSpec)).OrderBy(s => s.SizeName)];
         }
         catch (Exception ex)
         {

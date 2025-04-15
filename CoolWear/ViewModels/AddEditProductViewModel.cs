@@ -325,8 +325,12 @@ public partial class AddEditProductViewModel : ViewModelBase
         {
             // Lấy dữ liệu trên luồng nền
             categoriesData = [.. (await _unitOfWork.ProductCategories.GetAllAsync()).OrderBy(x => x.CategoryName)];
-            colorsData = [.. (await _unitOfWork.ProductColors.GetAllAsync()).OrderBy(x => x.ColorName)];
-            sizesData = [.. (await _unitOfWork.ProductSizes.GetAllAsync()).OrderBy(x => x.SizeName)];
+
+            var colorSpec = new ColorSpecification();
+            colorsData = [.. (await _unitOfWork.ProductColors.GetAsync(colorSpec)).OrderBy(c => c.ColorName)];
+
+            var sizeSpec = new SizeSpecification();
+            sizesData = [.. (await _unitOfWork.ProductSizes.GetAsync(sizeSpec)).OrderBy(s => s.SizeName)];
         }
         catch (Exception ex) { Debug.WriteLine($"Lỗi tải lookup: {ex}"); errorMsg = ex.Message; }
 

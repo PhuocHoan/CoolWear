@@ -96,5 +96,8 @@ public sealed class ServiceManager
 
         // Register OrderViewModel
         AddKeyedSingleton(() => new OrderViewModel(GetKeyedSingleton<IUnitOfWork>()));
+
+        // Register ReportViewModel
+        AddKeyedSingleton(() => new ReportViewModel(GetKeyedSingleton<IUnitOfWork>()));
     }
 }

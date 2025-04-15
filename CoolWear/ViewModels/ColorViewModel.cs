@@ -429,9 +429,21 @@ public partial class ColorViewModel : ViewModelBase
             await _unitOfWork.BeginTransactionAsync(); // Bắt đầu transaction
             try
             {
-                // Nếu xóa màu sắc mà đang có biến thể sản phẩm sử dụng thì màu sắc của biến thể sản phẩm đó sẽ được đặt lại thành null
-                // Có thể đổi màu sắc của biến thể sản phẩm từ null thành màu sắc khác
-                await _unitOfWork.ProductColors.DeleteAsync(color);
+                // --- KIỂM TRA RÀNG BUỘC ORDER ITEM ---
+                bool isInUseInOrder = await _unitOfWork.OrderItems.AnyAsync(oi => oi.Variant.ColorId == color.ColorId);
+                if (isInUseInOrder)
+                {
+                    // --- XÓA MỀM ---
+                    color.IsDeleted = true;
+                    await _unitOfWork.ProductColors.UpdateAsync(color);
+                    Debug.WriteLine($"Xóa mềm Màu ID: {color.ColorId} do đang dùng trong đơn hàng.");
+                }
+                else
+                {
+                    // --- XÓA CỨNG ---
+                    await _unitOfWork.ProductColors.DeleteAsync(color);
+                    Debug.WriteLine($"Xóa cứng Màu ID: {color.ColorId}.");
+                }
                 bool saved = await _unitOfWork.SaveChangesAsync();
 
                 if (saved)

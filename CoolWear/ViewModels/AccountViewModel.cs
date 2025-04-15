@@ -4,74 +4,63 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace CoolWear.ViewModels
+namespace CoolWear.ViewModels;
+
+public partial class AccountViewModel : ViewModelBase
 {
-    public partial class AccountViewModel : ViewModelBase
+    private readonly IUnitOfWork _unitOfWork;
+    private StoreOwner? _storeOwner;
+
+    // Add backing fields for properties
+    private string _ownerName = "";
+    private string _email = "";
+    private string _phone = "";
+    private string _address = "";
+
+    // Use properties with SetProperty for change notification
+    public string OwnerName
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private StoreOwner? _storeOwner;
+        get => _ownerName;
+        set => SetProperty(ref _ownerName, value);
+    }
 
-        // Add backing fields for properties
-        private string _ownerName = "";
-        private string _email = "";
-        private string _phone = "";
-        private string _address = "";
+    public string Email
+    {
+        get => _email;
+        set => SetProperty(ref _email, value);
+    }
 
-        // Use properties with SetProperty for change notification
-        public string OwnerName
+    public string Phone
+    {
+        get => _phone;
+        set => SetProperty(ref _phone, value);
+    }
+
+    public string Address
+    {
+        get => _address;
+        set => SetProperty(ref _address, value);
+    }
+
+    public AccountViewModel(IUnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
+
+    public async Task LoadAccountInfoAsync()
+    {
+        var owners = await _unitOfWork.StoreOwners.GetAllAsync();
+        if (owners.Any())
         {
-            get => _ownerName;
-            set => SetProperty(ref _ownerName, value);
-        }
+            _storeOwner = owners.First(); // Assuming there is only one store owner
+            Debug.WriteLine($"Store owner: {_storeOwner.OwnerName}");
 
-        public string Email
+            // Set properties from StoreOwner data
+            OwnerName = _storeOwner.OwnerName ?? string.Empty;
+            Email = _storeOwner.Email ?? string.Empty;
+            Phone = _storeOwner.Phone ?? string.Empty;
+            Address = _storeOwner.Address ?? string.Empty;
+        }
+        else
         {
-            get => _email;
-            set => SetProperty(ref _email, value);
+            Debug.WriteLine("No store owners found");
         }
-
-        public string Phone
-        {
-            get => _phone;
-            set => SetProperty(ref _phone, value);
-        }
-
-        public string Address
-        {
-            get => _address;
-            set => SetProperty(ref _address, value);
-        }
-
-        public AccountViewModel(IUnitOfWork unitOfWork)
-        {
-            _unitOfWork = unitOfWork;
-
-            // Load StoreOwner data on ViewModel initialization
-            _ = GetStoreOwnerAsync(_unitOfWork);
-        }
-
-        private async Task GetStoreOwnerAsync(IUnitOfWork unitOfWork)
-        {
-            var owners = await unitOfWork.StoreOwners.GetAllAsync();
-            if (owners.Any())
-            {
-                _storeOwner = owners.First(); // Assuming there is only one store owner
-                Debug.WriteLine($"Store owner: {_storeOwner.OwnerName}");
-
-                // Set properties from StoreOwner data
-                OwnerName = _storeOwner.OwnerName ?? string.Empty;
-                Email = _storeOwner.Email ?? string.Empty;
-                Phone = _storeOwner.Phone ?? string.Empty;
-                Address = _storeOwner.Address ?? string.Empty;
-            }
-            else
-            {
-                Debug.WriteLine("No store owners found");
-            }
-        }
-        public async Task LoadAccountInfoAsync() => await GetStoreOwnerAsync(_unitOfWork);
-
-        // Method to handle possible login validation (if needed for your case)
-        public bool CanLogin() => !string.IsNullOrEmpty(OwnerName) && !string.IsNullOrEmpty(Email);
     }
 }

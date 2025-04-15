@@ -429,9 +429,21 @@ public partial class SizeViewModel : ViewModelBase
             await _unitOfWork.BeginTransactionAsync(); // Bắt đầu transaction
             try
             {
-                // Nếu xóa size mà đang có biến thể sản phẩm sử dụng thì size của biến thể sản phẩm đó sẽ được đặt lại thành null
-                // Có thể đổi size của biến thể sản phẩm từ null thành size khác
-                await _unitOfWork.ProductSizes.DeleteAsync(size);
+                // --- KIỂM TRA RÀNG BUỘC ORDER ITEM ---
+                bool isInUseInOrder = await _unitOfWork.OrderItems.AnyAsync(oi => oi.Variant.SizeId == size.SizeId);
+                if (isInUseInOrder)
+                {
+                    // --- XÓA MỀM ---
+                    size.IsDeleted = true;
+                    await _unitOfWork.ProductSizes.UpdateAsync(size);
+                    Debug.WriteLine($"Xóa mềm Size ID: {size.SizeId} do đang dùng trong đơn hàng.");
+                }
+                else
+                {
+                    // --- XÓA CỨNG ---
+                    await _unitOfWork.ProductSizes.DeleteAsync(size);
+                    Debug.WriteLine($"Xóa cứng Size ID: {size.SizeId}.");
+                }
                 bool saved = await _unitOfWork.SaveChangesAsync();
 
                 if (saved)

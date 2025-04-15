@@ -250,8 +250,8 @@
 														</Grid.ColumnDefinitions>
 														<TextBlock Grid.Column="0" Text="{x:Bind OrderItemId}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
 														<TextBlock Grid.Column="1" Text="{x:Bind Variant.Product.ProductName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" HorizontalAlignment="Center"/>
-														<TextBlock Grid.Column="2" Text="{x:Bind Variant.Color.ColorName, FallbackValue='N/A', TargetNullValue='N/A'}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-														<TextBlock Grid.Column="3" Text="{x:Bind Variant.Size.SizeName, FallbackValue='N/A', TargetNullValue='N/A'}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+														<TextBlock Grid.Column="2" Text="{x:Bind Variant.Color.ColorName}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+														<TextBlock Grid.Column="3" Text="{x:Bind Variant.Size.SizeName}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
 														<TextBlock Grid.Column="4" Text="{x:Bind Quantity}" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,0,10,0"/>
 														<TextBlock Grid.Column="5" Text="{x:Bind UnitPrice, Converter={StaticResource CurrencyFormatConverter}}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
 													</Grid>

@@ -9,6 +9,10 @@ public class SizeSpecification : GenericSpecification<ProductSize>
         int? skip = null,
         int? take = null)
     {
+        // --- Lọc Cơ bản ---
+        // Chỉ lấy size chưa bị xóa
+        AddCriteria(s => !s.IsDeleted);
+
         // Lọc theo Từ khóa tìm kiếm (ID hoặc Tên)
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {

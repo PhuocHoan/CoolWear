@@ -5,11 +5,119 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:CoolWear.Views"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:converters="using:CoolWear.Converters" xmlns:lvc="using:LiveChartsCore.SkiaSharpView.WinUI" xmlns:viewmodels="using:CoolWear.ViewModels"
+	mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Grid>
+	<Page.Resources>
+		<converters:CurrencyFormatConverter x:Key="CurrencyFormatConverter"/>
+		<converters:EnumToStringConverter x:Key="EnumToStringConverter"/>
+		<converters:NullableDateTimeOffsetConverter x:Key="NullableDateTimeOffsetConverter"/>
+		<converters:ReportPeriodToDatePickerVisibilityConverter x:Key="ReportPeriodToDatePickerVisibilityConverter"/>
+	</Page.Resources>
 
-    </Grid>
+	<ScrollViewer>
+		<Grid Padding="20">
+			<Grid.RowDefinitions>
+				<RowDefinition Height="Auto"/>
+				<!-- Header -->
+				<RowDefinition Height="Auto"/>
+				<!-- Filter -->
+				<RowDefinition Height="Auto"/>
+				<RowDefinition Height="Auto"/>
+				<!-- Summary Stats -->
+				<RowDefinition Height="*"/>
+				<RowDefinition Height="*"/>
+				<!-- Charts -->
+			</Grid.RowDefinitions>
+
+			<!-- Header và Filter -->
+			<TextBlock Grid.Row="0" Text="Báo Cáo Doanh Thu &amp; Sản Phẩm" Style="{ThemeResource TitleTextBlockStyle}" Margin="0,0,0,20"/>
+			<StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="20" Margin="0,0,0,20" VerticalAlignment="Center">
+				<RadioButtons Header="Xem theo:" MaxColumns="3"
+							  ItemsSource="{x:Bind ViewModel.AvailablePeriods, Mode=OneWay}"
+							  SelectedItem="{x:Bind ViewModel.SelectedPeriod, Mode=OneWay}"
+							  SelectionChanged="PeriodRadioButtons_SelectionChanged">
+					<RadioButtons.ItemTemplate>
+						<DataTemplate x:DataType="viewmodels:ReportPeriod">
+							<TextBlock Text="{x:Bind Converter={StaticResource EnumToStringConverter}}"/>
+						</DataTemplate>
+					</RadioButtons.ItemTemplate>
+				</RadioButtons>
+				<DatePicker x:Name="ReportDatePicker" 
+							Header="Chọn Ngày/Tháng/Năm:" Width="300"
+							Date="{x:Bind ViewModel.SelectedDate, Mode=TwoWay, Converter={StaticResource NullableDateTimeOffsetConverter}}"
+							DayVisible="{x:Bind ViewModel.SelectedPeriod, Mode=OneWay, Converter={StaticResource ReportPeriodToDatePickerVisibilityConverter}, ConverterParameter=Day}"
+							MonthVisible="{x:Bind ViewModel.SelectedPeriod, Mode=OneWay, Converter={StaticResource ReportPeriodToDatePickerVisibilityConverter}, ConverterParameter=Month}"
+							YearVisible="{x:Bind ViewModel.SelectedPeriod, Mode=OneWay, Converter={StaticResource ReportPeriodToDatePickerVisibilityConverter}, ConverterParameter=Year}"/>
+				<ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" Width="30" Height="30"/>
+			</StackPanel>
+
+			<TextBlock Grid.Row="2" Text="{x:Bind ViewModel.CurrentDateSelectionText, Mode=OneWay}" VerticalAlignment="Center" HorizontalAlignment="Center" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,0,0,20"/>
+			
+			<!-- Summary Stats -->
+			<StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="30" Margin="0,0,0,20" HorizontalAlignment="Center">
+				<Border Background="{ThemeResource SystemAccentColorLight2}" Padding="15" CornerRadius="5" MinWidth="180">
+					<StackPanel>
+						<TextBlock Text="Tổng Doanh Thu" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.8"/>
+						<TextBlock Text="{x:Bind ViewModel.TotalRevenue, Mode=OneWay, Converter={StaticResource CurrencyFormatConverter}}" Style="{ThemeResource SubtitleTextBlockStyle}" FontWeight="SemiBold"/>
+					</StackPanel>
+				</Border>
+				<Border Background="{ThemeResource SystemAccentColorLight2}" Padding="15" CornerRadius="5" MinWidth="180">
+					<StackPanel>
+						<TextBlock Text="Tổng Lợi Nhuận" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.8"/>
+						<TextBlock Text="{x:Bind ViewModel.TotalProfit, Mode=OneWay, Converter={StaticResource CurrencyFormatConverter}}" Style="{ThemeResource SubtitleTextBlockStyle}" FontWeight="SemiBold"/>
+					</StackPanel>
+				</Border>
+				<Border Background="{ThemeResource SystemFillColorNeutralBackgroundBrush}" BorderThickness="1" BorderBrush="{ThemeResource SystemControlBackgroundBaseLowBrush}" Padding="15" CornerRadius="5">
+					<StackPanel Orientation="Horizontal" Spacing="15">
+						<StackPanel>
+							<TextBlock Text="Hoàn thành" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.8" HorizontalAlignment="Center"/>
+							<TextBlock Text="{x:Bind ViewModel.CompletedOrdersCount, Mode=OneWay}" Style="{ThemeResource SubtitleTextBlockStyle}" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+						</StackPanel>
+						<StackPanel>
+							<TextBlock Text="Đang xử lý" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.8" HorizontalAlignment="Center"/>
+							<TextBlock Text="{x:Bind ViewModel.ProcessingOrdersCount, Mode=OneWay}" Style="{ThemeResource SubtitleTextBlockStyle}" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+						</StackPanel>
+						<StackPanel>
+							<TextBlock Text="Đã hủy" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.8" HorizontalAlignment="Center"/>
+							<TextBlock Text="{x:Bind ViewModel.CancelledOrdersCount, Mode=OneWay}" Style="{ThemeResource SubtitleTextBlockStyle}" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+						</StackPanel>
+						<StackPanel>
+							<TextBlock Text="Đã hoàn trả" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.8" HorizontalAlignment="Center"/>
+							<TextBlock Text="{x:Bind ViewModel.ReturnedOrdersCount, Mode=OneWay}" Style="{ThemeResource SubtitleTextBlockStyle}" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+						</StackPanel>
+					</StackPanel>
+				</Border>
+			</StackPanel>
+
+			<!-- Charts -->
+			<!-- Biểu đồ Doanh thu -->
+			<Border Grid.Row="4" BorderBrush="{ThemeResource SystemControlBackgroundBaseLowBrush}" BorderThickness="1" Margin="0,0,0,20" Padding="10">
+				<StackPanel>
+					<TextBlock Text="{x:Bind ViewModel.CurrentDateRevenueSelectionText, Mode=OneWay}" Style="{ThemeResource SubtitleTextBlockStyle}" Margin="0,0,0,10"/>
+					<lvc:CartesianChart
+						Series="{x:Bind ViewModel.RevenueChartSeries, Mode=OneWay}"
+						XAxes="{x:Bind ViewModel.RevenueXAxes, Mode=OneWay}"
+						LegendPosition="Bottom"
+						TooltipPosition="Top"
+						Height="400"/>
+				</StackPanel>
+			</Border>
+
+
+			<!-- Biểu đồ Sản phẩm bán chạy -->
+			<Border Grid.Row="5" BorderBrush="{ThemeResource SystemControlBackgroundBaseLowBrush}" BorderThickness="1" Padding="10">
+				<StackPanel>
+					<TextBlock Text="{x:Bind ViewModel.CurrentDateTopProductSelectionText, Mode=OneWay}" Style="{ThemeResource SubtitleTextBlockStyle}" Margin="0,0,0,10"/>
+					<lvc:CartesianChart
+						Series="{x:Bind ViewModel.TopProductChartSeries, Mode=OneWay}"
+						XAxes="{x:Bind ViewModel.TopProductXAxes, Mode=OneWay}"
+						LegendPosition="Bottom"
+						TooltipPosition="Top"
+						Height="400"/>
+				</StackPanel>
+			</Border>
+		</Grid>
+	</ScrollViewer>
 </Page>

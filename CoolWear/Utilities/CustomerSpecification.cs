@@ -31,20 +31,18 @@ public class CustomerSpecification : GenericSpecification<Customer>
             {
                 AddCriteria(c => c.Points <= maxPoints.Value);
             }
-            // Có thể thêm logic xử lý nếu min > max (ví dụ: không trả về gì hoặc báo lỗi)
         }
 
         // --- Lọc theo Ngày Tạo ---
         if (startDateUtc.HasValue)
         {
-            // Lấy từ đầu ngày startDateUtc
-            AddCriteria(c => c.CreateDate >= startDateUtc.Value.Date);
+            DateTime startDateUnspecified = DateTime.SpecifyKind(startDateUtc.Value, DateTimeKind.Unspecified);
+            AddCriteria(o => o.CreateDate >= startDateUnspecified);
         }
         if (endDateUtc.HasValue)
         {
-            // Lấy đến hết ngày endDateUtc
-            var endOfDayUtc = endDateUtc.Value.Date.AddDays(1);
-            AddCriteria(c => c.CreateDate < endOfDayUtc);
+            DateTime endDateUnspecified = DateTime.SpecifyKind(endDateUtc.Value, DateTimeKind.Unspecified);
+            AddCriteria(o => o.CreateDate < endDateUnspecified);
         }
 
         // --- Lọc theo Từ khóa Tìm kiếm ---

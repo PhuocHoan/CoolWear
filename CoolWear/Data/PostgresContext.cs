@@ -245,6 +245,10 @@ public partial class PostgresContext : DbContext
                 .HasMaxLength(20)
                 .HasComment("Tên màu sắc, duy nhất")
                 .HasColumnName("color_name");
+            entity.Property(e => e.IsDeleted)
+                .HasDefaultValue(false)
+                .HasComment("Trạng thái xóa màu sắc, mặc định là chưa (false)")
+                .HasColumnName("is_deleted");
         });
 
         modelBuilder.Entity<ProductSize>(entity =>
@@ -262,6 +266,10 @@ public partial class PostgresContext : DbContext
                 .HasMaxLength(10)
                 .HasComment("Tên kích thước, duy nhất")
                 .HasColumnName("size_name");
+            entity.Property(e => e.IsDeleted)
+                .HasDefaultValue(false)
+                .HasComment("Trạng thái xóa kích thước, mặc định là chưa (false)")
+                .HasColumnName("is_deleted");
         });
 
         modelBuilder.Entity<ProductVariant>(entity =>

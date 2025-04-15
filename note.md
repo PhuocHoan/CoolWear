@@ -118,10 +118,10 @@ POSTGRES_PASSWORD=1234
   - Doanh thu:
 
     - Mặc định là sẽ hiển thị theo ngày trước, có thể chọn theo tháng hoặc theo năm.
-      - Bấm vào doanh thu theo ngày/tháng/năm sẽ hiển thị doanh thu theo ngày/tháng/năm và Hiển thị số đơn đã hoàn thành, số đơn đã hủy, số đơn đã hoàn trả trong ngày hôm nay/tháng này/năm này
-      - Doanh thu theo ngày = tổng net_total trong ngày của các đơn đã hoàn thành
-      - Doanh thu theo tháng = tổng net_total trong tháng nay của các đơn đã hoàn thành
-      - Doanh thu theo năm = tổng net_total trong năm nay của các đơn đã hoàn thành
+      - Bấm vào lợi nhuận theo ngày/tháng/năm sẽ hiển thị lợi nhuận theo ngày/tháng/năm và Hiển thị số đơn đã hoàn thành, số đơn đã hủy, số đơn đã hoàn trả trong ngày hôm nay/tháng này/năm này
+      - Lợi nhuận theo ngày = tổng net_total trong ngày của các đơn đã hoàn thành - tổng import_price của các sản phẩm có trong các đơn đã hoàn thành trong ngày hôm nay
+      - Lợi nhuận theo tháng = tổng net_total trong tháng của các đơn đã hoàn thành - tổng import_price của các sản phẩm có trong các đơn đã hoàn thành trong tháng này
+      - Lợi nhuận theo năm = tổng net_total trong năm của các đơn đã hoàn thành - tổng import_price của các sản phẩm có trong các đơn đã hoàn thành trong năm này
 
   - Biểu đồ:
     - Doanh thu
@@ -129,6 +129,6 @@ POSTGRES_PASSWORD=1234
       - Doanh thu theo tháng (12 tháng)
       - Doanh thu theo năm (5 năm gần nhất)
     - Sản phẩm bán chạy
-      - Hiển thị 10 sản phẩm bán chạy nhất trong ngày/tháng/năm (theo số lượng)
+      - Hiển thị 10 sản phẩm bán chạy nhất trong ngày/tháng/năm (theo số lượng mua)
 
 - Bug:
