@@ -7,58 +7,153 @@
     xmlns:viewModels="using:CoolWear.ViewModels"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Grid Padding="20">
+    <Grid Padding="30">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="1*"/>
-            <ColumnDefinition Width="2*"/>
-        </Grid.ColumnDefinitions>
+        <!-- Header -->
+        <TextBlock Text="Thông tin tài khoản" 
+                   FontSize="28" 
+                   FontWeight="Bold" 
+                   Foreground="{ThemeResource SystemAccentColor}" 
+                   HorizontalAlignment="Center" 
+                   Margin="0,0,0,20"/>
 
-        <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal">
-            <TextBlock Text="Tên chủ cửa hàng:" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
-        </StackPanel>
-        <Border Grid.Row="1" Grid.Column="0" BorderBrush="Black" BorderThickness="1" Margin="10">
-            <TextBlock Text="{x:Bind ViewModel.OwnerName, Mode=OneWay}" FontSize="16" Padding="5"/>
-        </Border>
+        <!-- Content -->
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="30" HorizontalAlignment="Center" Width="400">
+                <!-- Account Information Section -->
+                <StackPanel Spacing="20">
+                    <!-- Owner Name -->
+                    <StackPanel>
+                        <TextBlock Text="Tên chủ cửa hàng" 
+                                   FontSize="18" 
+                                   FontWeight="SemiBold" 
+                                   Margin="0,0,0,5"/>
+                        <TextBox Text="{x:Bind ViewModel.OwnerName, Mode=TwoWay}" 
+                                 FontSize="16" 
+                                 Padding="10" 
+                                 BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}" 
+                                 BorderThickness="1" 
+                                 CornerRadius="5"/>
+                    </StackPanel>
 
-        <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal">
-            <TextBlock Text="Email:" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
-        </StackPanel>
-        <Border Grid.Row="3" Grid.Column="0" BorderBrush="Black" BorderThickness="1" Margin="10">
-            <TextBlock Text="{x:Bind ViewModel.Email, Mode=OneWay}" FontSize="16" Padding="5"/>
-        </Border>
+                    <!-- Email -->
+                    <StackPanel>
+                        <TextBlock Text="Email" 
+                                   FontSize="18" 
+                                   FontWeight="SemiBold" 
+                                   Margin="0,0,0,5"/>
+                        <TextBox Text="{x:Bind ViewModel.Email, Mode=TwoWay}" 
+                                 FontSize="16" 
+                                 Padding="10" 
+                                 BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}" 
+                                 BorderThickness="1" 
+                                 CornerRadius="5"/>
+                    </StackPanel>
 
-        <StackPanel Grid.Row="4" Grid.Column="0" Orientation="Horizontal">
-            <TextBlock Text="Số điện thoại:" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
-        </StackPanel>
-        <Border Grid.Row="5" Grid.Column="0" BorderBrush="Black" BorderThickness="1" Margin="10">
-            <TextBlock Text="{x:Bind ViewModel.Phone, Mode=OneWay}" FontSize="16" Padding="5"/>
-        </Border>
+                    <!-- Phone -->
+                    <StackPanel>
+                        <TextBlock Text="Số điện thoại" 
+                                   FontSize="18" 
+                                   FontWeight="SemiBold" 
+                                   Margin="0,0,0,5"/>
+                        <NumberBox Text="{x:Bind ViewModel.Phone, Mode=TwoWay}" 
+                                 FontSize="16" 
+                                 Padding="10" 
+                                 BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}" 
+                                 BorderThickness="1" 
+                                 CornerRadius="5"/>
+                    </StackPanel>
 
-        <StackPanel Grid.Row="6" Grid.Column="0" Orientation="Horizontal">
-            <TextBlock Text="Địa chỉ:" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
-        </StackPanel>
-        <Border Grid.Row="7" Grid.Column="0" BorderBrush="Black" BorderThickness="1" Margin="10">
-            <TextBlock Text="{x:Bind ViewModel.Address, Mode=OneWay}" FontSize="16" Padding="5"/>
-        </Border>
+                    <!-- Address -->
+                    <StackPanel>
+                        <TextBlock Text="Địa chỉ" 
+                                   FontSize="18" 
+                                   FontWeight="SemiBold" 
+                                   Margin="0,0,0,5"/>
+                        <TextBox Text="{x:Bind ViewModel.Address, Mode=TwoWay}" 
+                                 FontSize="16" 
+                                 Padding="10" 
+                                 BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}" 
+                                 BorderThickness="1" 
+                                 CornerRadius="5"/>
+                    </StackPanel>
 
-        <Button Grid.Row="8" Grid.Column="0" Content="Thay đổi" 
-                Background="#5FE2FF" BorderBrush="Transparent" BorderThickness="0" 
-                HorizontalAlignment="Center" VerticalAlignment="Center"
-                Padding="10,5" FontSize="16" FontWeight="Bold"/>
+                    <!-- Save Button -->
+                    <Button Content="Lưu thay đổi" 
+                            Background="{ThemeResource SystemAccentColor}" 
+                            Foreground="White" 
+                            FontSize="18" 
+                            FontWeight="Bold" 
+                            Padding="10" 
+                            CornerRadius="5" 
+                            HorizontalAlignment="Stretch" 
+                            Click="SaveButton_Click"/>
+                </StackPanel>
+
+                <!-- Password Section -->
+                <StackPanel Spacing="20">
+                    <!-- Old Password -->
+                    <StackPanel>
+                        <TextBlock Text="Mật khẩu cũ" 
+                                   FontSize="18" 
+                                   FontWeight="SemiBold" 
+                                   Margin="0,0,0,5"/>
+                        <PasswordBox x:Name="OldPasswordBox" 
+                                     FontSize="16" 
+                                     Padding="10" 
+                                     BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}" 
+                                     BorderThickness="1" 
+                                     CornerRadius="5" 
+                                     PlaceholderText="Nhập mật khẩu cũ"/>
+                    </StackPanel>
+
+                    <!-- New Password -->
+                    <StackPanel>
+                        <TextBlock Text="Mật khẩu mới" 
+                                   FontSize="18" 
+                                   FontWeight="SemiBold" 
+                                   Margin="0,0,0,5"/>
+                        <PasswordBox x:Name="NewPasswordBox" 
+                                     FontSize="16" 
+                                     Padding="10" 
+                                     BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}" 
+                                     BorderThickness="1" 
+                                     CornerRadius="5" 
+                                     PlaceholderText="Nhập mật khẩu mới"/>
+                    </StackPanel>
+
+                    <!-- Repeat New Password -->
+                    <StackPanel>
+                        <TextBlock Text="Nhập lại mật khẩu mới" 
+                                   FontSize="18" 
+                                   FontWeight="SemiBold" 
+                                   Margin="0,0,0,5"/>
+                        <PasswordBox x:Name="RepeatPasswordBox" 
+                                     FontSize="16" 
+                                     Padding="10" 
+                                     BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}" 
+                                     BorderThickness="1" 
+                                     CornerRadius="5" 
+                                     PlaceholderText="Nhập lại mật khẩu mới"/>
+                    </StackPanel>
+
+                    <!-- Change Password Button -->
+                    <Button Content="Đổi mật khẩu" 
+                            Background="{ThemeResource SystemAccentColor}" 
+                            Foreground="White" 
+                            FontSize="18" 
+                            FontWeight="Bold" 
+                            Padding="10" 
+                            CornerRadius="5" 
+                            HorizontalAlignment="Stretch" 
+                            Click="ChangePasswordButton_Click"/>
+
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </Page>
