@@ -125,6 +125,7 @@ public partial class AccountViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            await ShowErrorDialogAsync("Error", "Đổi thông tin thất bại.");
             Debug.WriteLine($"Error saving account information: {ex.Message}");
         }
     }
