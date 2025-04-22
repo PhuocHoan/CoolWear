@@ -107,6 +107,7 @@ public sealed partial class SellPage : Page
         if (ViewModel.OrdersItems.Count == 0)
         {
             Debug.WriteLine("Không có sản phẩm nào để thanh toán.");
+            await ViewModel.ShowErrorDialog("Error", "Không có sản phẩm nào để thanh toán.");
             return;
         }
 
@@ -154,10 +155,17 @@ public sealed partial class SellPage : Page
             ViewModel.SelectedVariantIds.Clear();
 
             Debug.WriteLine("✅ Thanh toán thành công!");
+            await ViewModel.ShowSuccessDialog("Success", "Thanh toán thành công.");
+            if (ViewModel.IsReceiptEnabled)
+            {
+                Debug.WriteLine("Generating receipt...");
+                await ViewModel.GenerateAndOpenReceiptAsync(newOrder);
+            }
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"❌ Lỗi khi lưu đơn hàng: {ex.Message}");
+            await ViewModel.ShowErrorDialog("Error", "Lỗi thanh toán.");
         }
     }
 
@@ -167,17 +175,30 @@ public sealed partial class SellPage : Page
     {
         if (sender is Button btn && btn.Tag is int customerId)
         {
-            _selectedCustomerId = customerId;
-            Debug.WriteLine($"✅ Khách hàng được chọn có ID: {_selectedCustomerId}");
-          
-            var customer = ViewModel.FilteredCustomers?.FirstOrDefault(c => c.CustomerId == customerId);
-            if (customer != null)
+            // Check if the clicked customer is already selected
+            if (_selectedCustomerId == customerId)
             {
-                Debug.WriteLine($"Tên khách hàng: {customer.CustomerName}");
-                ViewModel.SelectedCustomerName = customer.CustomerName;
+                // Deselect the customer
+                _selectedCustomerId = null;
+                ViewModel.SelectedCustomerName = null;
+                Debug.WriteLine("✅ Đã bỏ chọn khách hàng.");
+            }
+            else
+            {
+                // Select the new customer
+                _selectedCustomerId = customerId;
+                Debug.WriteLine($"✅ Khách hàng được chọn có ID: {_selectedCustomerId}");
+
+                var customer = ViewModel.FilteredCustomers?.FirstOrDefault(c => c.CustomerId == customerId);
+                if (customer != null)
+                {
+                    Debug.WriteLine($"Tên khách hàng: {customer.CustomerName}");
+                    ViewModel.SelectedCustomerName = customer.CustomerName;
+                }
             }
         }
     }
+
 
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -199,4 +220,5 @@ public sealed partial class SellPage : Page
             Debug.WriteLine("ERROR: ViewModel is null in OnNavigatedTo.");
         }
     }
+
 }

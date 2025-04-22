@@ -248,6 +248,8 @@
 
                     <CheckBox Content="Tại chỗ"
               IsChecked="{x:Bind ViewModel.SelectedStatus, Mode=TwoWay, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=Đang xử lý}"/>
+                    <CheckBox Content="Tạo Hóa đơn" 
+           IsChecked="{Binding IsReceiptEnabled, Mode=TwoWay}"/>
                 </StackPanel>
 
                 <TextBlock Text="{x:Bind ViewModel.SelectedCustomerName, Mode=OneWay}" FontStyle="Italic"/>
@@ -265,14 +267,6 @@
                 FontWeight="Bold"/>
             </StackPanel>
         </Grid>
-
-
-
-
-
-
-
-
 
     </Grid>
 </Page>

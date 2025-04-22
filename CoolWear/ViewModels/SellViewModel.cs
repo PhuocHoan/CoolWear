@@ -10,6 +10,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.IO;
+using PdfSharp.Pdf;
+using PdfSharp.Drawing;
+using System.Windows.Input;
 
 namespace CoolWear.ViewModels;
 
@@ -21,7 +25,7 @@ public class SellViewModel : ViewModelBase
     private ObservableCollection<Product>? _filteredProducts;
     private ObservableCollection<ProductCategory>? _categories;
     private ObservableCollection<ProductVariant>? _productVariants;
-    private int _selectedPaymentMethodId;
+    private int _selectedPaymentMethodId = 1;
     private string _selectedStatus = "Đang xử lý";
     private ProductCategory? _selectedCategory;
     private string? _searchTerm;
@@ -33,12 +37,18 @@ public class SellViewModel : ViewModelBase
     private ObservableCollection<Order>? _orders = new();
     private ObservableCollection<OrderItem>? _ordersItems = new();
     private ObservableCollection<Customer>? _filteredCustomers;
-
+    private bool _isReceiptEnabled;
     private List<int> _selectedVariantIds = new();
 
     private decimal _totalPrice;
     private string? _customerSearchTerm;
     private string? _selectedCustomerName;
+
+    public bool IsReceiptEnabled
+    {
+        get => _isReceiptEnabled;
+        set => SetProperty(ref _isReceiptEnabled, value);
+    }
 
     public string SelectedStatus
     {
@@ -369,6 +379,7 @@ public class SellViewModel : ViewModelBase
             {
                 Debug.WriteLine($"Đơn hàng đã được tạo với {newOrder.OrderItems.Count} sản phẩm.");
                 Orders?.Add(newOrder);
+
                 return true;
             }
 
@@ -377,8 +388,155 @@ public class SellViewModel : ViewModelBase
         catch (Exception ex)
         {
             Debug.WriteLine($"Lỗi khi tạo đơn hàng: {ex}");
+
             return false;
         }
     }
 
+    public async Task GenerateAndOpenReceiptAsync(Order order)
+    {
+        try
+        {
+            // Ensure the order is valid
+            if (order == null || order.OrderItems == null || !order.OrderItems.Any())
+            {
+                await ShowErrorDialogAsync("Error", "No order or items found to generate a receipt.");
+                return;
+            }
+
+            // Generate the PDF file
+            string filePath = await GenerateReceiptPdfAsync(order);
+
+            // Open the PDF file
+            if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = filePath,
+                    UseShellExecute = true
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Error generating or opening receipt: {ex.Message}");
+            await ShowErrorDialogAsync("Error", "Lỗi tạo hóa đơn.");
+        }
+    }
+
+    private async Task<string> GenerateReceiptPdfAsync(Order order)
+    {
+        string fileName = $"Receipt_{order.OrderId}_{DateTime.Now:yyyyMMddHHmmss}.pdf";
+        string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), fileName);
+
+        try
+        {
+            var storeOwner = (await _unitOfWork.StoreOwners.GetAllAsync()).FirstOrDefault();
+            var paymentMethod = await _unitOfWork.PaymentMethods.GetByIdAsync(order.PaymentMethodId);
+            string paymentMethodName = paymentMethod?.PaymentMethodName ?? "N/A";
+
+            // Create a new PDF document
+            using (PdfDocument document = new PdfDocument())
+            {
+                document.Info.Title = "Receipt";
+
+                // Add a page
+                PdfPage page = document.AddPage();
+                XGraphics gfx = XGraphics.FromPdfPage(page);
+
+                // Define fonts
+                XFont titleFont = new XFont("Arial", 20);
+                XFont regularFont = new XFont("Arial", 12);
+
+                // Draw title
+                gfx.DrawString("Receipt", titleFont, XBrushes.Black,
+                    new XRect(0, 30, page.Width, 0), XStringFormats.TopCenter);
+
+                // Draw shop information
+                gfx.DrawString($"Tên chủ: {storeOwner.OwnerName}", regularFont, XBrushes.Black,
+                    new XRect(40, 70, page.Width, 0), XStringFormats.TopLeft);
+                gfx.DrawString($"Địa chỉ: {storeOwner.Address}", regularFont, XBrushes.Black,
+                    new XRect(40, 90, page.Width, 0), XStringFormats.TopLeft);
+                gfx.DrawString($"Số điện thoại: {storeOwner.Phone}", regularFont, XBrushes.Black,
+                    new XRect(40, 110, page.Width, 0), XStringFormats.TopLeft);
+                gfx.DrawString($"Email: {storeOwner.Email}", regularFont, XBrushes.Black,
+                    new XRect(40, 130, page.Width, 0), XStringFormats.TopLeft);
+
+                // Draw order details
+                gfx.DrawString($"Order ID: {order.OrderId}", regularFont, XBrushes.Black,
+                    new XRect(40, 170, page.Width, 0), XStringFormats.TopLeft);
+                gfx.DrawString($"Ngày: {order.OrderDate:yyyy-MM-dd HH:mm:ss}", regularFont, XBrushes.Black,
+                    new XRect(40, 190, page.Width, 0), XStringFormats.TopLeft);
+                gfx.DrawString($"Khách: {order.Customer?.CustomerName ?? "N/A"}", regularFont, XBrushes.Black,
+                    new XRect(40, 210, page.Width, 0), XStringFormats.TopLeft);
+                gfx.DrawString($"Phương thức thanh toán: {paymentMethodName}", regularFont, XBrushes.Black,
+                    new XRect(40, 230, page.Width, 0), XStringFormats.TopLeft);
+
+                // Draw table header
+                gfx.DrawString("Món", regularFont, XBrushes.Black,
+                    new XRect(40, 270, 200, 0), XStringFormats.TopLeft);
+                gfx.DrawString("Màu", regularFont, XBrushes.Black,
+                    new XRect(140, 270, 100, 0), XStringFormats.TopLeft);
+                gfx.DrawString("Size", regularFont, XBrushes.Black,
+                    new XRect(240, 270, 100, 0), XStringFormats.TopLeft);
+                gfx.DrawString("Số Lượng", regularFont, XBrushes.Black,
+                    new XRect(340, 270, 100, 0), XStringFormats.TopLeft);
+                gfx.DrawString("Giá", regularFont, XBrushes.Black,
+                    new XRect(440, 270, 100, 0), XStringFormats.TopLeft);
+
+                // Draw order items
+                int yOffset = 290;
+                foreach (var item in order.OrderItems)
+                {
+                    gfx.DrawString(item.Variant.Product.ProductName, regularFont, XBrushes.Black,
+                        new XRect(40, yOffset, 200, 0), XStringFormats.TopLeft);
+                    gfx.DrawString(item.Variant.Color?.ColorName ?? "N/A", regularFont, XBrushes.Black,
+                        new XRect(140, yOffset, 100, 0), XStringFormats.TopLeft);
+                    gfx.DrawString(item.Variant.Size?.SizeName ?? "N/A", regularFont, XBrushes.Black,
+                        new XRect(240, yOffset, 100, 0), XStringFormats.TopLeft);
+                    gfx.DrawString(item.Quantity.ToString(), regularFont, XBrushes.Black,
+                        new XRect(340, yOffset, 100, 0), XStringFormats.TopLeft);
+                    gfx.DrawString($"{item.UnitPrice:N0}đ", regularFont, XBrushes.Black,
+                        new XRect(440, yOffset, 100, 0), XStringFormats.TopLeft);
+
+                    yOffset += 20;
+                }
+
+                // Draw total
+                gfx.DrawString($"Tổng: {order.NetTotal:N0}đ", titleFont, XBrushes.Black,
+                    new XRect(40, yOffset + 30, page.Width, 30), XStringFormats.TopLeft);
+
+                // Save the document
+                document.Save(filePath);
+            }
+
+            return filePath;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Error generating PDF: {ex.Message}");
+            await ShowErrorDialogAsync("Error", "Failed to generate the receipt PDF.");
+            return string.Empty;
+        }
+    }
+    public async Task GenerateAndOpenReceiptIfEnabledAsync(Order order)
+    {
+        if (IsReceiptEnabled)
+        {
+            await GenerateAndOpenReceiptAsync(order);
+        }
+        else
+        {
+            Debug.WriteLine("Receipt generation is disabled.");
+        }
+    }
+    public async Task ShowErrorDialog(string title, string message)
+    {
+        await ShowErrorDialogAsync(title, message);
+    }
+
+    public async Task ShowSuccessDialog(string title, string message)
+    {
+        await ShowSuccessDialogAsync(title, message);
+    }
 }

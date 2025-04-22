@@ -67,6 +67,7 @@
 		<PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1742" />
 		<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250401001" />
 		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+		<PackageReference Include="PDFsharp" Version="6.1.1" />
 		<PackageReference Include="PropertyChanged.Fody" Version="4.1.0" />
 		<PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.4" />
 	</ItemGroup>
