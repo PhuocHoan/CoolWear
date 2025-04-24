@@ -51,15 +51,31 @@ public sealed partial class SellPage : Page
 
                 if (variant != null)
                 {
-                    var orderItem = new OrderItem
+                    if (variant.Variant.StockQuantity > 0)
                     {
-                        VariantId = variantId,
-                        Quantity = 1,
-                        UnitPrice = variant.Product.Price
-                    };
+                        var orderItem = new OrderItem
+                        {
+                            VariantId = variantId,
+                            Quantity = 1, // Default quantity
+                            UnitPrice = variant.Product.Price
+                        };
 
-                    ViewModel.OrdersItems.Add(orderItem);
+                        // Subscribe to Quantity changes for validation
+                        orderItem.PropertyChanged += (s, args) =>
+                        {
+                            if (args.PropertyName == nameof(OrderItem.Quantity))
+                            {
+                                ValidateQuantity(orderItem, variant.Variant.StockQuantity);
+                            }
+                        };
 
+                        ViewModel.OrdersItems.Add(orderItem);
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"[WARN] VariantId = {variantId} is out of stock.");
+                        ViewModel.ShowErrorDialog("Out of Stock", $"Sản phẩm {variantId} hết hàng.");
+                    }
                 }
                 else
                 {
@@ -68,6 +84,25 @@ public sealed partial class SellPage : Page
             }
         }
     }
+
+    private void ValidateQuantity(OrderItem orderItem, int stockQuantity)
+    {
+        if (orderItem.Quantity > stockQuantity)
+        {
+            Debug.WriteLine($"[WARN] Quantity exceeds stock. Resetting to maximum available: {stockQuantity}");
+            orderItem.Quantity = stockQuantity;
+
+            // Notify the user
+            ViewModel.ShowErrorDialog("Stock Limit Exceeded",
+                $"Số lượng không thể vượt quá tồn kho ({stockQuantity}).");
+        }
+        else if (orderItem.Quantity < 1)
+        {
+            Debug.WriteLine("[WARN] Quantity cannot be less than 1. Resetting to 1.");
+            orderItem.Quantity = 1;
+        }
+    }
+
 
     private void DeleteOrderItem_Click(object sender, RoutedEventArgs e)
     {
@@ -145,6 +180,18 @@ public sealed partial class SellPage : Page
                 };
 
                 await ViewModel.UnitOfWork.OrderItems.AddAsync(orderItem);
+                // Decrease StockQuantity for the corresponding ProductVariant
+                var variant = await ViewModel.UnitOfWork.ProductVariants.GetByIdAsync(item.VariantId);
+                if (variant != null)
+                {
+                    variant.StockQuantity -= item.Quantity;
+                    if (variant.StockQuantity < 0)
+                    {
+                        variant.StockQuantity = 0; // Ensure stock doesn't go negative
+                    }
+
+                    await ViewModel.UnitOfWork.ProductVariants.UpdateAsync(variant);
+                }
             }
 
             await ViewModel.UnitOfWork.SaveChangesAsync();
@@ -170,7 +217,7 @@ public sealed partial class SellPage : Page
 
             ViewModel.OrdersItems.Clear();
             ViewModel.SelectedVariantIds.Clear();
-
+            await ViewModel.InitializeAsync();
             Debug.WriteLine("✅ Thanh toán thành công!");
             await ViewModel.ShowSuccessDialog("Success", "Thanh toán thành công.");
             if (ViewModel.IsReceiptEnabled)
