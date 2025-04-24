@@ -36,6 +36,8 @@ public partial class ProductViewModel : ViewModelBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly INavigationService _navigationService; // Inject service
     private readonly DispatcherQueue _dispatcherQueue;
+    private readonly ExcelService _excelService = new ExcelService(); // Added ExcelService instance
+
     private bool _isResettingFilters = false;
 
     // --- Constants ---
@@ -561,6 +563,68 @@ public partial class ProductViewModel : ViewModelBase
             }
         }
     }
-    private async Task ImportProductsAsync() => await ShowNotImplementedDialogAsync("Nhập File Excel/CSV");
-    private async Task ExportProductsAsync() => await ShowNotImplementedDialogAsync("Xuất File Excel/CSV");
+    private async Task ImportProductsAsync()
+    {
+        var picker = new Windows.Storage.Pickers.FileOpenPicker();
+        picker.FileTypeFilter.Add(".xlsx");
+
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(((App)Microsoft.UI.Xaml.Application.Current).MainWindow);
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+        var file = await picker.PickSingleFileAsync();
+        if (file != null)
+        {
+            try
+            {
+                var products = _excelService.ImportProductsFromExcel(file.Path);
+                foreach (var product in products)
+                {
+                    // Add or update each product and its variants in the database
+                    await _unitOfWork.Products.AddAsync(product);
+                }
+                await _unitOfWork.SaveChangesAsync();
+                await ShowSuccessDialogAsync("Import Successful", "Nhập file thành công");
+                await LoadProductsAsync(); // Reload the product list
+            }
+            catch (Exception ex)
+            {
+                var errorMessage = $"An error occurred while importing: {ex.Message}";
+                if (ex.InnerException != null)
+                {
+                    errorMessage += $"\nInner Exception: {ex.InnerException.Message}";
+                }
+                await ShowErrorDialogAsync("Import Failed", errorMessage);
+            }
+        }
+    }
+
+    private async Task ExportProductsAsync()
+    {
+        var picker = new Windows.Storage.Pickers.FileSavePicker();
+        picker.FileTypeChoices.Add("Excel File", new List<string> { ".xlsx" });
+
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(((App)Microsoft.UI.Xaml.Application.Current).MainWindow);
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+        var file = await picker.PickSaveFileAsync();
+        if (file != null)
+        {
+            try
+            {
+                var products = await _unitOfWork.Products.GetAllAsync();
+                _excelService.ExportProductsToExcel(file.Path, products.ToList());
+                await ShowSuccessDialogAsync("Export Successful", "Xuất file thành công.");
+            }
+            catch (Exception ex)
+            {
+                var errorMessage = $"An error occurred while exporting: {ex.Message}";
+                if (ex.InnerException != null)
+                {
+                    errorMessage += $"\nInner Exception: {ex.InnerException.Message}";
+                }
+                await ShowErrorDialogAsync("Export Failed", errorMessage);
+            }
+        }
+    }
+
 }

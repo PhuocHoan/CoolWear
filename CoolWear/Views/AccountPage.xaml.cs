@@ -1,7 +1,11 @@
 ﻿using CoolWear.Services;
 using CoolWear.ViewModels;
+using Microsoft.UI;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
+
 using System;
 using System.Diagnostics;
 
@@ -20,6 +24,19 @@ public sealed partial class AccountPage : Page
             ViewModel = ServiceManager.GetKeyedSingleton<AccountViewModel>();
         }
         catch (Exception) { }
+    }
+
+    private async void SaveButton_Click(object sender, RoutedEventArgs e)
+    {
+        await ViewModel.SaveAccountInfoAsync();
+    }
+
+    private async void ChangePasswordButton_Click(object sender, RoutedEventArgs e)
+    {
+        string oldPassword = OldPasswordBox.Password;
+        string newPassword = NewPasswordBox.Password;
+        string repeatPassword = RepeatPasswordBox.Password;
+        bool isSuccess = await ViewModel.ChangePasswordAsync(oldPassword, newPassword, repeatPassword);
     }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)

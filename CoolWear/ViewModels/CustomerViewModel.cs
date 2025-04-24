@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Controls;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -19,6 +20,9 @@ public partial class CustomerViewModel : ViewModelBase
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly DispatcherQueue _dispatcherQueue;
+    private readonly ExcelService _excelService = new ExcelService(); // Added ExcelService instance
+
+
     private bool _isResettingFilters = false;
     private const int DefaultPageSize = 1;
 
@@ -433,6 +437,67 @@ public partial class CustomerViewModel : ViewModelBase
             }
         }
     }
-    private async Task ImportCustomersAsync() => await ShowNotImplementedDialogAsync("Nhập File Excel/CSV");
-    private async Task ExportCustomersAsync() => await ShowNotImplementedDialogAsync("Xuất File Excel/CSV");
+    private async Task ImportCustomersAsync()
+    {
+        var picker = new Windows.Storage.Pickers.FileOpenPicker();
+        picker.FileTypeFilter.Add(".xlsx");
+
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(((App)Microsoft.UI.Xaml.Application.Current).MainWindow);
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+        var file = await picker.PickSingleFileAsync();
+        if (file != null)
+        {
+            try
+            {
+                var customers = _excelService.ImportCustomersFromExcel(file.Path);
+                foreach (var customer in customers)
+                {
+                    // Add each customer to the database
+                    await _unitOfWork.Customers.AddAsync(customer);
+                }
+                await _unitOfWork.SaveChangesAsync();
+                await ShowSuccessDialogAsync("Import Successful", "Nhập file thành công.");
+            }
+            catch (Exception ex)
+            {
+                var errorMessage = $"An error occurred while importing: {ex.Message}";
+                if (ex.InnerException != null)
+                {
+                    errorMessage += $"\nInner Exception: {ex.InnerException.Message}";
+                }
+                await ShowErrorDialogAsync("Import Failed", errorMessage);
+            }
+        }
+    }
+
+    private async Task ExportCustomersAsync()
+    {
+        var picker = new Windows.Storage.Pickers.FileSavePicker();
+        picker.FileTypeChoices.Add("Excel File", new List<string> { ".xlsx" });
+
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(((App)Microsoft.UI.Xaml.Application.Current).MainWindow);
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+        var file = await picker.PickSaveFileAsync();
+        if (file != null)
+        {
+            try
+            {
+                var customers = await _unitOfWork.Customers.GetAllAsync();
+                _excelService.ExportCustomersToExcel(file.Path, customers.ToList());
+                await ShowSuccessDialogAsync("Export Successful", "Xuất file thành công.");
+            }
+            catch (Exception ex)
+            {
+                var errorMessage = $"An error occurred while exporting: {ex.Message}";
+                if (ex.InnerException != null)
+                {
+                    errorMessage += $"\nInner Exception: {ex.InnerException.Message}";
+                }
+                await ShowErrorDialogAsync("Export Failed", errorMessage);
+            }
+        }
+    }
+
 }

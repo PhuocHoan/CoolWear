@@ -17,6 +17,8 @@ public partial class CategoryViewModel : ViewModelBase
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly DispatcherQueue _dispatcherQueue; // Thêm DispatcherQueue
+    private readonly ExcelService _excelService = new ExcelService(); // Added ExcelService instance
+
     private bool _isResettingFilters = false;
     private const int DefaultPageSize = 2; // Số danh mục trên mỗi trang
 
@@ -572,6 +574,66 @@ public partial class CategoryViewModel : ViewModelBase
             }
         }
     }
-    private async Task ImportAsync() => await ShowNotImplementedDialogAsync("Nhập File Excel/CSV");
-    private async Task ExportAsync() => await ShowNotImplementedDialogAsync("Xuất File Excel/CSV");
+    private async Task ImportAsync()
+    {
+        var picker = new Windows.Storage.Pickers.FileOpenPicker();
+        picker.FileTypeFilter.Add(".xlsx");
+
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(((App)Microsoft.UI.Xaml.Application.Current).MainWindow);
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+        var file = await picker.PickSingleFileAsync();
+        if (file != null)
+        {
+            try
+            {
+                var categories = _excelService.ImportCategoriesFromExcel(file.Path);
+                foreach (var category in categories)
+                {
+                    // Add each category to the database
+                    await _unitOfWork.ProductCategories.AddAsync(category);
+                }
+                await _unitOfWork.SaveChangesAsync();
+                await ShowSuccessDialogAsync("Import Successful", "Nhập file thành công.");
+            }
+            catch (Exception ex)
+            {
+                var errorMessage = $"An error occurred while importing: {ex.Message}";
+                if (ex.InnerException != null)
+                {
+                    errorMessage += $"\nInner Exception: {ex.InnerException.Message}";
+                }
+                await ShowErrorDialogAsync("Import Failed", errorMessage);
+            }
+        }
+    }
+
+    private async Task ExportAsync()
+    {
+        var picker = new Windows.Storage.Pickers.FileSavePicker();
+        picker.FileTypeChoices.Add("Excel File", new List<string> { ".xlsx" });
+
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(((App)Microsoft.UI.Xaml.Application.Current).MainWindow);
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+        var file = await picker.PickSaveFileAsync();
+        if (file != null)
+        {
+            try
+            {
+                var categories = await _unitOfWork.ProductCategories.GetAllAsync();
+                _excelService.ExportCategoriesToExcel(file.Path, categories.ToList());
+                await ShowSuccessDialogAsync("Export Successful", "Xuất file thành công.");
+            }
+            catch (Exception ex)
+            {
+                var errorMessage = $"An error occurred while exporting: {ex.Message}";
+                if (ex.InnerException != null)
+                {
+                    errorMessage += $"\nInner Exception: {ex.InnerException.Message}";
+                }
+                await ShowErrorDialogAsync("Export Failed", errorMessage);
+            }
+        }
+    }
 }
