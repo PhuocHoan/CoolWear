@@ -115,9 +115,8 @@ public sealed partial class SellPage : Page
         {
 
             int subtotal = ViewModel.OrdersItems.Sum(i => i.Quantity * i.UnitPrice);
-            int pointUsed = 0; 
-            int netTotal = subtotal - pointUsed;
-
+            int pointUsed = ViewModel.PointInput; 
+            int netTotal = subtotal - pointUsed*1000;
 
             var newOrder = new Order
             {
@@ -150,6 +149,24 @@ public sealed partial class SellPage : Page
 
             await ViewModel.UnitOfWork.SaveChangesAsync();
 
+            if (_selectedCustomerId.HasValue)
+            {
+                var customer = await ViewModel.UnitOfWork.Customers.GetByIdAsync(_selectedCustomerId.Value);
+                if (customer != null)
+                {
+                    
+                    int pointsEarned = SellViewModel.CalculatePoints(netTotal);
+                    
+                    customer.Points += pointsEarned;
+                    customer.Points -= pointUsed;
+
+                    await ViewModel.UnitOfWork.Customers.UpdateAsync(customer);
+                    await ViewModel.UnitOfWork.SaveChangesAsync();
+
+                    Debug.WriteLine($"✅ Điểm đã được cộng: {pointsEarned}. Tổng điểm hiện tại: {customer.Points}");
+                }
+            }
+
 
             ViewModel.OrdersItems.Clear();
             ViewModel.SelectedVariantIds.Clear();
@@ -175,25 +192,24 @@ public sealed partial class SellPage : Page
     {
         if (sender is Button btn && btn.Tag is int customerId)
         {
-            // Check if the clicked customer is already selected
             if (_selectedCustomerId == customerId)
             {
-                // Deselect the customer
                 _selectedCustomerId = null;
                 ViewModel.SelectedCustomerName = null;
+                ViewModel.SelectedCustomerPoints = null; // Reset points
                 Debug.WriteLine("✅ Đã bỏ chọn khách hàng.");
             }
             else
             {
-                // Select the new customer
                 _selectedCustomerId = customerId;
                 Debug.WriteLine($"✅ Khách hàng được chọn có ID: {_selectedCustomerId}");
 
                 var customer = ViewModel.FilteredCustomers?.FirstOrDefault(c => c.CustomerId == customerId);
                 if (customer != null)
                 {
-                    Debug.WriteLine($"Tên khách hàng: {customer.CustomerName}");
                     ViewModel.SelectedCustomerName = customer.CustomerName;
+                    ViewModel.SelectedCustomerPoints = customer.Points; // Set points
+                    Debug.WriteLine($"Tên khách hàng: {customer.CustomerName}, Điểm: {customer.Points}");
                 }
             }
         }

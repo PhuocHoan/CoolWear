@@ -43,6 +43,51 @@ public class SellViewModel : ViewModelBase
     private decimal _totalPrice;
     private string? _customerSearchTerm;
     private string? _selectedCustomerName;
+    public int Points { get; set; }
+    private int? _selectedCustomerPoints;
+    private int _pointInput;
+    private int _pointUsed;
+    private decimal _netTotal;
+    private decimal _subTotal;
+
+
+    public int? SelectedCustomerPoints
+    {
+        get => _selectedCustomerPoints;
+        set => SetProperty(ref _selectedCustomerPoints, value);
+    }
+    public int PointInput
+    {
+        get => _pointInput;
+        set
+        {
+            if (value < 0) value = 0;
+            int maxPoints = Math.Min(SelectedCustomerPoints ?? 0, (int)(SubTotal / 1000));
+            if (value > maxPoints) value = maxPoints;
+
+            if (_pointInput != value)
+            {
+                _pointInput = value;
+                OnPropertyChanged(nameof(PointInput));
+            }
+            NetTotal = TotalPrice - (PointInput * 1000);
+        }
+    }
+    public int PointUsed
+    {
+        get => _pointUsed;
+        private set => SetProperty(ref _pointUsed, value);
+    }
+    public decimal NetTotal
+    {
+        get => _netTotal;
+        private set => SetProperty(ref _netTotal, value);
+    }
+    public decimal SubTotal
+    {
+        get => OrdersItems?.Sum(item => item.Quantity * item.UnitPrice) ?? 0;
+        private set => OnPropertyChanged(nameof(TotalPrice));
+    }
 
     public bool IsReceiptEnabled
     {
@@ -503,8 +548,15 @@ public class SellViewModel : ViewModelBase
                 }
 
                 // Draw total
-                gfx.DrawString($"Tổng: {order.NetTotal:N0}đ", titleFont, XBrushes.Black,
+                gfx.DrawString($"Số tiền hàng: {order.Subtotal:N0}đ", regularFont, XBrushes.Black,
                     new XRect(40, yOffset + 30, page.Width, 30), XStringFormats.TopLeft);
+
+                gfx.DrawString($"Giảm giá: {order.Subtotal - order.NetTotal:N0}đ", regularFont, XBrushes.Black,
+                    new XRect(40, yOffset + 50, page.Width, 30), XStringFormats.TopLeft);
+
+                gfx.DrawString($"Tổng tiền: {order.NetTotal:N0}đ", titleFont, XBrushes.Black,
+                    new XRect(40, yOffset + 70, page.Width, 30), XStringFormats.TopLeft);
+
 
                 // Save the document
                 document.Save(filePath);
@@ -530,6 +582,9 @@ public class SellViewModel : ViewModelBase
             Debug.WriteLine("Receipt generation is disabled.");
         }
     }
+
+    public static int CalculatePoints(int netTotal) => (int)Math.Floor((double)netTotal / 100000);
+
     public async Task ShowErrorDialog(string title, string message)
     {
         await ShowErrorDialogAsync(title, message);

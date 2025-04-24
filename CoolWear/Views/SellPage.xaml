@@ -228,43 +228,82 @@
             </ScrollViewer>
 
             <!-- Tổng tiền + Nút thanh toán -->
-            <StackPanel Grid.Row="3" Spacing="8">
-                <StackPanel Orientation="Vertical" Margin="10">
-                    <TextBlock Text="Chọn phương thức thanh toán:" FontWeight="Bold" Margin="0,0,0,10"/>
+            <StackPanel Grid.Row="3" Spacing="8" Padding="10" Background="White" BorderBrush="LightGray" BorderThickness="1" CornerRadius="8">
+                <!-- Payment Method and Order Status in the Same Row -->
+                <StackPanel Orientation="Horizontal" Spacing="20" Margin="0,0,0,10">
+                    <!-- Payment Method Section -->
+                    <StackPanel Width="auto">
+                        <TextBlock Text="Chọn phương thức thanh toán:" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
+                        <RadioButton Content="Tiền mặt"
+                         IsChecked="{x:Bind ViewModel.SelectedPaymentMethodId, Mode=TwoWay, Converter={StaticResource IntToBooleanConverter}, ConverterParameter=1}"
+                         GroupName="PaymentMethod" FontSize="14"/>
+                        <RadioButton Content="Chuyển khoản"
+                         IsChecked="{x:Bind ViewModel.SelectedPaymentMethodId, Mode=TwoWay, Converter={StaticResource IntToBooleanConverter}, ConverterParameter=2}"
+                         GroupName="PaymentMethod" FontSize="14"/>
+                    </StackPanel>
 
-                    <RadioButton Content="Tiền mặt"
-                 IsChecked="{x:Bind ViewModel.SelectedPaymentMethodId, Mode=TwoWay, Converter={StaticResource IntToBooleanConverter}, ConverterParameter=1}"
-                 GroupName="PaymentMethod"/>
-
-                    <RadioButton Content="Chuyển khoản"
-                 IsChecked="{x:Bind ViewModel.SelectedPaymentMethodId, Mode=TwoWay, Converter={StaticResource IntToBooleanConverter}, ConverterParameter=2}"
-                 GroupName="PaymentMethod"/>
+                    <!-- Order Status Section -->
+                    <StackPanel Width="auto">
+                        <TextBlock Text="Chọn trạng thái đơn hàng:" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
+                        <CheckBox Content="Giao Hàng"
+                      IsChecked="{x:Bind ViewModel.SelectedStatus, Mode=TwoWay, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=Hoàn thành}"
+                      FontSize="14"/>
+                        <CheckBox Content="Tại chỗ"
+                      IsChecked="{x:Bind ViewModel.SelectedStatus, Mode=TwoWay, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=Đang xử lý}"
+                      FontSize="14"/>
+                        <CheckBox Content="Tạo Hóa đơn"
+                      IsChecked="{Binding IsReceiptEnabled, Mode=TwoWay}"
+                      FontSize="14"/>
+                    </StackPanel>
                 </StackPanel>
-                <StackPanel Orientation="Vertical" Margin="10">
-                    <TextBlock Text="Chọn trạng thái đơn hàng:" FontWeight="Bold" Margin="0,0,0,10"/>
 
-                    <CheckBox Content="Giao Hàng"
-              IsChecked="{x:Bind ViewModel.SelectedStatus, Mode=TwoWay, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=Hoàn thành}"/>
+                <!-- Customer Info -->
+                <TextBlock FontSize="14" Margin="0,0,0,10">
+        <Run Text="{x:Bind ViewModel.SelectedCustomerName, Mode=OneWay}" FontWeight="Bold"/>
+        <Run Text=" ("/>
+        <Run Text="{x:Bind ViewModel.SelectedCustomerPoints, Mode=OneWay}" FontStyle="Italic"/>
+        <Run Text=" points)"/>
+                </TextBlock>
 
-                    <CheckBox Content="Tại chỗ"
-              IsChecked="{x:Bind ViewModel.SelectedStatus, Mode=TwoWay, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=Đang xử lý}"/>
-                    <CheckBox Content="Tạo Hóa đơn" 
-           IsChecked="{Binding IsReceiptEnabled, Mode=TwoWay}"/>
-                </StackPanel>
-
-                <TextBlock Text="{x:Bind ViewModel.SelectedCustomerName, Mode=OneWay}" FontStyle="Italic"/>
+                <!-- Total Price -->
                 <TextBlock Text="{x:Bind ViewModel.TotalPrice, Mode=OneWay ,Converter={StaticResource CurrencyFormatConverter}}"
+               FontSize="18"
+               FontWeight="SemiBold"
+               TextAlignment="Right"
+               HorizontalAlignment="Right"
+               Margin="0,0,0,5"/>
+
+                <!-- Net Total -->
+                <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,5,0,10">
+                    <TextBlock Text="Số tiền sau giảm giá:" FontWeight="Bold" FontSize="14" VerticalAlignment="Center"/>
+                    <TextBlock Text="{x:Bind ViewModel.NetTotal, Mode=OneWay, Converter={StaticResource CurrencyFormatConverter}}"
                    FontSize="18"
                    FontWeight="SemiBold"
-                   TextAlignment="Right"
-                   HorizontalAlignment="Right"/>
+                   VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Points Input -->
+                <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,10,0,10">
+                    <TextBlock Text="Nhập điểm sử dụng:" FontWeight="Bold" FontSize="14" VerticalAlignment="Center"/>
+                    <NumberBox
+            Value="{x:Bind ViewModel.PointInput, Mode=TwoWay}"
+            Minimum="0"
+            Maximum="{x:Bind ViewModel.SelectedCustomerPoints.Value, Mode=OneWay, FallbackValue=0}"
+            SpinButtonPlacementMode="Hidden"  
+            Width="100"
+            HorizontalAlignment="Left"/>
+                </StackPanel>
+
+                <!-- Checkout Button -->
                 <Button Content="Thanh toán"
-                HorizontalAlignment="Stretch"
-                Height="40"
-                Click="Checkout_Click"
-                Background="ForestGreen"
-                Foreground="White"
-                FontWeight="Bold"/>
+            HorizontalAlignment="Stretch"
+            Height="50"
+            Click="Checkout_Click"
+            Background="ForestGreen"
+            Foreground="White"
+            FontWeight="Bold"
+            FontSize="16"
+            CornerRadius="8"/>
             </StackPanel>
         </Grid>
 
