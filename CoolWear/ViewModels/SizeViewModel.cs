@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Controls;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -17,6 +18,8 @@ public partial class SizeViewModel : ViewModelBase
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly DispatcherQueue _dispatcherQueue;
+    private readonly ExcelService _excelService = new ExcelService(); 
+
     private bool _isResettingFilters = false;
     private const int DefaultPageSize = 2; // Số size trên mỗi trang
 
@@ -487,6 +490,67 @@ public partial class SizeViewModel : ViewModelBase
         }
     }
 
-    private async Task ImportAsync() => await ShowNotImplementedDialogAsync("Nhập File Excel/CSV");
-    private async Task ExportAsync() => await ShowNotImplementedDialogAsync("Xuất File Excel/CSV");
+    private async Task ImportAsync()
+    {
+        var picker = new Windows.Storage.Pickers.FileOpenPicker();
+        picker.FileTypeFilter.Add(".xlsx");
+
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(((App)Microsoft.UI.Xaml.Application.Current).MainWindow);
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+        var file = await picker.PickSingleFileAsync();
+        if (file != null)
+        {
+            try
+            {
+                var sizes = _excelService.ImportSizesFromExcel(file.Path);
+                foreach (var size in sizes)
+                {
+                    // Add each size to the database
+                    await _unitOfWork.ProductSizes.AddAsync(size);
+                }
+                await _unitOfWork.SaveChangesAsync();
+                await ShowSuccessDialogAsync("Import Successful", "Nhập file thành công.");
+                await LoadSizesAsync(); // Reload the sizes
+            }
+            catch (Exception ex)
+            {
+                var errorMessage = $"An error occurred while importing: {ex.Message}";
+                if (ex.InnerException != null)
+                {
+                    errorMessage += $"\nInner Exception: {ex.InnerException.Message}";
+                }
+                await ShowErrorDialogAsync("Import Failed", errorMessage);
+            }
+        }
+    }
+
+    private async Task ExportAsync()
+    {
+        var picker = new Windows.Storage.Pickers.FileSavePicker();
+        picker.FileTypeChoices.Add("Excel File", new List<string> { ".xlsx" });
+
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(((App)Microsoft.UI.Xaml.Application.Current).MainWindow);
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+        var file = await picker.PickSaveFileAsync();
+        if (file != null)
+        {
+            try
+            {
+                var sizes = await _unitOfWork.ProductSizes.GetAllAsync();
+                _excelService.ExportSizesToExcel(file.Path, sizes.ToList());
+                await ShowSuccessDialogAsync("Export Successful", "Xuất file thành công.");
+            }
+            catch (Exception ex)
+            {
+                var errorMessage = $"An error occurred while exporting: {ex.Message}";
+                if (ex.InnerException != null)
+                {
+                    errorMessage += $"\nInner Exception: {ex.InnerException.Message}";
+                }
+                await ShowErrorDialogAsync("Export Failed", errorMessage);
+            }
+        }
+    }
 }
