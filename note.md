@@ -38,7 +38,7 @@ POSTGRES_PASSWORD=1234
 
   - knex migrate:make migration1 : tạo file migration1
   - Chỉnh sửa file migration1
-  - knex migrate:latest (run migration1)
+  - knex migrate:latest
 
 ## Project Planning Features (Chính sách tích điểm)
 
