@@ -18,7 +18,7 @@ public partial class ColorViewModel : ViewModelBase
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly DispatcherQueue _dispatcherQueue;
-    private readonly ExcelService _excelService = new ExcelService();
+    private readonly ExcelService _excelService = new();
 
     private bool _isResettingFilters = false;
     private const int DefaultPageSize = 4; // Số màu sắc trên mỗi trang
@@ -317,21 +317,36 @@ public partial class ColorViewModel : ViewModelBase
         await _unitOfWork.BeginTransactionAsync();
         try
         {
+            string trimmedName = DialogColorName.Trim();
+            string lowerTrimmedName = trimmedName.ToLowerInvariant();
+
             if (_editingColor == null) // --- Chế độ Add ---
             {
-                // Kiểm tra trùng tên trước khi thêm
-                bool nameExists = await _unitOfWork.ProductColors.AnyAsync(c => c.ColorName.ToLower() == DialogColorName.Trim().ToLower());
-                if (nameExists)
-                {
-                    throw new InvalidOperationException($"Tên màu sắc '{DialogColorName}' đã tồn tại.");
-                }
+                var specCheckName = new GenericSpecification<ProductColor>();
+                specCheckName.AddCriteria(c => c.ColorName.ToLower() == lowerTrimmedName);
 
-                var newColor = new ProductColor
+                var existingColor = (await _unitOfWork.ProductColors.GetAsync(specCheckName)).FirstOrDefault();
+
+                if (existingColor != null) // Tên đã tồn tại
                 {
-                    ColorName = DialogColorName.Trim(),
-                };
-                await _unitOfWork.ProductColors.AddAsync(newColor);
-                Debug.WriteLine("Yêu cầu thêm màu sắc mới.");
+                    if (!existingColor.IsDeleted) // Chưa xóa mềm -> Lỗi
+                    {
+                        throw new InvalidOperationException($"Tên màu sắc '{trimmedName}' đã tồn tại và đang được sử dụng.");
+                    }
+                    else // Đã xóa mềm -> Khôi phục
+                    {
+                        existingColor.IsDeleted = false;
+                        existingColor.ColorName = trimmedName; // Cập nhật lại tên
+                        await _unitOfWork.ProductColors.UpdateAsync(existingColor); // Đánh dấu Update
+                        Debug.WriteLine($"Khôi phục màu sắc ID: {existingColor.ColorId}");
+                    }
+                }
+                else // Tên chưa tồn tại -> Thêm mới
+                {
+                    var newColor = new ProductColor { ColorName = trimmedName, IsDeleted = false };
+                    await _unitOfWork.ProductColors.AddAsync(newColor);
+                    Debug.WriteLine("Yêu cầu thêm màu sắc mới.");
+                }
             }
             else // --- Chế độ Edit ---
             {
@@ -519,7 +534,7 @@ public partial class ColorViewModel : ViewModelBase
                 await ShowErrorDialogAsync("Import Failed", $"An error occurred while importing: {ex.Message}");
                 if (ex.InnerException != null)
                 {
-                    
+
                     errorMessage += $"\nInner Exception: {ex.InnerException.Message}";
                 }
                 await ShowErrorDialogAsync("Import Failed", errorMessage);

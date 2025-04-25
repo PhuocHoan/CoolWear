@@ -18,7 +18,7 @@ public partial class SizeViewModel : ViewModelBase
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly DispatcherQueue _dispatcherQueue;
-    private readonly ExcelService _excelService = new ExcelService(); 
+    private readonly ExcelService _excelService = new();
 
     private bool _isResettingFilters = false;
     private const int DefaultPageSize = 2; // Số size trên mỗi trang
@@ -317,21 +317,36 @@ public partial class SizeViewModel : ViewModelBase
         await _unitOfWork.BeginTransactionAsync();
         try
         {
+            string trimmedName = DialogSizeName.Trim();
+            string lowerTrimmedName = trimmedName.ToLowerInvariant();
+
             if (_editingSize == null) // --- Chế độ Add ---
             {
-                // Kiểm tra trùng tên trước khi thêm
-                bool nameExists = await _unitOfWork.ProductSizes.AnyAsync(c => c.SizeName.ToLower() == DialogSizeName.Trim().ToLower());
-                if (nameExists)
-                {
-                    throw new InvalidOperationException($"Tên size '{DialogSizeName}' đã tồn tại.");
-                }
+                var specCheckName = new GenericSpecification<ProductSize>();
+                specCheckName.AddCriteria(c => c.SizeName.ToLower() == lowerTrimmedName);
 
-                var newSize = new ProductSize
+                var existingSize = (await _unitOfWork.ProductSizes.GetAsync(specCheckName)).FirstOrDefault();
+
+                if (existingSize != null) // Tên đã tồn tại
                 {
-                    SizeName = DialogSizeName.Trim(),
-                };
-                await _unitOfWork.ProductSizes.AddAsync(newSize);
-                Debug.WriteLine("Yêu cầu thêm size mới.");
+                    if (!existingSize.IsDeleted) // Chưa xóa mềm -> Lỗi
+                    {
+                        throw new InvalidOperationException($"Tên size '{trimmedName}' đã tồn tại và đang được sử dụng.");
+                    }
+                    else // Đã xóa mềm -> Khôi phục
+                    {
+                        existingSize.IsDeleted = false;
+                        existingSize.SizeName = trimmedName; // Cập nhật lại tên
+                        await _unitOfWork.ProductSizes.UpdateAsync(existingSize); // Đánh dấu Update
+                        Debug.WriteLine($"Khôi phục size ID: {existingSize.SizeId}");
+                    }
+                }
+                else // Tên chưa tồn tại -> Thêm mới
+                {
+                    var newSize = new ProductSize { SizeName = trimmedName, IsDeleted = false };
+                    await _unitOfWork.ProductSizes.AddAsync(newSize);
+                    Debug.WriteLine("Yêu cầu thêm size mới.");
+                }
             }
             else // --- Chế độ Edit ---
             {

@@ -390,11 +390,9 @@ public class SellViewModel : ViewModelBase
 
             var newOrder = new Order
             {
-                OrderDate = DateTime.Now,
                 CustomerId = customerId,
                 Subtotal = 0,
                 PaymentMethodId = SelectedPaymentMethodId,
-                PointUsed = 0,
                 Status = SelectedStatus,
                 NetTotal = 0
             };
