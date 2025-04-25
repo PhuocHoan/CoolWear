@@ -26,7 +26,7 @@ public class SellViewModel : ViewModelBase
     private ObservableCollection<ProductCategory>? _categories;
     private ObservableCollection<ProductVariant>? _productVariants;
     private int _selectedPaymentMethodId = 1;
-    private string _selectedStatus = "Đang xử lý";
+    private string _selectedStatus = "Hoàn thành";
     private ProductCategory? _selectedCategory;
     private string? _searchTerm;
     private bool _isLoading;
@@ -98,16 +98,24 @@ public class SellViewModel : ViewModelBase
     public string SelectedStatus
     {
         get => _selectedStatus;
-        set => SetProperty(ref _selectedStatus, value);
+        set
+        {
+            if (value == "Hoàn thành" || value == "Đang xử lý")
+            {
+                _selectedStatus = value;
+                OnPropertyChanged(nameof(SelectedStatus));
+            }
+        }
     }
     public int SelectedPaymentMethodId
     {
         get => _selectedPaymentMethodId;
         set
         {
-            if (SetProperty(ref _selectedPaymentMethodId, value))
+            if (value == 1 || value == 2) 
             {
-                Debug.WriteLine($"SelectedPaymentMethodId updated to: {value}");
+                _selectedPaymentMethodId = value;
+                OnPropertyChanged(nameof(SelectedPaymentMethodId));
             }
         }
     }
@@ -512,51 +520,70 @@ public class SellViewModel : ViewModelBase
                     new XRect(40, 170, page.Width, 0), XStringFormats.TopLeft);
                 gfx.DrawString($"Ngày: {order.OrderDate:yyyy-MM-dd HH:mm:ss}", regularFont, XBrushes.Black,
                     new XRect(40, 190, page.Width, 0), XStringFormats.TopLeft);
-                gfx.DrawString($"Khách: {order.Customer?.CustomerName ?? "N/A"}", regularFont, XBrushes.Black,
-                    new XRect(40, 210, page.Width, 0), XStringFormats.TopLeft);
+
+                // Handle long customer names with wrapping
+                string customerName = order.Customer?.CustomerName ?? "N/A";
+                double maxWidth = page.Width - 80; // Allow some margin
+                var wrappedLines = WrapText(gfx, $"Khách: {customerName}", regularFont, maxWidth);
+
+                int yOffset = 210; // Starting Y position for customer name
+                foreach (var line in wrappedLines)
+                {
+                    gfx.DrawString(line, regularFont, XBrushes.Black,
+                        new XRect(40, yOffset, page.Width, 0), XStringFormats.TopLeft);
+                    yOffset += 15; // Move to the next line
+                }
+
                 gfx.DrawString($"Phương thức thanh toán: {paymentMethodName}", regularFont, XBrushes.Black,
-                    new XRect(40, 230, page.Width, 0), XStringFormats.TopLeft);
+                    new XRect(40, yOffset, page.Width, 0), XStringFormats.TopLeft);
 
                 // Draw table header
+                yOffset += 40; // Add some space before the table
                 gfx.DrawString("Món", regularFont, XBrushes.Black,
-                    new XRect(40, 270, 200, 0), XStringFormats.TopLeft);
+                    new XRect(40, yOffset, 200, 0), XStringFormats.TopLeft);
                 gfx.DrawString("Màu", regularFont, XBrushes.Black,
-                    new XRect(140, 270, 100, 0), XStringFormats.TopLeft);
+                    new XRect(140, yOffset, 100, 0), XStringFormats.TopLeft);
                 gfx.DrawString("Size", regularFont, XBrushes.Black,
-                    new XRect(240, 270, 100, 0), XStringFormats.TopLeft);
+                    new XRect(240, yOffset, 100, 0), XStringFormats.TopLeft);
                 gfx.DrawString("Số Lượng", regularFont, XBrushes.Black,
-                    new XRect(340, 270, 100, 0), XStringFormats.TopLeft);
+                    new XRect(340, yOffset, 100, 0), XStringFormats.TopLeft);
                 gfx.DrawString("Giá", regularFont, XBrushes.Black,
-                    new XRect(440, 270, 100, 0), XStringFormats.TopLeft);
+                    new XRect(440, yOffset, 100, 0), XStringFormats.TopLeft);
 
                 // Draw order items
-                int yOffset = 290;
+                yOffset += 20; // Move below the header
+                int lineHeight = 20;
+
                 foreach (var item in order.OrderItems)
                 {
-                    gfx.DrawString(item.Variant.Product.ProductName, regularFont, XBrushes.Black,
-                        new XRect(40, yOffset, 200, 0), XStringFormats.TopLeft);
-                    gfx.DrawString(item.Variant.Color?.ColorName ?? "N/A", regularFont, XBrushes.Black,
-                        new XRect(140, yOffset, 100, 0), XStringFormats.TopLeft);
-                    gfx.DrawString(item.Variant.Size?.SizeName ?? "N/A", regularFont, XBrushes.Black,
-                        new XRect(240, yOffset, 100, 0), XStringFormats.TopLeft);
-                    gfx.DrawString(item.Quantity.ToString(), regularFont, XBrushes.Black,
-                        new XRect(340, yOffset, 100, 0), XStringFormats.TopLeft);
-                    gfx.DrawString($"{item.UnitPrice:N0}đ", regularFont, XBrushes.Black,
-                        new XRect(440, yOffset, 100, 0), XStringFormats.TopLeft);
+                    var wrappedProductName = WrapText(gfx, item.Variant.Product.ProductName, regularFont, 90);
+                    foreach (var line in wrappedProductName)
+                    {
+                        gfx.DrawString(line, regularFont, XBrushes.Black,
+                            new XRect(40, yOffset, 90, lineHeight), XStringFormats.TopLeft);
+                        yOffset += lineHeight;
+                    }
 
-                    yOffset += 20;
+                    gfx.DrawString(item.Variant.Color?.ColorName ?? "N/A", regularFont, XBrushes.Black,
+                        new XRect(140, yOffset - lineHeight, 100, lineHeight), XStringFormats.TopLeft);
+                    gfx.DrawString(item.Variant.Size?.SizeName ?? "N/A", regularFont, XBrushes.Black,
+                        new XRect(240, yOffset - lineHeight, 100, lineHeight), XStringFormats.TopLeft);
+                    gfx.DrawString(item.Quantity.ToString(), regularFont, XBrushes.Black,
+                        new XRect(340, yOffset - lineHeight, 100, lineHeight), XStringFormats.TopLeft);
+                    gfx.DrawString($"{item.UnitPrice:N0}đ", regularFont, XBrushes.Black,
+                        new XRect(440, yOffset - lineHeight, 100, lineHeight), XStringFormats.TopLeft);
                 }
 
                 // Draw total
+                yOffset += 30;
                 gfx.DrawString($"Số tiền hàng: {order.Subtotal:N0}đ", regularFont, XBrushes.Black,
-                    new XRect(40, yOffset + 30, page.Width, 30), XStringFormats.TopLeft);
+                    new XRect(40, yOffset, page.Width, 30), XStringFormats.TopLeft);
 
                 gfx.DrawString($"Giảm giá: {order.Subtotal - order.NetTotal:N0}đ", regularFont, XBrushes.Black,
-                    new XRect(40, yOffset + 50, page.Width, 30), XStringFormats.TopLeft);
+                    new XRect(40, yOffset + 20, page.Width, 30), XStringFormats.TopLeft);
 
                 gfx.DrawString($"Tổng tiền: {order.NetTotal:N0}đ", titleFont, XBrushes.Black,
-                    new XRect(40, yOffset + 70, page.Width, 30), XStringFormats.TopLeft);
-
+                    new XRect(40, yOffset + 40, page.Width, 30), XStringFormats.TopLeft);
 
                 // Save the document
                 document.Save(filePath);
@@ -571,6 +598,37 @@ public class SellViewModel : ViewModelBase
             return string.Empty;
         }
     }
+
+
+    private List<string> WrapText(XGraphics gfx, string text, XFont font, double maxWidth)
+    {
+        var lines = new List<string>();
+        var words = text.Split(' ');
+
+        string currentLine = string.Empty;
+
+        foreach (var word in words)
+        {
+            var testLine = string.IsNullOrEmpty(currentLine) ? word : $"{currentLine} {word}";
+            if (gfx.MeasureString(testLine, font).Width <= maxWidth)
+            {
+                currentLine = testLine;
+            }
+            else
+            {
+                lines.Add(currentLine);
+                currentLine = word;
+            }
+        }
+
+        if (!string.IsNullOrEmpty(currentLine))
+        {
+            lines.Add(currentLine);
+        }
+
+        return lines;
+    }
+
     public async Task GenerateAndOpenReceiptIfEnabledAsync(Order order)
     {
         if (IsReceiptEnabled)

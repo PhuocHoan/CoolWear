@@ -108,23 +108,23 @@ public sealed partial class SellPage : Page
     {
         if (sender is Button btn && btn.Tag is int variantId)
         {
-            // Tìm sản phẩm trong OrdersItems dựa vào VariantId
+
             var itemToRemove = ViewModel.OrdersItems.FirstOrDefault(i => i.VariantId == variantId);
 
             if (itemToRemove != null)
             {
-                // Xóa OrderItem khỏi danh sách
+
                 ViewModel.OrdersItems.Remove(itemToRemove);
                 Debug.WriteLine($"✅ Đã xóa sản phẩm với VariantId: {variantId}");
 
-                // Xóa VariantId khỏi danh sách SelectedVariantIds để cho phép chọn lại
+
                 ViewModel.SelectedVariantIds.Remove(variantId);
                 Debug.WriteLine($"✅ Đã xóa VariantId: {variantId} khỏi SelectedVariantIds.");
 
-                // Cập nhật lại trạng thái lựa chọn sau khi xóa (nếu có)
+
                 if (_selectedOrderItem == itemToRemove)
                 {
-                    _selectedOrderItem = null;  // Deselect nếu sản phẩm vừa xóa đang được chọn
+                    _selectedOrderItem = null;
                     Debug.WriteLine("✅ Đã bỏ chọn sản phẩm vừa xóa.");
                 }
             }
@@ -203,8 +203,8 @@ public sealed partial class SellPage : Page
                 {
                     
                     int pointsEarned = SellViewModel.CalculatePoints(netTotal);
-                    
-                    customer.Points += pointsEarned;
+                    if(ViewModel.SelectedStatus=="Hoàn thành")
+                        customer.Points += pointsEarned;
                     customer.Points -= pointUsed;
 
                     await ViewModel.UnitOfWork.Customers.UpdateAsync(customer);
@@ -217,6 +217,10 @@ public sealed partial class SellPage : Page
 
             ViewModel.OrdersItems.Clear();
             ViewModel.SelectedVariantIds.Clear();
+            ViewModel.SelectedPaymentMethodId = 1;
+            ViewModel.SelectedStatus = "Hoàn thành";
+            Debug.WriteLine($"✅ SelectedStatus reset to: {ViewModel.SelectedStatus}");
+
             await ViewModel.InitializeAsync();
             Debug.WriteLine("✅ Thanh toán thành công!");
             await ViewModel.ShowSuccessDialog("Success", "Thanh toán thành công.");
