@@ -577,18 +577,69 @@ public partial class ProductViewModel : ViewModelBase
             try
             {
                 var products = _excelService.ImportProductsFromExcel(file.Path);
+
+                // Retrieve existing product names, categories, colors, and sizes from the database
+                var existingProducts = await _unitOfWork.Products.GetAllAsync();
+                var existingProductNames = existingProducts
+                    .Select(p => p.ProductName.ToLower())
+                    .ToHashSet(); // Use HashSet for efficient lookups
+
+                var existingCategoryIds = (await _unitOfWork.ProductCategories.GetAllAsync())
+                    .Select(c => c.CategoryId)
+                    .ToHashSet();
+
+                var existingColorIds = (await _unitOfWork.ProductColors.GetAllAsync())
+                    .Select(c => c.ColorId)
+                    .ToHashSet();
+
+                var existingSizeIds = (await _unitOfWork.ProductSizes.GetAllAsync())
+                    .Select(s => s.SizeId)
+                    .ToHashSet();
+
                 foreach (var product in products)
                 {
-                    // Add or update each product and its variants in the database
+                    // Check if the product already exists by name
+                    if (existingProductNames.Contains(product.ProductName.ToLower()))
+                    {
+                        continue; // Skip duplicates
+                    }
+
+                    // Validate CategoryId
+                    if (product.CategoryId.HasValue && !existingCategoryIds.Contains(product.CategoryId.Value))
+                    {
+                        continue; // Skip if CategoryId does not exist
+                    }
+
+                    // Validate ProductVariants
+                    if (product.ProductVariants.Any(variant =>
+                            (variant.ColorId.HasValue && !existingColorIds.Contains(variant.ColorId.Value)) ||
+                            (variant.SizeId.HasValue && !existingSizeIds.Contains(variant.SizeId.Value))))
+                    {
+                        continue; // Skip if any ColorId or SizeId in variants does not exist
+                    }
+
+                    // Check for duplicate variants within the product
+                    var duplicateVariants = product.ProductVariants
+                        .GroupBy(v => new { v.ColorId, v.SizeId, product.CategoryId })
+                        .Where(group => group.Count() > 1)
+                        .ToList();
+
+                    if (duplicateVariants.Any())
+                    {
+                        continue; // Skip the product if it has duplicate variants
+                    }
+
+                    // Add the product if all validations pass
                     await _unitOfWork.Products.AddAsync(product);
                 }
+
                 await _unitOfWork.SaveChangesAsync();
                 await ShowSuccessDialogAsync("Import Successful", "Nhập file thành công");
                 await LoadProductsAsync(); // Reload the product list
             }
             catch (Exception ex)
             {
-                var errorMessage = $"An error occurred while importing: {ex.Message}";
+                string errorMessage = $"An error occurred while importing: {ex.Message}";
                 if (ex.InnerException != null)
                 {
                     errorMessage += $"\nInner Exception: {ex.InnerException.Message}";
@@ -597,6 +648,8 @@ public partial class ProductViewModel : ViewModelBase
             }
         }
     }
+
+
 
     private async Task ExportProductsAsync()
     {
@@ -617,7 +670,7 @@ public partial class ProductViewModel : ViewModelBase
             }
             catch (Exception ex)
             {
-                var errorMessage = $"An error occurred while exporting: {ex.Message}";
+                string errorMessage = $"An error occurred while exporting: {ex.Message}";
                 if (ex.InnerException != null)
                 {
                     errorMessage += $"\nInner Exception: {ex.InnerException.Message}";

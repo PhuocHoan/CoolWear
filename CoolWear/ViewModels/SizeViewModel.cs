@@ -519,18 +519,29 @@ public partial class SizeViewModel : ViewModelBase
             try
             {
                 var sizes = _excelService.ImportSizesFromExcel(file.Path);
+
+                // Retrieve existing size names from the database
+                var existingSizeNames = (await _unitOfWork.ProductSizes.GetAllAsync())
+                    .Select(s => s.SizeName.ToLower())
+                    .ToHashSet(); // Use HashSet for efficient lookups
+
                 foreach (var size in sizes)
                 {
-                    // Add each size to the database
-                    await _unitOfWork.ProductSizes.AddAsync(size);
+                    // Check if the size already exists
+                    if (!existingSizeNames.Contains(size.SizeName.ToLower()))
+                    {
+                        // Add the size if it doesn't already exist
+                        await _unitOfWork.ProductSizes.AddAsync(size);
+                    }
                 }
+
                 await _unitOfWork.SaveChangesAsync();
                 await ShowSuccessDialogAsync("Import Successful", "Nhập file thành công.");
                 await LoadSizesAsync(); // Reload the sizes
             }
             catch (Exception ex)
             {
-                var errorMessage = $"An error occurred while importing: {ex.Message}";
+                string errorMessage = $"An error occurred while importing: {ex.Message}";
                 if (ex.InnerException != null)
                 {
                     errorMessage += $"\nInner Exception: {ex.InnerException.Message}";
@@ -539,6 +550,8 @@ public partial class SizeViewModel : ViewModelBase
             }
         }
     }
+
+
 
     private async Task ExportAsync()
     {
@@ -559,7 +572,7 @@ public partial class SizeViewModel : ViewModelBase
             }
             catch (Exception ex)
             {
-                var errorMessage = $"An error occurred while exporting: {ex.Message}";
+                string errorMessage = $"An error occurred while exporting: {ex.Message}";
                 if (ex.InnerException != null)
                 {
                     errorMessage += $"\nInner Exception: {ex.InnerException.Message}";
