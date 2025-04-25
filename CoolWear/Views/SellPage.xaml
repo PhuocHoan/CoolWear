@@ -69,7 +69,7 @@
                   HorizontalScrollBarVisibility="Disabled">
             <StackPanel  Padding="10" Spacing="10">
                 <!--  Search Box -->
-                <TextBox PlaceholderText="Tìm sản phẩm (tên, mã sản phẩm)..."
+                <TextBox PlaceholderText="Tìm sản phẩm (Tên, Mã sản phẩm)..."
                      Text="{x:Bind ViewModel.SearchTerm, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                      Width="300"
                      HorizontalAlignment="Left"
