@@ -578,22 +578,58 @@ public partial class ProductViewModel : ViewModelBase
             {
                 var products = _excelService.ImportProductsFromExcel(file.Path);
 
-                // Retrieve existing product names  from the database
+                // Retrieve existing product names, categories, colors, and sizes from the database
                 var existingProducts = await _unitOfWork.Products.GetAllAsync();
                 var existingProductNames = existingProducts
                     .Select(p => p.ProductName.ToLower())
                     .ToHashSet(); // Use HashSet for efficient lookups
 
+                var existingCategoryIds = (await _unitOfWork.ProductCategories.GetAllAsync())
+                    .Select(c => c.CategoryId)
+                    .ToHashSet();
+
+                var existingColorIds = (await _unitOfWork.ProductColors.GetAllAsync())
+                    .Select(c => c.ColorId)
+                    .ToHashSet();
+
+                var existingSizeIds = (await _unitOfWork.ProductSizes.GetAllAsync())
+                    .Select(s => s.SizeId)
+                    .ToHashSet();
 
                 foreach (var product in products)
                 {
-                    // Check if the product already exists by name 
+                    // Check if the product already exists by name
                     if (existingProductNames.Contains(product.ProductName.ToLower()))
                     {
                         continue; // Skip duplicates
                     }
 
-                    // Add the product if it doesn't already exist
+                    // Validate CategoryId
+                    if (product.CategoryId.HasValue && !existingCategoryIds.Contains(product.CategoryId.Value))
+                    {
+                        continue; // Skip if CategoryId does not exist
+                    }
+
+                    // Validate ProductVariants
+                    if (product.ProductVariants.Any(variant =>
+                            (variant.ColorId.HasValue && !existingColorIds.Contains(variant.ColorId.Value)) ||
+                            (variant.SizeId.HasValue && !existingSizeIds.Contains(variant.SizeId.Value))))
+                    {
+                        continue; // Skip if any ColorId or SizeId in variants does not exist
+                    }
+
+                    // Check for duplicate variants within the product
+                    var duplicateVariants = product.ProductVariants
+                        .GroupBy(v => new { v.ColorId, v.SizeId, product.CategoryId })
+                        .Where(group => group.Count() > 1)
+                        .ToList();
+
+                    if (duplicateVariants.Any())
+                    {
+                        continue; // Skip the product if it has duplicate variants
+                    }
+
+                    // Add the product if all validations pass
                     await _unitOfWork.Products.AddAsync(product);
                 }
 
@@ -612,6 +648,7 @@ public partial class ProductViewModel : ViewModelBase
             }
         }
     }
+
 
 
     private async Task ExportProductsAsync()
