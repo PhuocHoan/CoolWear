@@ -504,29 +504,36 @@ public partial class ColorViewModel : ViewModelBase
             try
             {
                 var colors = _excelService.ImportColorsFromExcel(file.Path);
+                var existingColorNames = (await _unitOfWork.ProductColors.GetAllAsync())
+                    .Select(c => c.ColorName.ToLower())
+                    .ToHashSet(); // Cache existing color names for quick lookup
+
                 foreach (var color in colors)
                 {
-                    // Add each color to the database
-                    await _unitOfWork.ProductColors.AddAsync(color);
+                    if (!existingColorNames.Contains(color.ColorName.ToLower()))
+                    {
+                        // Add the color if it doesn't already exist
+                        await _unitOfWork.ProductColors.AddAsync(color);
+                    }
                 }
+
                 await _unitOfWork.SaveChangesAsync();
                 await ShowSuccessDialogAsync("Import Successful", "Nhập file thành công.");
                 await LoadColorsAsync(); // Reload the colors
             }
             catch (Exception ex)
             {
-                string errorMessage = null;
-                await ShowErrorDialogAsync("Import Failed", $"An error occurred while importing: {ex.Message}");
+                string errorMessage = $"An error occurred while importing: {ex.Message}";
                 if (ex.InnerException != null)
                 {
-                    
                     errorMessage += $"\nInner Exception: {ex.InnerException.Message}";
                 }
                 await ShowErrorDialogAsync("Import Failed", errorMessage);
-
             }
         }
     }
+
+
     private async Task ExportAsync()
     {
         var picker = new Windows.Storage.Pickers.FileSavePicker();

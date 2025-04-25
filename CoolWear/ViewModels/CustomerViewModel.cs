@@ -438,38 +438,58 @@ public partial class CustomerViewModel : ViewModelBase
         }
     }
     private async Task ImportCustomersAsync()
+{
+    var picker = new Windows.Storage.Pickers.FileOpenPicker();
+    picker.FileTypeFilter.Add(".xlsx");
+
+    var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(((App)Microsoft.UI.Xaml.Application.Current).MainWindow);
+    WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+    var file = await picker.PickSingleFileAsync();
+    if (file != null)
     {
-        var picker = new Windows.Storage.Pickers.FileOpenPicker();
-        picker.FileTypeFilter.Add(".xlsx");
-
-        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(((App)Microsoft.UI.Xaml.Application.Current).MainWindow);
-        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
-
-        var file = await picker.PickSingleFileAsync();
-        if (file != null)
+        try
         {
-            try
+            var customers = _excelService.ImportCustomersFromExcel(file.Path);
+
+            // Retrieve existing customer emails and phone numbers from the database
+            var existingCustomers = await _unitOfWork.Customers.GetAllAsync();
+            var existingEmails = existingCustomers
+                .Where(c => !string.IsNullOrEmpty(c.Email))
+                .Select(c => c.Email!.ToLower())
+                .ToHashSet(); // Use HashSet for efficient lookups
+            var existingPhones = existingCustomers
+                .Select(c => c.Phone)
+                .ToHashSet();
+
+            foreach (var customer in customers)
             {
-                var customers = _excelService.ImportCustomersFromExcel(file.Path);
-                foreach (var customer in customers)
+                // Check if the customer already exists by email or phone
+                if ((customer.Email != null && existingEmails.Contains(customer.Email.ToLower())) ||
+                    existingPhones.Contains(customer.Phone))
                 {
-                    // Add each customer to the database
-                    await _unitOfWork.Customers.AddAsync(customer);
+                    continue; // Skip duplicates
                 }
-                await _unitOfWork.SaveChangesAsync();
-                await ShowSuccessDialogAsync("Import Successful", "Nhập file thành công.");
+
+                // Add the customer if it doesn't already exist
+                await _unitOfWork.Customers.AddAsync(customer);
             }
-            catch (Exception ex)
+
+            await _unitOfWork.SaveChangesAsync();
+            await ShowSuccessDialogAsync("Import Successful", "Nhập file thành công.");
+        }
+        catch (Exception ex)
+        {
+            string errorMessage = $"An error occurred while importing: {ex.Message}";
+            if (ex.InnerException != null)
             {
-                var errorMessage = $"An error occurred while importing: {ex.Message}";
-                if (ex.InnerException != null)
-                {
-                    errorMessage += $"\nInner Exception: {ex.InnerException.Message}";
-                }
-                await ShowErrorDialogAsync("Import Failed", errorMessage);
+                errorMessage += $"\nInner Exception: {ex.InnerException.Message}";
             }
+            await ShowErrorDialogAsync("Import Failed", errorMessage);
         }
     }
+}
+
 
     private async Task ExportCustomersAsync()
     {
@@ -490,7 +510,7 @@ public partial class CustomerViewModel : ViewModelBase
             }
             catch (Exception ex)
             {
-                var errorMessage = $"An error occurred while exporting: {ex.Message}";
+                string errorMessage = $"An error occurred while exporting: {ex.Message}";
                 if (ex.InnerException != null)
                 {
                     errorMessage += $"\nInner Exception: {ex.InnerException.Message}";

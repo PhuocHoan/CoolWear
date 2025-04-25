@@ -588,17 +588,28 @@ public partial class CategoryViewModel : ViewModelBase
             try
             {
                 var categories = _excelService.ImportCategoriesFromExcel(file.Path);
+
+                // Retrieve existing category names from the database
+                var existingCategoryNames = (await _unitOfWork.ProductCategories.GetAllAsync())
+                    .Select(c => c.CategoryName.ToLower())
+                    .ToHashSet(); // Use HashSet for efficient lookups
+
                 foreach (var category in categories)
                 {
-                    // Add each category to the database
-                    await _unitOfWork.ProductCategories.AddAsync(category);
+                    // Check if the category already exists
+                    if (!existingCategoryNames.Contains(category.CategoryName.ToLower()))
+                    {
+                        // Add the category if it doesn't already exist
+                        await _unitOfWork.ProductCategories.AddAsync(category);
+                    }
                 }
+
                 await _unitOfWork.SaveChangesAsync();
                 await ShowSuccessDialogAsync("Import Successful", "Nhập file thành công.");
             }
             catch (Exception ex)
             {
-                var errorMessage = $"An error occurred while importing: {ex.Message}";
+                string errorMessage = $"An error occurred while importing: {ex.Message}";
                 if (ex.InnerException != null)
                 {
                     errorMessage += $"\nInner Exception: {ex.InnerException.Message}";
@@ -607,6 +618,7 @@ public partial class CategoryViewModel : ViewModelBase
             }
         }
     }
+
 
     private async Task ExportAsync()
     {
@@ -627,7 +639,7 @@ public partial class CategoryViewModel : ViewModelBase
             }
             catch (Exception ex)
             {
-                var errorMessage = $"An error occurred while exporting: {ex.Message}";
+                string errorMessage = $"An error occurred while exporting: {ex.Message}";
                 if (ex.InnerException != null)
                 {
                     errorMessage += $"\nInner Exception: {ex.InnerException.Message}";

@@ -5,6 +5,8 @@ using DocumentFormat.OpenXml.Spreadsheet;
 using CoolWear.Models;
 using System.Linq;
 using System;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace CoolWear.Services
 {
@@ -15,7 +17,7 @@ namespace CoolWear.Services
         /// </summary>
         /// <param name="filePath">The path to the Excel file.</param>
         /// <returns>A list of ProductColor objects.</returns>
-        public List<ProductColor> ImportColorsFromExcel(string filePath)
+        public List<ProductColor>? ImportColorsFromExcel(string filePath)
         {
             var colors = new List<ProductColor>();
 
@@ -23,26 +25,44 @@ namespace CoolWear.Services
             {
                 var workbookPart = document.WorkbookPart;
                 var sheet = workbookPart.Workbook.Sheets.Elements<Sheet>().FirstOrDefault();
-                if (sheet == null) return colors;
+                if (sheet == null) return null;
 
                 var worksheetPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id);
-                var rows = worksheetPart.Worksheet.Descendants<Row>().Skip(1); // Skip header row
+                var rows = worksheetPart.Worksheet.Descendants<Row>().ToList();
 
-                foreach (var row in rows)
+                // Check if the first row contains the header "ColorName"
+                var headerRow = rows.FirstOrDefault();
+                if (headerRow == null || GetCellValue(workbookPart, headerRow.Elements<Cell>().FirstOrDefault()) != "ColorName")
                 {
-                    var cells = row.Elements<Cell>().ToArray();
-                    var color = new ProductColor
+                    return null; // Return null if the header is missing or incorrect
+                }
+
+                // Skip the header row and process the remaining rows
+                foreach (var row in rows.Skip(1))
+                {
+                    try
                     {
-                        ColorId = int.TryParse(GetCellValue(workbookPart, cells[0]), out var colorId) ? colorId : 0,
-                        ColorName = GetCellValue(workbookPart, cells[1]),
-                        IsDeleted = bool.TryParse(GetCellValue(workbookPart, cells[2]), out var isDeleted) && isDeleted
-                    };
-                    colors.Add(color);
+                        var cells = row.Elements<Cell>().ToArray();
+                        var color = new ProductColor
+                        {
+                            ColorName = GetCellValue(workbookPart, cells[0]),
+                        };
+                        colors.Add(color);
+                    }
+                    catch (DbUpdateException ex)
+                    {
+                        if (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
+                        {
+                            continue;
+                        }
+                        throw;
+                    }
                 }
             }
 
             return colors;
         }
+
 
         /// <summary>
         /// Exports a list of ProductColor to an Excel file.
@@ -105,7 +125,7 @@ namespace CoolWear.Services
         /// </summary>
         /// <param name="filePath">The path to the Excel file.</param>
         /// <returns>A list of ProductSize objects.</returns>
-        public List<ProductSize> ImportSizesFromExcel(string filePath)
+        public List<ProductSize>? ImportSizesFromExcel(string filePath)
         {
             var sizes = new List<ProductSize>();
 
@@ -113,26 +133,44 @@ namespace CoolWear.Services
             {
                 var workbookPart = document.WorkbookPart;
                 var sheet = workbookPart.Workbook.Sheets.Elements<Sheet>().FirstOrDefault();
-                if (sheet == null) return sizes;
+                if (sheet == null) return null;
 
                 var worksheetPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id);
-                var rows = worksheetPart.Worksheet.Descendants<Row>().Skip(1); // Skip header row
+                var rows = worksheetPart.Worksheet.Descendants<Row>().ToList();
 
-                foreach (var row in rows)
+                // Check if the first row contains the header "SizeName"
+                var headerRow = rows.FirstOrDefault();
+                if (headerRow == null || GetCellValue(workbookPart, headerRow.Elements<Cell>().FirstOrDefault()) != "SizeName")
                 {
-                    var cells = row.Elements<Cell>().ToArray();
-                    var size = new ProductSize
+                    return null; // Return null if the header is missing or incorrect
+                }
+
+                // Skip the header row and process the remaining rows
+                foreach (var row in rows.Skip(1))
+                {
+                    try
                     {
-                        SizeId = int.TryParse(GetCellValue(workbookPart, cells[0]), out var sizeId) ? sizeId : 0,
-                        SizeName = GetCellValue(workbookPart, cells[1]),
-                        IsDeleted = bool.TryParse(GetCellValue(workbookPart, cells[2]), out var isDeleted) && isDeleted
-                    };
-                    sizes.Add(size);
+                        var cells = row.Elements<Cell>().ToArray();
+                        var size = new ProductSize
+                        {
+                            SizeName = GetCellValue(workbookPart, cells[0]),
+                        };
+                        sizes.Add(size);
+                    }
+                    catch (DbUpdateException ex)
+                    {
+                        if (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
+                        {
+                            continue;
+                        }
+                        throw;
+                    }
                 }
             }
 
             return sizes;
         }
+
 
         /// <summary>
         /// Exports a list of ProductSize to an Excel file.
@@ -215,14 +253,24 @@ namespace CoolWear.Services
 
                 foreach (var row in rows)
                 {
-                    var cells = row.Elements<Cell>().ToArray();
-                    var category = new ProductCategory
+                    try
                     {
-                        CategoryId = int.TryParse(GetCellValue(workbookPart, cells[0]), out var categoryId) ? categoryId : 0,
-                        CategoryName = GetCellValue(workbookPart, cells[1]),
-                        ProductType = GetCellValue(workbookPart, cells[2])
-                    };
-                    categories.Add(category);
+                        var cells = row.Elements<Cell>().ToArray();
+                        var category = new ProductCategory
+                        {
+                            CategoryName = GetCellValue(workbookPart, cells[0]),
+                            ProductType = GetCellValue(workbookPart, cells[1])
+                        };
+                        categories.Add(category);
+                    }
+                    catch (DbUpdateException ex)
+                    {
+                        if (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
+                        {
+                            continue;
+                        }
+                        throw;
+                    }
                 }
             }
 
@@ -305,19 +353,31 @@ namespace CoolWear.Services
 
                 foreach (var row in rows)
                 {
-                    var cells = row.Elements<Cell>().ToArray();
-                    var customer = new Customer
+                    try
                     {
-                        CustomerId = int.TryParse(GetCellValue(workbookPart, cells[0]), out var customerId) ? customerId : 0,
-                        CustomerName = GetCellValue(workbookPart, cells[1]),
-                        Email = GetCellValue(workbookPart, cells[2]),
-                        Phone = GetCellValue(workbookPart, cells[3]),
-                        Address = GetCellValue(workbookPart, cells[4]),
-                        CreateDate = DateTime.TryParse(GetCellValue(workbookPart, cells[5]), out var createDate) ? createDate : DateTime.Now,
-                        Points = int.TryParse(GetCellValue(workbookPart, cells[6]), out var points) ? points : 0,
-                        IsDeleted = bool.TryParse(GetCellValue(workbookPart, cells[7]), out var isDeleted) && isDeleted
-                    };
-                    customers.Add(customer);
+                        var cells = row.Elements<Cell>().ToArray();
+                        var customer = new Customer
+                        {
+
+                            CustomerName = GetCellValue(workbookPart, cells[0]),
+                            Email = GetCellValue(workbookPart, cells[1]),
+                            Phone = GetCellValue(workbookPart, cells[2]),
+                            Address = GetCellValue(workbookPart, cells[3]),
+                            Points = int.TryParse(GetCellValue(workbookPart, cells[4]), out var points) ? points : 0,
+
+                        };
+                        customers.Add(customer);
+
+                    }
+                    catch (DbUpdateException ex)
+                    {
+                        if (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
+                        {
+                            continue;
+                        }
+                        throw;
+                    }
+
                 }
             }
 
@@ -405,53 +465,61 @@ namespace CoolWear.Services
 
                 foreach (var row in rows)
                 {
-                    var cells = row.Elements<Cell>().ToArray();
-
-                    // Parse Product data
-                    var productId = int.TryParse(GetCellValue(workbookPart, cells[0]), out var pid) ? pid : 0;
-                    var productName = GetCellValue(workbookPart, cells[1]);
-                    var importPrice = int.TryParse(GetCellValue(workbookPart, cells[2]), out var ip) ? ip : 0;
-                    var price = int.TryParse(GetCellValue(workbookPart, cells[3]), out var p) ? p : 0;
-                    var categoryId = int.TryParse(GetCellValue(workbookPart, cells[4]), out var cid) ? cid : (int?)null;
-                    var publicId = GetCellValue(workbookPart, cells[5]);
-                    var isDeleted = bool.TryParse(GetCellValue(workbookPart, cells[6]), out var del) && del;
-
-                    // Check if the product already exists
-                    var product = products.FirstOrDefault(p => p.ProductId == productId);
-                    if (product == null)
+                    try
                     {
-                        product = new Product
+
+                        var cells = row.Elements<Cell>().ToArray();
+
+                        // Parse Product data
+                        var no = int.TryParse(GetCellValue(workbookPart, cells[0]), out var pid) ? pid : 0;
+                        var productName = GetCellValue(workbookPart, cells[1]);
+                        var importPrice = int.TryParse(GetCellValue(workbookPart, cells[2]), out var ip) ? ip : 0;
+                        var price = int.TryParse(GetCellValue(workbookPart, cells[3]), out var p) ? p : 0;
+                        var categoryId = int.TryParse(GetCellValue(workbookPart, cells[4]), out var cid) ? cid : (int?)null;
+                        var publicId = GetCellValue(workbookPart, cells[5]);
+
+
+                        // Check if the product already exists
+                        var product = products.FirstOrDefault(p => p.ProductName == productName);
+                        if (product == null)
                         {
-                            ProductId = productId,
-                            ProductName = productName,
-                            ImportPrice = importPrice,
-                            Price = price,
-                            CategoryId = categoryId,
-                            PublicId = publicId,
-                            IsDeleted = isDeleted,
-                            ProductVariants = new List<ProductVariant>()
+                            product = new Product
+                            {
+                                ProductName = productName,
+                                ImportPrice = importPrice,
+                                Price = price,
+                                CategoryId = categoryId,
+                                PublicId = publicId,
+
+                                ProductVariants = new List<ProductVariant>()
+                            };
+                            products.Add(product);
+                        }
+
+                        // Parse ProductVariant data
+
+                        var colorId = int.TryParse(GetCellValue(workbookPart, cells[6]), out var colId) ? colId : (int?)null;
+                        var sizeId = int.TryParse(GetCellValue(workbookPart, cells[7]), out var szId) ? szId : (int?)null;
+                        var stockQuantity = int.TryParse(GetCellValue(workbookPart, cells[8]), out var sq) ? sq : 0;
+
+
+                        var variant = new ProductVariant
+                        {
+                            ColorId = colorId,
+                            SizeId = sizeId,
+                            StockQuantity = stockQuantity,
                         };
-                        products.Add(product);
+
+                        product.ProductVariants.Add(variant);
                     }
-
-                    // Parse ProductVariant data
-                    var variantId = int.TryParse(GetCellValue(workbookPart, cells[7]), out var vid) ? vid : 0;
-                    var colorId = int.TryParse(GetCellValue(workbookPart, cells[8]), out var colId) ? colId : (int?)null;
-                    var sizeId = int.TryParse(GetCellValue(workbookPart, cells[9]), out var szId) ? szId : (int?)null;
-                    var stockQuantity = int.TryParse(GetCellValue(workbookPart, cells[10]), out var sq) ? sq : 0;
-                    var variantIsDeleted = bool.TryParse(GetCellValue(workbookPart, cells[11]), out var vdel) && vdel;
-
-                    var variant = new ProductVariant
+                    catch (DbUpdateException ex)
                     {
-                        VariantId = variantId,
-                        ProductId = productId,
-                        ColorId = colorId,
-                        SizeId = sizeId,
-                        StockQuantity = stockQuantity,
-                        IsDeleted = variantIsDeleted
-                    };
-
-                    product.ProductVariants.Add(variant);
+                        if (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
+                        {
+                            continue;
+                        }
+                        throw;
+                    }
                 }
             }
 
