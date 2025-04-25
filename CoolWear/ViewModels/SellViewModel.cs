@@ -227,7 +227,6 @@ public class SellViewModel : ViewModelBase
 
     protected async void OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (IsLoading) return;
 
         if (e.PropertyName == nameof(SelectedCategory) || e.PropertyName == nameof(SearchTerm))
         {

@@ -29,7 +29,6 @@
         </Style>
     </Page.Resources>
 
-    <!-- Column 1:List -->
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="200" />
@@ -37,21 +36,31 @@
             <ColumnDefinition Width="2*" />
         </Grid.ColumnDefinitions>
 
-        <ListBox Grid.Column="0"
-         ItemsSource="{x:Bind ViewModel.Categories, Mode=OneWay}"
-         SelectedItem="{x:Bind ViewModel.SelectedCategory, Mode=TwoWay}"
-         ScrollViewer.VerticalScrollBarVisibility="Auto"
-         x:Name="CategoryListBox">
-            <ListBox.ItemTemplate>
-                <DataTemplate x:DataType="models:ProductCategory">
-                    <Border CornerRadius="4" Padding="10" Margin="5">
-                        <StackPanel>
-                            <TextBlock Text="{x:Bind CategoryName}" FontSize="20" HorizontalAlignment="Center" />
-                        </StackPanel>
-                    </Border>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+        <StackPanel Grid.Column="0" Padding="10" Spacing="10">
+            <Button Content="Clear Selection"
+            Click="ClearCategory_Click"
+            Background="Gray"
+            Foreground="White"
+            FontSize="14"
+            HorizontalAlignment="Stretch"
+            Padding="5" />
+
+            <!-- Column 1:List -->
+            <ListBox ItemsSource="{x:Bind ViewModel.Categories, Mode=OneWay}"
+             SelectedItem="{x:Bind ViewModel.SelectedCategory, Mode=TwoWay}"
+             ScrollViewer.VerticalScrollBarVisibility="Auto"
+             x:Name="CategoryListBox">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="models:ProductCategory">
+                        <Border CornerRadius="4" Padding="10" Margin="5">
+                            <TextBlock Text="{x:Bind CategoryName, TargetNullValue='Tất cả'}" 
+                               FontSize="20" 
+                               HorizontalAlignment="Center" />
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </StackPanel>
 
 
         <!-- Column 2: Search + Product List -->
@@ -60,11 +69,11 @@
                   HorizontalScrollBarVisibility="Disabled">
             <StackPanel  Padding="10" Spacing="10">
                 <!--  Search Box -->
-                <TextBox PlaceholderText="Tìm sản phẩm..." 
-                 Text="{x:Bind ViewModel.SearchTerm, Mode=TwoWay}" 
-                 Width="300"
-                 HorizontalAlignment="Left"
-                 Margin="0,0,0,10"/>
+                <TextBox PlaceholderText="Tìm sản phẩm (tên, mã sản phẩm)..."
+                     Text="{x:Bind ViewModel.SearchTerm, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     Width="300"
+                     HorizontalAlignment="Left"
+                     Margin="0,0,0,10"/>
 
                 <!--  Product List -->
                 <ListView x:Name="ProductsListView"
@@ -157,8 +166,8 @@
 
             <!-- Search Customer -->
             <StackPanel Grid.Row="0" Padding="0,0,0,10" Spacing="5">
-                <TextBox PlaceholderText="Tìm khách hàng..."
-             Text="{x:Bind ViewModel.CustomerSearchTerm, Mode=TwoWay}"
+                <TextBox PlaceholderText="Tìm khách hàng (Tên, Email, Sdt) ..."
+             Text="{x:Bind ViewModel.CustomerSearchTerm, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
              Width="300"
              HorizontalAlignment="Left"/>
 

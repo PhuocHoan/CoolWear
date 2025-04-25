@@ -85,6 +85,13 @@ public sealed partial class SellPage : Page
         }
     }
 
+    private void ClearCategory_Click(object sender, RoutedEventArgs e)
+    {
+        Debug.WriteLine("Clear Selection button clicked.");
+        ViewModel.SelectedCategory = null;
+    }
+
+
     private void ValidateQuantity(OrderItem orderItem, int stockQuantity)
     {
         if (orderItem.Quantity > stockQuantity)
