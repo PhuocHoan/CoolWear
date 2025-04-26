@@ -22,7 +22,7 @@ public partial class CustomerViewModel : ViewModelBase
     private readonly DispatcherQueue _dispatcherQueue;
 
     private bool _isResettingFilters = false;
-    private const int DefaultPageSize = 1;
+    private const int DefaultPageSize = 6;
 
     // --- Backing fields ---
     private ObservableCollection<Customer>? _filteredCustomers;

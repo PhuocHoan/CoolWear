@@ -74,6 +74,14 @@
 		<PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.4" />
 	</ItemGroup>
 	<ItemGroup>
+	  <Content Update="Assets\1.webp">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </Content>
+	  <Content Update="Assets\4.jpg">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </Content>
+	</ItemGroup>
+	<ItemGroup>
 	  <Page Update="Views\SellPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </Page>

@@ -20,7 +20,7 @@ public partial class CategoryViewModel : ViewModelBase
     private readonly ExcelService _excelService = new(); // Added ExcelService instance
 
     private bool _isResettingFilters = false;
-    private const int DefaultPageSize = 2; // Số danh mục trên mỗi trang
+    private const int DefaultPageSize = 6; // Số danh mục trên mỗi trang
 
     // Backing fields
     private ObservableCollection<ProductCategory>? _filteredCategories;

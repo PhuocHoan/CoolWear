@@ -21,7 +21,7 @@ public partial class OrderViewModel : ViewModelBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly DispatcherQueue _dispatcherQueue;
     private bool _isResettingFilters = false;
-    private const int DefaultPageSize = 1; // Số đơn hàng trên mỗi trang
+    private const int DefaultPageSize = 6; // Số đơn hàng trên mỗi trang
 
     // --- Backing fields ---
     private ObservableCollection<Order>? _filteredOrders;

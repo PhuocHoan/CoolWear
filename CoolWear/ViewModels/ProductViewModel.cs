@@ -41,7 +41,7 @@ public partial class ProductViewModel : ViewModelBase
     private bool _isResettingFilters = false;
 
     // --- Constants ---
-    private const int DefaultPageSize = 2;
+    private const int DefaultPageSize = 6;
 
     // --- Backing Fields ---
     private ObservableCollection<Product>? _filteredProducts;

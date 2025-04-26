@@ -20,7 +20,7 @@ public partial class ColorViewModel : ViewModelBase
     private readonly ExcelService _excelService = new();
 
     private bool _isResettingFilters = false;
-    private const int DefaultPageSize = 4; // Số màu sắc trên mỗi trang
+    private const int DefaultPageSize = 6; // Số màu sắc trên mỗi trang
 
     // Backing fields
     private ObservableCollection<ProductColor>? _filteredColors;

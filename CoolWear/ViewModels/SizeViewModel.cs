@@ -20,7 +20,7 @@ public partial class SizeViewModel : ViewModelBase
     private readonly ExcelService _excelService = new();
 
     private bool _isResettingFilters = false;
-    private const int DefaultPageSize = 2; // Số size trên mỗi trang
+    private const int DefaultPageSize = 6; // Số size trên mỗi trang
 
     // Backing fields
     private ObservableCollection<ProductSize>? _filteredSizes;
