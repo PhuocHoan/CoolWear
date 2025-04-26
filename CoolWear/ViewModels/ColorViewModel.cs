@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Controls;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -286,7 +285,7 @@ public partial class ColorViewModel : ViewModelBase
 
         _editingColor = colorToEdit; // Lưu lại color đang sửa
         DialogTitle = "Chỉnh Sửa Màu Sắc";
-        DialogColorName = colorToEdit.ColorName; // Điền thông tin cũ vào ô nhập liệu
+        DialogColorName = colorToEdit!.ColorName; // Điền thông tin cũ vào ô nhập liệu
         IsDialogSaving = false;
 
         // Yêu cầu View hiển thị dialog
@@ -436,7 +435,7 @@ public partial class ColorViewModel : ViewModelBase
 
         var confirmation = await ShowConfirmationDialogAsync(
             "Xác Nhận Xóa Màu Sắc",
-            $"Bạn có chắc muốn xóa màu sắc '{color.ColorName}' không?",
+            $"Bạn có chắc muốn xóa màu sắc '{color!.ColorName}' không?",
             "Xóa", "Hủy");
 
         if (confirmation == ContentDialogResult.Primary)
@@ -518,12 +517,12 @@ public partial class ColorViewModel : ViewModelBase
         {
             try
             {
-                var colors = _excelService.ImportColorsFromExcel(file.Path);
+                var colors = ExcelService.ImportColorsFromExcel(file.Path);
                 var existingColorNames = (await _unitOfWork.ProductColors.GetAllAsync())
                     .Select(c => c.ColorName.ToLower())
                     .ToHashSet(); // Cache existing color names for quick lookup
 
-                foreach (var color in colors)
+                foreach (var color in colors!)
                 {
                     if (!existingColorNames.Contains(color.ColorName.ToLower()))
                     {
@@ -552,7 +551,7 @@ public partial class ColorViewModel : ViewModelBase
     private async Task ExportAsync()
     {
         var picker = new Windows.Storage.Pickers.FileSavePicker();
-        picker.FileTypeChoices.Add("Excel File", new List<string> { ".xlsx" });
+        picker.FileTypeChoices.Add("Excel File", [".xlsx"]);
 
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(((App)Microsoft.UI.Xaml.Application.Current).MainWindow);
         WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
@@ -563,7 +562,7 @@ public partial class ColorViewModel : ViewModelBase
             try
             {
                 var colors = await _unitOfWork.ProductColors.GetAllAsync();
-                _excelService.ExportColorsToExcel(file.Path, colors.ToList());
+                ExcelService.ExportColorsToExcel(file.Path, [.. colors]);
                 await ShowSuccessDialogAsync("Export Successful", "Xuất file thành công.");
             }
             catch (Exception ex)

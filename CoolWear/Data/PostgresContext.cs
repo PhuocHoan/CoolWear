@@ -3,13 +3,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CoolWear.Data;
 
-public partial class PostgresContext : DbContext
+public partial class PostgresContext(DbContextOptions<PostgresContext> options) : DbContext(options)
 {
-    public PostgresContext(DbContextOptions<PostgresContext> options)
-        : base(options)
-    {
-    }
-
     public virtual DbSet<Customer> Customers { get; set; }
 
     public virtual DbSet<Order> Orders { get; set; }

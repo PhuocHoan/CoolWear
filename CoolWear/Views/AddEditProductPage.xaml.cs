@@ -1,7 +1,7 @@
 ﻿using CoolWear.Services;
 using CoolWear.ViewModels;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Navigation; // Needed for OnNavigatedTo
+using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Diagnostics;
 

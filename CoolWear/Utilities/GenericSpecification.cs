@@ -21,10 +21,10 @@ public class GenericSpecification<T> : ISpecification<T>
     public void AddInclude(string includeString) => _includeStrings.Add(includeString);
 
     /// <summary>
-    /// Enables pagination for this specification.
+    /// Kích hoạt phân trang cho đặc tả này.
     /// </summary>
-    /// <param name="skip">Number of items to skip.</param>
-    /// <param name="take">Number of items to take (page size).</param>
+    /// <param name="skip">Số lượng mục cần bỏ qua.</param>
+    /// <param name="take">Số lượng mục cần lấy (kích thước trang).</param>
     protected virtual void ApplyPaging(int skip, int take)
     {
         Skip = skip;

@@ -14,15 +14,15 @@ public abstract class ViewModelBase : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     /// <summary>
-    /// Raise the PropertyChanged event for the specified property.
+    /// Kích hoạt sự kiện PropertyChanged cho thuộc tính được chỉ định.
     /// </summary>
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
     /// <summary>
-    /// Set the specified property and raise the PropertyChanged event if the value has changed.
+    /// Đặt thuộc tính được chỉ định và kích hoạt sự kiện PropertyChanged nếu giá trị đã thay đổi.
     /// </summary>
-    /// <returns>true if the value was changed, false otherwise.</returns>
+    /// <returns>true nếu giá trị đã thay đổi, false nếu không.</returns>
     protected bool SetProperty<T>(
         ref T field,
         T value,
@@ -37,28 +37,28 @@ public abstract class ViewModelBase : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Get the XamlRoot for ContentDialogs
+    /// Lấy XamlRoot cho ContentDialogs
     /// </summary>
-    /// <returns>The XamlRoot for ContentDialogs</returns>
+    /// <returns>XamlRoot cho ContentDialogs</returns>
     protected static XamlRoot? GetXamlRootForDialogs()
     {
         if (Application.Current is App app && app.MainWindow?.Content is FrameworkElement rootElement)
         {
             return rootElement.XamlRoot;
         }
-        Debug.WriteLine("ERROR: Could not obtain XamlRoot for ContentDialog. App, MainWindow, or MainWindow.Content might be null/invalid.");
+        Debug.WriteLine("ERROR: Không thể lấy XamlRoot cho ContentDialog. App, MainWindow, hoặc MainWindow.Content có thể null/không hợp lệ.");
         return null;
     }
 
     /// <summary>
-    /// Show a confirmation dialog with the specified title and content.
+    /// Hiển thị hộp thoại xác nhận với tiêu đề và nội dung được chỉ định.
     /// </summary>
-    /// <returns>The result of the dialog</returns>
+    /// <returns>Kết quả của hộp thoại</returns>
     protected static async Task<ContentDialogResult> ShowConfirmationDialogAsync(
         string title, string content, string primaryText = "OK", string closeText = "Cancel")
     {
         var xamlRoot = GetXamlRootForDialogs();
-        if (xamlRoot == null) return ContentDialogResult.None; // Cannot show dialog
+        if (xamlRoot == null) return ContentDialogResult.None; // Không thể hiển thị hộp thoại
 
         var dialog = new ContentDialog
         {
@@ -73,9 +73,9 @@ public abstract class ViewModelBase : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Show an error dialog with the specified title and message.
+    /// Hiển thị hộp thoại lỗi với tiêu đề và thông báo được chỉ định.
     /// </summary>
-    /// <returns>A task that represents the asynchronous operation.</returns>
+    /// <returns>Một tác vụ đại diện cho hoạt động không đồng bộ.</returns>
     public static async Task ShowErrorDialogAsync(string title, string message)
     {
         var xamlRoot = GetXamlRootForDialogs();
@@ -92,9 +92,9 @@ public abstract class ViewModelBase : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Show a dialog indicating that the specified feature is not implemented.
+    /// Hiển thị hộp thoại cho biết tính năng được chỉ định chưa được triển khai.
     /// </summary>
-    /// <returns>A task that represents the asynchronous operation.</returns>
+    /// <returns>Một tác vụ đại diện cho hoạt động không đồng bộ.</returns>
     protected static async Task ShowNotImplementedDialogAsync(string feature)
     {
         var xamlRoot = GetXamlRootForDialogs();
@@ -111,9 +111,9 @@ public abstract class ViewModelBase : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Show a success dialog with the specified title and message.
+    /// Hiển thị hộp thoại thành công với tiêu đề và thông báo được chỉ định.
     /// </summary>
-    /// <returns>A task that represents the asynchronous operation.</returns>
+    /// <returns>Một tác vụ đại diện cho hoạt động không đồng bộ.</returns>
     protected static async Task ShowSuccessDialogAsync(string title, string message)
     {
         var xamlRoot = GetXamlRootForDialogs();

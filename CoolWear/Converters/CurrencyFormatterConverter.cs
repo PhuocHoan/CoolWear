@@ -6,7 +6,7 @@ namespace CoolWear.Converters;
 
 public partial class CurrencyFormatConverter : IValueConverter
 {
-    // Convert value (int/decimal) to formatted currency string (e.g., "10.000 đ")
+    // Chuyển đổi giá trị (int/decimal) sang chuỗi tiền tệ đã format (e.g., "10.000 đ")
     public object Convert(object value, Type targetType, object parameter, string language)
     {
         if (value is int i)

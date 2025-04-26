@@ -23,6 +23,6 @@ public partial class ProductColor : INotifyPropertyChanged
     /// </summary>
     public bool IsDeleted { get; set; }
 
-    public virtual ICollection<ProductVariant> ProductVariants { get; set; } = new List<ProductVariant>();
+    public virtual ICollection<ProductVariant> ProductVariants { get; set; } = [];
     public event PropertyChangedEventHandler? PropertyChanged;
 }

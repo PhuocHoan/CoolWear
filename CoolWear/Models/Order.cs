@@ -51,7 +51,7 @@ public partial class Order : INotifyPropertyChanged
 
     public virtual Customer? Customer { get; set; }
 
-    public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+    public virtual ICollection<OrderItem> OrderItems { get; set; } = [];
 
     public virtual PaymentMethod PaymentMethod { get; set; } = null!;
 

@@ -23,7 +23,7 @@ public partial class ProductCategory : INotifyPropertyChanged
     /// </summary>
     public string ProductType { get; set; } = null!;
 
-    public virtual ICollection<Product> Products { get; set; } = new List<Product>();
+    public virtual ICollection<Product> Products { get; set; } = [];
 
     public event PropertyChangedEventHandler? PropertyChanged;
 }

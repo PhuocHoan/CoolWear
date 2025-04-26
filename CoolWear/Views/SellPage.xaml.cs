@@ -1,12 +1,10 @@
 ﻿using CoolWear.Models;
 using CoolWear.Services;
 using CoolWear.ViewModels;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 using System;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 
@@ -74,7 +72,7 @@ public sealed partial class SellPage : Page
                     else
                     {
                         Debug.WriteLine($"[WARN] VariantId = {variantId} is out of stock.");
-                        ViewModel.ShowErrorDialog("Out of Stock", $"Sản phẩm {variantId} hết hàng.");
+                        SellViewModel.ShowErrorDialog("Out of Stock", $"Sản phẩm {variantId} hết hàng.");
                     }
                 }
                 else
@@ -91,7 +89,6 @@ public sealed partial class SellPage : Page
         ViewModel.SelectedCategory = null;
     }
 
-
     private void ValidateQuantity(OrderItem orderItem, int stockQuantity)
     {
         if (orderItem.Quantity > stockQuantity)
@@ -100,7 +97,7 @@ public sealed partial class SellPage : Page
             orderItem.Quantity = stockQuantity;
 
             // Notify the user
-            ViewModel.ShowErrorDialog("Stock Limit Exceeded",
+            _ = SellViewModel.ShowErrorDialog("Stock Limit Exceeded",
                 $"Số lượng không thể vượt quá tồn kho ({stockQuantity}).");
         }
         else if (orderItem.Quantity < 1)
@@ -110,24 +107,20 @@ public sealed partial class SellPage : Page
         }
     }
 
-
     private void DeleteOrderItem_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button btn && btn.Tag is int variantId)
         {
-
-            var itemToRemove = ViewModel.OrdersItems.FirstOrDefault(i => i.VariantId == variantId);
+            var itemToRemove = ViewModel.OrdersItems!.FirstOrDefault(i => i.VariantId == variantId);
 
             if (itemToRemove != null)
             {
 
-                ViewModel.OrdersItems.Remove(itemToRemove);
+                ViewModel.OrdersItems!.Remove(itemToRemove);
                 Debug.WriteLine($"✅ Đã xóa sản phẩm với VariantId: {variantId}");
-
 
                 ViewModel.SelectedVariantIds.Remove(variantId);
                 Debug.WriteLine($"✅ Đã xóa VariantId: {variantId} khỏi SelectedVariantIds.");
-
 
                 if (_selectedOrderItem == itemToRemove)
                 {
@@ -142,33 +135,30 @@ public sealed partial class SellPage : Page
         }
     }
 
-
-
     private async void Checkout_Click(object sender, RoutedEventArgs e)
     {
-        if (ViewModel.OrdersItems.Count == 0)
+        if (ViewModel.OrdersItems!.Count == 0)
         {
             Debug.WriteLine("Không có sản phẩm nào để thanh toán.");
-            await ViewModel.ShowErrorDialog("Error", "Không có sản phẩm nào để thanh toán.");
+            await SellViewModel.ShowErrorDialog("Error", "Không có sản phẩm nào để thanh toán.");
             return;
         }
 
         try
         {
-
             int subtotal = ViewModel.OrdersItems.Sum(i => i.Quantity * i.UnitPrice);
-            int pointUsed = ViewModel.PointInput; 
-            int netTotal = subtotal - pointUsed*1000;
+            int pointUsed = ViewModel.PointInput;
+            int netTotal = subtotal - pointUsed * 1000;
 
             var newOrder = new Order
             {
-                OrderDate = DateTime.Now,
+                OrderDate = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 Subtotal = subtotal,
                 NetTotal = netTotal,
                 PointUsed = pointUsed,
                 Status = ViewModel.SelectedStatus,
                 CustomerId = _selectedCustomerId,
-                PaymentMethodId = ViewModel.SelectedPaymentMethodId, 
+                PaymentMethodId = ViewModel.SelectedPaymentMethodId,
             };
 
             await ViewModel.UnitOfWork.Orders.AddAsync(newOrder);
@@ -208,9 +198,9 @@ public sealed partial class SellPage : Page
                 var customer = await ViewModel.UnitOfWork.Customers.GetByIdAsync(_selectedCustomerId.Value);
                 if (customer != null)
                 {
-                    
+
                     int pointsEarned = SellViewModel.CalculatePoints(netTotal);
-                    if(ViewModel.SelectedStatus=="Hoàn thành")
+                    if (ViewModel.SelectedStatus == "Hoàn thành")
                         customer.Points += pointsEarned;
                     customer.Points -= pointUsed;
 
@@ -221,7 +211,6 @@ public sealed partial class SellPage : Page
                 }
             }
 
-
             ViewModel.OrdersItems.Clear();
             ViewModel.SelectedVariantIds.Clear();
             ViewModel.SelectedPaymentMethodId = 1;
@@ -230,7 +219,7 @@ public sealed partial class SellPage : Page
 
             await ViewModel.InitializeAsync();
             Debug.WriteLine("✅ Thanh toán thành công!");
-            await ViewModel.ShowSuccessDialog("Success", "Thanh toán thành công.");
+            await SellViewModel.ShowSuccessDialog("Success", "Thanh toán thành công.");
             if (ViewModel.IsReceiptEnabled)
             {
                 Debug.WriteLine("Generating receipt...");
@@ -240,12 +229,9 @@ public sealed partial class SellPage : Page
         catch (Exception ex)
         {
             Debug.WriteLine($"❌ Lỗi khi lưu đơn hàng: {ex.Message}");
-            await ViewModel.ShowErrorDialog("Error", "Lỗi thanh toán.");
+            await SellViewModel.ShowErrorDialog("Error", "Lỗi thanh toán.");
         }
     }
-
-
-
     private void SelectCustomer_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button btn && btn.Tag is int customerId)
@@ -272,8 +258,6 @@ public sealed partial class SellPage : Page
             }
         }
     }
-
-
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {

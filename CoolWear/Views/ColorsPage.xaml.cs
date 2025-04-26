@@ -7,9 +7,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace CoolWear.Views;
-/// <summary>
-/// An empty page that can be used on its own or navigated to within a Frame.
-/// </summary>
+
 public sealed partial class ColorsPage : Page
 {
     public ColorViewModel ViewModel { get; }

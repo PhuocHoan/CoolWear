@@ -7,9 +7,6 @@ using System.Linq;
 
 namespace CoolWear.Views;
 
-/// <summary>
-/// An empty window that can be used on its own or navigated to within a Frame.
-/// </summary>
 public sealed partial class DashboardWindow : Window
 {
     private readonly INavigationService _navigationService;
@@ -55,7 +52,6 @@ public sealed partial class DashboardWindow : Window
         }
     }
 
-
     private void PerformLogout()
     {
         var loginWindow = new LoginWindow();
@@ -67,7 +63,6 @@ public sealed partial class DashboardWindow : Window
 
         Close(); // Close the current DashboardWindow
     }
-
 
     private void Navigation_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args) { }
 }

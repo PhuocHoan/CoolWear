@@ -20,8 +20,6 @@ public partial class CustomerViewModel : ViewModelBase
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly DispatcherQueue _dispatcherQueue;
-    private readonly ExcelService _excelService = new ExcelService(); // Added ExcelService instance
-
 
     private bool _isResettingFilters = false;
     private const int DefaultPageSize = 1;
@@ -295,7 +293,7 @@ public partial class CustomerViewModel : ViewModelBase
                     Email = email,
                     Phone = phone,
                     Address = address,
-                    CreateDate = DateTime.UtcNow,
+                    CreateDate = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified), // Ép kiểu Kind thành Unspecified
                 };
                 await _unitOfWork.Customers.AddAsync(newCustomer);
             }
@@ -385,7 +383,7 @@ public partial class CustomerViewModel : ViewModelBase
         if (!CanDeleteCustomer(customer)) return;
         var confirmation = await ShowConfirmationDialogAsync(
             "Xác Nhận Xóa Khách hàng",
-            $"Bạn có chắc muốn xóa khách hàng '{customer.CustomerName}' không?",
+            $"Bạn có chắc muốn xóa khách hàng '{customer!.CustomerName}' không?",
             "Xóa", "Hủy");
         if (confirmation == ContentDialogResult.Primary)
         {
@@ -438,63 +436,63 @@ public partial class CustomerViewModel : ViewModelBase
         }
     }
     private async Task ImportCustomersAsync()
-{
-    var picker = new Windows.Storage.Pickers.FileOpenPicker();
-    picker.FileTypeFilter.Add(".xlsx");
-
-    var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(((App)Microsoft.UI.Xaml.Application.Current).MainWindow);
-    WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
-
-    var file = await picker.PickSingleFileAsync();
-    if (file != null)
     {
-        try
+        var picker = new Windows.Storage.Pickers.FileOpenPicker();
+        picker.FileTypeFilter.Add(".xlsx");
+
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(((App)Microsoft.UI.Xaml.Application.Current).MainWindow);
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+        var file = await picker.PickSingleFileAsync();
+        if (file != null)
         {
-            var customers = _excelService.ImportCustomersFromExcel(file.Path);
-
-            // Retrieve existing customer emails and phone numbers from the database
-            var existingCustomers = await _unitOfWork.Customers.GetAllAsync();
-            var existingEmails = existingCustomers
-                .Where(c => !string.IsNullOrEmpty(c.Email))
-                .Select(c => c.Email!.ToLower())
-                .ToHashSet(); // Use HashSet for efficient lookups
-            var existingPhones = existingCustomers
-                .Select(c => c.Phone)
-                .ToHashSet();
-
-            foreach (var customer in customers)
+            try
             {
-                // Check if the customer already exists by email or phone
-                if ((customer.Email != null && existingEmails.Contains(customer.Email.ToLower())) ||
-                    existingPhones.Contains(customer.Phone))
+                var customers = ExcelService.ImportCustomersFromExcel(file.Path);
+
+                // Lấy thông tin khách hàng hiện có từ cơ sở dữ liệu
+                var existingCustomers = await _unitOfWork.Customers.GetAllAsync();
+                var existingEmails = existingCustomers
+                    .Where(c => !string.IsNullOrEmpty(c.Email))
+                    .Select(c => c.Email!.ToLower())
+                    .ToHashSet(); // Sử dụng HashSet để tra cứu hiệu quả
+                var existingPhones = existingCustomers
+                    .Select(c => c.Phone)
+                    .ToHashSet();
+
+                foreach (var customer in customers)
                 {
-                    continue; // Skip duplicates
+                    // Kiểm tra xem khách hàng đã tồn tại bằng email hoặc số điện thoại
+                    if ((customer.Email != null && existingEmails.Contains(customer.Email.ToLower())) ||
+                        existingPhones.Contains(customer.Phone))
+                    {
+                        continue; // Bỏ qua các bản sao
+                    }
+
+                    // Thêm khách hàng nếu chưa tồn tại
+                    await _unitOfWork.Customers.AddAsync(customer);
                 }
 
-                // Add the customer if it doesn't already exist
-                await _unitOfWork.Customers.AddAsync(customer);
+                await _unitOfWork.SaveChangesAsync();
+                await ShowSuccessDialogAsync("Import Successful", "Nhập file thành công.");
             }
-
-            await _unitOfWork.SaveChangesAsync();
-            await ShowSuccessDialogAsync("Import Successful", "Nhập file thành công.");
-        }
-        catch (Exception ex)
-        {
-            string errorMessage = $"An error occurred while importing: {ex.Message}";
-            if (ex.InnerException != null)
+            catch (Exception ex)
             {
-                errorMessage += $"\nInner Exception: {ex.InnerException.Message}";
+                string errorMessage = $"An error occurred while importing: {ex.Message}";
+                if (ex.InnerException != null)
+                {
+                    errorMessage += $"\nInner Exception: {ex.InnerException.Message}";
+                }
+                await ShowErrorDialogAsync("Import Failed", errorMessage);
             }
-            await ShowErrorDialogAsync("Import Failed", errorMessage);
         }
     }
-}
 
 
     private async Task ExportCustomersAsync()
     {
         var picker = new Windows.Storage.Pickers.FileSavePicker();
-        picker.FileTypeChoices.Add("Excel File", new List<string> { ".xlsx" });
+        picker.FileTypeChoices.Add("Excel File", [".xlsx"]);
 
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(((App)Microsoft.UI.Xaml.Application.Current).MainWindow);
         WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
@@ -505,7 +503,7 @@ public partial class CustomerViewModel : ViewModelBase
             try
             {
                 var customers = await _unitOfWork.Customers.GetAllAsync();
-                _excelService.ExportCustomersToExcel(file.Path, customers.ToList());
+                ExcelService.ExportCustomersToExcel(file.Path, [.. customers]);
                 await ShowSuccessDialogAsync("Export Successful", "Xuất file thành công.");
             }
             catch (Exception ex)

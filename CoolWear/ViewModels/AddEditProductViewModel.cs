@@ -737,7 +737,7 @@ public partial class AddEditProductViewModel : ViewModelBase
                     ImportPrice = ImportPrice,
                     Price = Price,
                     CategoryId = SelectedCategory!.CategoryId,
-                    PublicId = imagePathToSave, // Gán đường dẫn ảnh hoặc placeholder
+                    PublicId = imagePathToSave!, // Gán đường dẫn ảnh hoặc placeholder
                     IsDeleted = false,
                     ProductVariants = [] // Khởi tạo danh sách biến thể
                 };

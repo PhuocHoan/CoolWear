@@ -99,6 +99,7 @@
 					<lvc:CartesianChart
 						Series="{x:Bind ViewModel.RevenueChartSeries, Mode=OneWay}"
 						XAxes="{x:Bind ViewModel.RevenueXAxes, Mode=OneWay}"
+						YAxes="{x:Bind ViewModel.RevenueYAxes, Mode=OneWay}"
 						LegendPosition="Bottom"
 						TooltipPosition="Top"
 						Height="400"/>
@@ -113,6 +114,7 @@
 					<lvc:CartesianChart
 						Series="{x:Bind ViewModel.TopProductChartSeries, Mode=OneWay}"
 						XAxes="{x:Bind ViewModel.TopProductXAxes, Mode=OneWay}"
+						YAxes="{x:Bind ViewModel.TopProductYAxes, Mode=OneWay}"
 						LegendPosition="Bottom"
 						TooltipPosition="Top"
 						Height="400"/>

@@ -20,7 +20,7 @@ public partial class UnitOfWork(PostgresContext context) : IUnitOfWork
     public GenericRepository<StoreOwner> StoreOwners { get; } = new(context);
 
 
-    // Clear all the resources
+    // Xóa tất cả các tài nguyên
     public void Dispose()
     {
         Dispose(true);
@@ -33,10 +33,10 @@ public partial class UnitOfWork(PostgresContext context) : IUnitOfWork
         {
             if (disposing)
             {
-                // Clear all managed resources here
+                // Xóa tất cả các tài nguyên được quản lý ở đây
             }
 
-            // Clear all unmanaged resources 
+            // Xóa tất cả các tài nguyên không được quản lý
             disposed = true;
             await context.DisposeAsync();
         }
@@ -44,15 +44,15 @@ public partial class UnitOfWork(PostgresContext context) : IUnitOfWork
 
     public async Task<bool> SaveChangesAsync() => await context.SaveChangesAsync() > 0;
 
-    // Begin a transaction
+    // Bắt đầu một giao dịch
     public async Task BeginTransactionAsync() => await context.Database.BeginTransactionAsync();
 
-    // Commit a transaction
+    // Cam kết một giao dịch
     public async Task CommitTransactionAsync() => await context.Database.CommitTransactionAsync();
 
-    // Rollback a transaction
+    // Hoàn tác một giao dịch
     public async Task RollbackTransactionAsync() => await context.Database.RollbackTransactionAsync();
 
-    // Destructor (finalizer)
+    // Trình hủy (finalizer)
     ~UnitOfWork() => Dispose(false);
 }

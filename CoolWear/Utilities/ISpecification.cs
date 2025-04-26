@@ -5,29 +5,29 @@ using System.Linq.Expressions;
 namespace CoolWear.Utilities;
 
 /// <summary>
-/// Interface for implementing the Specification pattern with dynamic querying capabilities.
+/// Giao diện để triển khai mẫu Đặc tả với khả năng truy vấn động.
 /// </summary>
-/// <typeparam name="T">The type of entity to which this specification applies.</typeparam>
+/// <typeparam name="T">Loại thực thể mà đặc tả này áp dụng.</typeparam>
 public interface ISpecification<T>
 {
     /// <summary>
-    /// Collection of filter expressions to be applied to the query.
+    /// Bộ sưu tập các biểu thức lọc sẽ được áp dụng cho truy vấn.
     /// </summary>
     IEnumerable<Expression<Func<T, bool>>> Criteria { get; }
 
     /// <summary>
-    /// Collection of include expressions for eager loading related entities.
+    /// Bộ sưu tập các biểu thức bao gồm để tải trước các thực thể liên quan.
     /// </summary>
-    IEnumerable<string> IncludeStrings { get; } // String based Includes
+    IEnumerable<string> IncludeStrings { get; } // Bao gồm dựa trên chuỗi
 
-    // --- Pagination ---
+    // --- Phân trang ---
     /// <summary>
-    /// Gets the number of items to take (page size).
+    /// Lấy số lượng mục cần lấy (kích thước trang).
     /// </summary>
     int Take { get; }
 
     /// <summary>
-    /// Gets the number of items to skip.
+    /// Lấy số lượng mục cần bỏ qua.
     /// </summary>
     int Skip { get; }
 }

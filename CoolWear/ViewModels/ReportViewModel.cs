@@ -38,8 +38,9 @@ public class TopProductModel
     public int QuantitySold { get; set; }
 }
 
-public partial class ReportViewModel(IUnitOfWork unitOfWork) : ViewModelBase
+public partial class ReportViewModel : ViewModelBase
 {
+    private readonly IUnitOfWork _unitOfWork;
     private readonly DispatcherQueue _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
     private bool _isLoading = false;
 
@@ -61,11 +62,16 @@ public partial class ReportViewModel(IUnitOfWork unitOfWork) : ViewModelBase
     // --- Properties cho Biểu đồ Doanh thu ---
     private ObservableCollection<ISeries> _revenueChartSeries = [];
     private IEnumerable<ICartesianAxis> _revenueXAxes = [];
+    private IEnumerable<ICartesianAxis> _revenueYAxes = [];
 
     // --- Properties cho Biểu đồ Sản phẩm bán chạy ---
     private ObservableCollection<ISeries> _topProductChartSeries = [];
-    // Đổi tên thành XAxes cho rõ ràng
     private IEnumerable<ICartesianAxis> _topProductXAxes = [];
+    private IEnumerable<ICartesianAxis> _topProductYAxes = [];
+
+    // === Default Axes (Để tránh lỗi khởi tạo) ===
+    private static readonly Axis[] _defaultXAxis = [new Axis { IsVisible = false }]; // Trục X mặc định ẩn
+    private static readonly Axis[] _defaultYAxis = [new Axis { IsVisible = false }]; // Trục Y mặc định ẩn
 
     // === Public Properties ===
     public bool IsLoading { get => _isLoading; private set => SetProperty(ref _isLoading, value); }
@@ -109,8 +115,23 @@ public partial class ReportViewModel(IUnitOfWork unitOfWork) : ViewModelBase
     // LiveCharts Properties
     public ObservableCollection<ISeries> RevenueChartSeries { get => _revenueChartSeries; set => SetProperty(ref _revenueChartSeries, value); }
     public IEnumerable<ICartesianAxis> RevenueXAxes { get => _revenueXAxes; set => SetProperty(ref _revenueXAxes, value); }
+    public IEnumerable<ICartesianAxis> RevenueYAxes { get => _revenueYAxes; set => SetProperty(ref _revenueYAxes, value); }
     public ObservableCollection<ISeries> TopProductChartSeries { get => _topProductChartSeries; set => SetProperty(ref _topProductChartSeries, value); }
     public IEnumerable<ICartesianAxis> TopProductXAxes { get => _topProductXAxes; set => SetProperty(ref _topProductXAxes, value); }
+    public IEnumerable<ICartesianAxis> TopProductYAxes { get => _topProductYAxes; set => SetProperty(ref _topProductYAxes, value); }
+
+    public ReportViewModel(IUnitOfWork unitOfWork) // Sửa constructor để nhận IUnitOfWork
+    {
+        _unitOfWork = unitOfWork; // Gán unitOfWork
+
+        // *** Khởi tạo Axes với giá trị mặc định NGAY LẬP TỨC ***
+        RevenueXAxes = _defaultXAxis;
+        RevenueYAxes = _defaultYAxis;
+        TopProductXAxes = _defaultXAxis;
+        TopProductYAxes = _defaultYAxis;
+
+        // _ = LoadReportDataAsync(); // Có thể gọi ở OnNavigatedTo thay vì constructor
+    }
 
     /// <summary>
     /// Phương thức chính để tải tất cả dữ liệu báo cáo dựa trên SelectedPeriod.
@@ -137,7 +158,7 @@ public partial class ReportViewModel(IUnitOfWork unitOfWork) : ViewModelBase
 
         CurrentDateRevenueSelectionText = "Biểu Đồ Doanh Thu trong giai đoạn";
         CurrentDateTopProductSelectionText = "Top 10 Sản Phẩm Bán Chạy trong giai đoạn";
-        string period;
+        string periodText;
 
         switch (SelectedPeriod)
         {
@@ -150,9 +171,7 @@ public partial class ReportViewModel(IUnitOfWork unitOfWork) : ViewModelBase
                 // Update binding text hiển thị trên giao diện
                 CurrentDateSelectionText = $"Ngày: {startDateReport:dd/MM/yyyy}";
 
-                period = $" {startDateChart:dd/MM/yyyy} - {selectedDateOnly:dd/MM/yyyy}";
-                CurrentDateRevenueSelectionText += period;
-                CurrentDateTopProductSelectionText += period;
+                periodText = $" {startDateChart:dd/MM/yyyy} - {selectedDateOnly:dd/MM/yyyy}";
                 break;
             case ReportPeriod.Monthly:
                 // Đầu tháng của tháng được chọn + 1 tháng = đầu tháng sau
@@ -164,9 +183,7 @@ public partial class ReportViewModel(IUnitOfWork unitOfWork) : ViewModelBase
                 // Update binding text hiển thị trên giao diện
                 CurrentDateSelectionText = $"Tháng: {startDateReport:MM/yyyy}";
 
-                period = $" {startDateChart:MM/yyyy} - {selectedDateOnly:MM/yyyy}";
-                CurrentDateRevenueSelectionText += period;
-                CurrentDateTopProductSelectionText += period;
+                periodText = $" {startDateChart:MM/yyyy} - {selectedDateOnly:MM/yyyy}";
                 break;
             case ReportPeriod.Yearly:
                 // Đầu năm của năm được chọn + 1 năm = đầu năm sau
@@ -178,12 +195,12 @@ public partial class ReportViewModel(IUnitOfWork unitOfWork) : ViewModelBase
                 // Update binding text hiển thị trên giao diện
                 CurrentDateSelectionText = $"Năm: {startDateReport:yyyy}";
 
-                period = $" {startDateChart:yyyy} - {selectedDateOnly:yyyy}";
-                CurrentDateRevenueSelectionText += period;
-                CurrentDateTopProductSelectionText += period;
+                periodText = $" {startDateChart:yyyy} - {selectedDateOnly:yyyy}";
                 break;
         }
 
+        CurrentDateRevenueSelectionText += periodText;
+        CurrentDateTopProductSelectionText += periodText;
         // Chuyển sang UTC để truy vấn DB
         DateTime startDateChartUtc = startDateChart.ToUniversalTime();
         DateTime endDateChartUtc = endDateChart.ToUniversalTime();
@@ -195,8 +212,8 @@ public partial class ReportViewModel(IUnitOfWork unitOfWork) : ViewModelBase
         {
             (double revenue, double profit) = await CalculateRevenueAndProfitAsync(startDateReportUtc, endDateReportUtc);
             (int completed, int processing, int cancelled, int returned) = await GetOrderStatusCountsAsync(startDateReportUtc, endDateReportUtc);
-            (List<ISeries> revenueSeries, IEnumerable<ICartesianAxis> revenueXAxes) = await LoadRevenueChartDataAsync(startDateChartUtc, endDateChartUtc, SelectedPeriod);
-            (List<ISeries> topProductSeries, IEnumerable<ICartesianAxis> topProductXAxesResult) = await LoadTopProductsChartDataAsync(startDateChartUtc, endDateChartUtc);
+            (List<ISeries> revenueSeries, Axis[] revenueXAxesResult, Axis[] revenueYAxesResult) = await LoadRevenueChartDataAsync(startDateChartUtc, endDateChartUtc, SelectedPeriod);
+            (List<ISeries> topProductSeries, Axis[] topProductXAxesResult, Axis[] topProductYAxesResult) = await LoadTopProductsChartDataAsync(startDateChartUtc, endDateChartUtc);
 
             _dispatcherQueue.TryEnqueue(() =>
             {
@@ -209,9 +226,12 @@ public partial class ReportViewModel(IUnitOfWork unitOfWork) : ViewModelBase
 
                 // Cập nhật dữ liệu biểu đồ (ObservableCollection nên cập nhật trên UI thread)
                 RevenueChartSeries = [.. revenueSeries];
-                RevenueXAxes = revenueXAxes; // Gán trục X đã cấu hình
+                RevenueXAxes = revenueXAxesResult; // Gán trục X đã cấu hình
+                RevenueYAxes = revenueYAxesResult; // Gán trục Y đã cấu hình
+
                 TopProductChartSeries = [.. topProductSeries];
                 TopProductXAxes = topProductXAxesResult; // Gán trục X đã cấu hình
+                TopProductYAxes = topProductYAxesResult; // Gán trục Y đã cấu hình
             });
 
         }
@@ -223,8 +243,8 @@ public partial class ReportViewModel(IUnitOfWork unitOfWork) : ViewModelBase
                 _ = ShowErrorDialogAsync("Lỗi Tải Báo Cáo", $"Không thể tải dữ liệu báo cáo: {ex.Message}");
                 // Reset giá trị nếu lỗi
                 TotalRevenue = 0; TotalProfit = 0; CompletedOrdersCount = 0; ProcessingOrdersCount = 0; CancelledOrdersCount = 0; ReturnedOrdersCount = 0;
-                RevenueChartSeries = []; TopProductChartSeries = [];
-                RevenueXAxes = []; TopProductXAxes = [];
+                RevenueChartSeries = []; RevenueXAxes = _defaultXAxis; RevenueYAxes = _defaultYAxis;
+                TopProductChartSeries = []; TopProductXAxes = _defaultXAxis; TopProductYAxes = _defaultYAxis;
             });
         }
         finally
@@ -242,7 +262,7 @@ public partial class ReportViewModel(IUnitOfWork unitOfWork) : ViewModelBase
         double totalCost = 0;
 
         var spec = new OrderSpecification().CompletedOrderRevenue(startDateUtc, endDateUtc); // Lọc đơn hàng hoàn thành trong khoảng thời gian, dùng cho việc tính tổng doanh thu.
-        var completedOrders = await unitOfWork.Orders.GetAsync(spec);
+        var completedOrders = await _unitOfWork.Orders.GetAsync(spec);
 
         if (completedOrders != null)
         {
@@ -272,7 +292,7 @@ public partial class ReportViewModel(IUnitOfWork unitOfWork) : ViewModelBase
     private async Task<(int completed, int processing, int cancelled, int returned)> GetOrderStatusCountsAsync(DateTime startDateUtc, DateTime endDateUtc)
     {
         var spec = new OrderSpecification().OrderStatusCount(startDateUtc, endDateUtc); // Lọc đơn hàng trong khoảng thời gian
-        var ordersInPeriod = await unitOfWork.Orders.GetAsync(spec);
+        var ordersInPeriod = await _unitOfWork.Orders.GetAsync(spec);
 
         int completed = 0; int processing = 0; int cancelled = 0; int returned = 0;
         if (ordersInPeriod != null)
@@ -290,10 +310,11 @@ public partial class ReportViewModel(IUnitOfWork unitOfWork) : ViewModelBase
     /// <summary>
     /// Chuẩn bị dữ liệu và cấu hình cho biểu đồ doanh thu theo thời gian.
     /// </summary>
-    private async Task<(List<ISeries> series, Axis[] xAxes)> LoadRevenueChartDataAsync(DateTime startDateUtc, DateTime endDateUtc, ReportPeriod period)
+    private async Task<(List<ISeries> series, Axis[] xAxes, Axis[] yAxes)> LoadRevenueChartDataAsync(DateTime startDateUtc, DateTime endDateUtc, ReportPeriod period)
     {
         List<DateRevenueModel> revenueData = [];
-        Axis[] axes = [];
+        Axis[] xAxes = _defaultXAxis; // Khởi tạo bằng default
+        Axis[] yAxes = _defaultYAxis; // Khởi tạo Y bằng default
         string axisName;
         string axisLabelFormat = "dd/MM/yy";
 
@@ -314,7 +335,7 @@ public partial class ReportViewModel(IUnitOfWork unitOfWork) : ViewModelBase
             }
 
             var spec = new OrderSpecification().CompletedOrderRevenue(startDateUtc, endDateUtc);
-            var completedOrders = await unitOfWork.Orders.GetAsync(spec);
+            var completedOrders = await _unitOfWork.Orders.GetAsync(spec);
 
             if (completedOrders != null && completedOrders.Any())
             {
@@ -341,7 +362,7 @@ public partial class ReportViewModel(IUnitOfWork unitOfWork) : ViewModelBase
                 // Tạo mảng nhãn từ dữ liệu
                 string[] dateLabels = [.. revenueData.Select(d => d.Date.ToString(axisLabelFormat))];
 
-                axes =
+                xAxes =
                 [
                     new Axis
                     {
@@ -353,11 +374,21 @@ public partial class ReportViewModel(IUnitOfWork unitOfWork) : ViewModelBase
                         SeparatorsAtCenter = false, // Không phân cách ở giữa
                     }
                 ];
+
+                yAxes =
+                [
+                    new Axis
+                    {
+                        Name = "Doanh thu (VNĐ)",
+                        Labeler = value => value.ToString("N0"),
+                        MinLimit = 0
+                    }
+                ]; // Format số tiền
             }
             else
             {
                 // Nếu không có dữ liệu, vẫn tạo một trục mặc định
-                axes =
+                xAxes =
                 [
                     new Axis
                     {
@@ -370,6 +401,14 @@ public partial class ReportViewModel(IUnitOfWork unitOfWork) : ViewModelBase
                         ShowSeparatorLines = false,
                         TextSize = 20,
                         LabelsPaint = new SolidColorPaint(SKColors.Red),
+                    }
+                ];
+
+                yAxes =
+                [
+                    new Axis
+                    {
+                        IsVisible = false
                     }
                 ];
             }
@@ -393,24 +432,25 @@ public partial class ReportViewModel(IUnitOfWork unitOfWork) : ViewModelBase
                 }
             };
 
-        return (series, axes);
+        return (series, xAxes, yAxes);
     }
 
 
     /// <summary>
     /// Chuẩn bị dữ liệu và cấu hình cho biểu đồ Top 10 sản phẩm bán chạy DẠNG CỘT DỌCG (Column Chart).
     /// </summary>
-    private async Task<(List<ISeries> series, Axis[] xAxes)> LoadTopProductsChartDataAsync(DateTime startDateUtc, DateTime endDateUtc)
+    private async Task<(List<ISeries> series, Axis[] xAxes, Axis[] yAxes)> LoadTopProductsChartDataAsync(DateTime startDateUtc, DateTime endDateUtc)
     {
         List<TopProductModel> topProductsData = [];
-        Axis[] xAxes = []; // trục X chứa nhãn sản phẩm
+        Axis[] xAxes = _defaultXAxis; // Khởi tạo bằng default
+        Axis[] yAxes = _defaultYAxis; // Khởi tạo Y bằng default
         string[] labels = [];
 
         try
         {
             var spec = new OrderItemSpecification()
                 .TopSellingItems(startDateUtc, endDateUtc); // Lọc OrderItem của các đơn hàng Hoàn thành trong khoảng thời gian
-            var itemsSold = await unitOfWork.OrderItems.GetAsync(spec);
+            var itemsSold = await _unitOfWork.OrderItems.GetAsync(spec);
 
             if (itemsSold != null && itemsSold.Any())
             {
@@ -443,6 +483,17 @@ public partial class ReportViewModel(IUnitOfWork unitOfWork) : ViewModelBase
                         SeparatorsAtCenter = false, // Không phân cách ở giữa
                     }
                 ];
+
+                yAxes =
+                [
+                    new Axis
+                    {
+                        Name = "Số lượng bán",
+                        Labeler = value => value.ToString("N0"), // Format số nguyên
+                        MinLimit = 0,
+                        MinStep = 1
+                    }
+                ];
             }
             else
             {
@@ -460,6 +511,14 @@ public partial class ReportViewModel(IUnitOfWork unitOfWork) : ViewModelBase
                         ShowSeparatorLines = false,
                         TextSize = 20,
                         LabelsPaint = new SolidColorPaint(SKColors.Red),
+                    }
+                ];
+
+                yAxes =
+                [
+                    new Axis
+                    {
+                        IsVisible = false
                     }
                 ];
             }
@@ -481,6 +540,6 @@ public partial class ReportViewModel(IUnitOfWork unitOfWork) : ViewModelBase
             }
         };
 
-        return (series, xAxes);
+        return (series, xAxes, yAxes);
     }
 }

@@ -4,7 +4,7 @@ using System;
 
 namespace CoolWear.Converters;
 
-public class ReportPeriodToDatePickerVisibilityConverter : IValueConverter
+public partial class ReportPeriodToDatePickerVisibilityConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, string language) => value is ReportPeriod period && parameter is string partName
             ? partName switch

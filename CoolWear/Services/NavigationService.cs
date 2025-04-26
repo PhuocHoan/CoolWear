@@ -6,7 +6,7 @@ namespace CoolWear.Services;
 
 public class NavigationService : INavigationService
 {
-    public Frame? AppFrame { get; set; } // Set this from DashboardWindow
+    public Frame? AppFrame { get; set; } // Cài đặt giá trị này từ DashboardWindow
 
     public bool Navigate(Type sourcePageType)
     {
@@ -20,7 +20,7 @@ public class NavigationService : INavigationService
 
     public bool Navigate(Type sourcePageType, object parameter)
     {
-        if (AppFrame != null) // Allow re-navigating to same page with different param
+        if (AppFrame != null) // Cho phép chuyển hướng lại đến cùng trang với tham số khác
         {
             return AppFrame.Navigate(sourcePageType, parameter);
         }

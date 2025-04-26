@@ -1,5 +1,4 @@
-﻿// Converters/NullableDateTimeOffsetConverter.cs
-using Microsoft.UI.Xaml.Data;
+﻿using Microsoft.UI.Xaml.Data;
 using System;
 
 namespace CoolWear.Converters;
@@ -18,7 +17,7 @@ public partial class NullableDateTimeOffsetConverter : IValueConverter
         return DateTimeOffset.Now;
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    public object? ConvertBack(object value, Type targetType, object parameter, string language)
     {
         // Giá trị từ DatePicker luôn là DateTimeOffset (non-nullable)
         // Chỉ cần trả về giá trị đó, kiểu DateTimeOffset? trong ViewModel sẽ chấp nhận

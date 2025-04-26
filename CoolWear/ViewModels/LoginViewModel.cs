@@ -16,13 +16,13 @@ public partial class LoginViewModel : ViewModelBase
     private StoreOwner? _storeOwner;
     public ManagePassword? ManagePassword { get; private set; }
 
-    // Add backing fields for properties
+    // Thêm các trường hỗ trợ cho các thuộc tính
     private string _username = "";
     private string _password = "";
     private bool _rememberMe = false;
     private string _unProtectedPassword = "";
 
-    // Use properties with SetProperty for change notification
+    // Sử dụng các thuộc tính với SetProperty để thông báo thay đổi
     public string Username
     {
         get => _username;
@@ -48,17 +48,15 @@ public partial class LoginViewModel : ViewModelBase
         _unitOfWork = unitOfWork;
 
         LoginCommand = new AsyncRelayCommand(LoginAsync);
-
-        _ = InitializeDataAsync();
     }
 
-    private async Task InitializeDataAsync()
+    public async Task InitializeDataAsync()
     {
         var owners = await _unitOfWork.StoreOwners.GetAllAsync();
         if (owners.Any())
         {
             _storeOwner = owners.First();
-            Debug.WriteLine($"Store owner: {_storeOwner.Username}");
+            Debug.WriteLine($"Chủ cửa hàng: {_storeOwner.Username}");
 
             ManagePassword = new(_storeOwner, _unitOfWork);
             var result = ManagePassword.UnprotectPassword();
@@ -68,7 +66,7 @@ public partial class LoginViewModel : ViewModelBase
         }
         else
         {
-            Debug.WriteLine("No store owners found");
+            Debug.WriteLine("Không tìm thấy chủ cửa hàng nào");
         }
     }
 
@@ -77,21 +75,21 @@ public partial class LoginViewModel : ViewModelBase
     public bool Login() =>
         _storeOwner != null &&
         Username == _storeOwner.Username &&
-        (Password == _unProtectedPassword || Password == "123"); // Password default is 123 or the one stored
+        (Password == _unProtectedPassword || Password == "123"); // Mật khẩu mặc định là 123 hoặc mật khẩu đã lưu
 
     public async Task LoginAsync()
     {
         Debug.WriteLine(Username + " " + Password);
 
         if (CanLogin())
-        { // CanExecute - Look before you leap
-            bool success = Login(); // Execute
+        { // Có thể thực hiện - Kiểm tra trước khi thực hiện
+            bool success = Login(); // Thực hiện
 
             if (RememberMe == true)
             {
                 ManagePassword!.ProtectPassword(Password);
 
-                Debug.WriteLine($"Encrypted password in base 64 is: {Password}");
+                Debug.WriteLine($"Mật khẩu đã mã hóa dưới dạng base 64 là: {Password}");
             }
 
             if (success)
@@ -100,15 +98,15 @@ public partial class LoginViewModel : ViewModelBase
 
                 if (Application.Current is App app)
                 {
-                    app.MainWindow!.Close(); // Close the login window
-                    app.SetMainWindow(dashboardWindow); // Tell the App about the new main window
+                    app.MainWindow!.Close(); // Đóng cửa sổ đăng nhập
+                    app.SetMainWindow(dashboardWindow); // Thông báo cho App về cửa sổ chính mới
                 }
                 else
                 {
-                    Debug.WriteLine("ERROR: Could not cast Application.Current to App to set main window.");
+                    Debug.WriteLine("LỖI: Không thể ép kiểu Application.Current thành App để đặt cửa sổ chính.");
                 }
 
-                dashboardWindow.Activate(); // Activate the new window
+                dashboardWindow.Activate(); // Kích hoạt cửa sổ mới
             }
             else
             {

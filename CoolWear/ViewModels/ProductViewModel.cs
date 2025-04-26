@@ -21,10 +21,10 @@ public partial class ProductViewModel : ViewModelBase
     {
         public string DisplayName { get; set; } = string.Empty;
 
-        // Represents the filter state:
-        // null = All
-        // true = In Stock
-        // false = Out of Stock
+        // Đại diện cho trạng thái bộ lọc:
+        // null = Tất cả
+        // true = Còn hàng
+        // false = Hết hàng
         public bool? Value { get; set; }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -36,7 +36,7 @@ public partial class ProductViewModel : ViewModelBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly INavigationService _navigationService; // Inject service
     private readonly DispatcherQueue _dispatcherQueue;
-    private readonly ExcelService _excelService = new ExcelService(); // Added ExcelService instance
+    private readonly ExcelService _excelService = new(); // Thêm instance của ExcelService
 
     private bool _isResettingFilters = false;
 
@@ -109,7 +109,7 @@ public partial class ProductViewModel : ViewModelBase
         get => _selectedStockFilter; set => SetProperty(ref _selectedStockFilter, value);
     }
 
-    // If IsLoading = true, prevent ApplyFilters from running
+    // Nếu IsLoading = true, ngăn không cho ApplyFilters chạy
     public bool IsLoading { get => _isLoading; private set => SetProperty(ref _isLoading, value, nameof(IsLoading), UpdateCommandStates); }
     public bool ShowEmptyMessage { get => _showEmptyMessage; private set => SetProperty(ref _showEmptyMessage, value); }
 
@@ -149,12 +149,12 @@ public partial class ProductViewModel : ViewModelBase
     public ProductViewModel(IUnitOfWork unitOfWork, INavigationService navigationService)
     {
         _unitOfWork = unitOfWork;
-        _navigationService = navigationService; // Store service
+        _navigationService = navigationService; // Lưu trữ service
 
         // LẤY DISPATCHER QUEUE CỦA LUỒNG UI HIỆN TẠI KHI TẠO VIEWMODEL
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
-        // Initialize Collections
+        // Khởi tạo Collections
         FilteredProducts = [];
         Categories = [];
         Sizes = [];
@@ -162,12 +162,12 @@ public partial class ProductViewModel : ViewModelBase
 
         StockFilterOptions =
         [
-            new() { DisplayName = "Tất cả", Value = null },        // All
-            new() { DisplayName = "Còn hàng", Value = true },       // In Stock
-            new() { DisplayName = "Hết hàng", Value = false }       // Out of Stock
+            new() { DisplayName = "Tất cả", Value = null },        // Tất cả
+            new() { DisplayName = "Còn hàng", Value = true },       // Còn hàng
+            new() { DisplayName = "Hết hàng", Value = false }       // Hết hàng
         ];
 
-        // Initialize Commands
+        // Khởi tạo Commands
         LoadProductsCommand = new AsyncRelayCommand(InitializeDataAsync, CanLoadData);
         AddProductCommand = new AsyncRelayCommand(AddProductAsync, CanAddProduct);
         EditProductCommand = new AsyncRelayCommand<Product>(EditProductAsync, CanEditProduct);
@@ -186,7 +186,7 @@ public partial class ProductViewModel : ViewModelBase
         // Bỏ qua nếu đang loading HOẶC đang reset filter
         if (IsLoading || _isResettingFilters)
         {
-            Debug.WriteLine($"ViewModel_PropertyChanged for {e.PropertyName}: Ignored because IsLoading or IsResettingFilters is true.");
+            Debug.WriteLine($"ViewModel_PropertyChanged for {e.PropertyName}: Bỏ qua vì IsLoading hoặc IsResettingFilters đang là true.");
             return;
         }
 
@@ -198,7 +198,7 @@ public partial class ProductViewModel : ViewModelBase
             case nameof(SearchTerm):
             case nameof(SelectedStockFilter):
             case nameof(PageSize):
-                Debug.WriteLine($"ViewModel_PropertyChanged for {e.PropertyName}: Triggering ResetPageAndLoadAsync.");
+                Debug.WriteLine($"ViewModel_PropertyChanged for {e.PropertyName}: Kích hoạt ResetPageAndLoadAsync.");
                 await ResetPageAndLoadAsync();
                 break;
         }
@@ -209,7 +209,7 @@ public partial class ProductViewModel : ViewModelBase
     public async Task InitializeDataAsync()
     {
         if (!CanLoadData()) return;
-        // Load filter options first
+        // Tải các tùy chọn bộ lọc trước
         await LoadFilterOptionsAsync();
         await ResetFiltersAndLoadAsync();
     }
@@ -230,7 +230,7 @@ public partial class ProductViewModel : ViewModelBase
         await LoadProductsAsync();
     }
 
-    // Called by filter property setters to reset page and reload products
+    // Được gọi bởi các setter của thuộc tính bộ lọc để reset trang và tải lại sản phẩm
     private async Task ResetPageAndLoadAsync()
     {
         if (IsLoading)
@@ -292,7 +292,7 @@ public partial class ProductViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"ERROR Loading Products: {ex}");
+            Debug.WriteLine($"LỖI Tải Sản Phẩm: {ex}");
             await ShowErrorDialogAsync("Lỗi Tải Dữ Liệu", $"Không thể tải danh sách sản phẩm: {ex.Message}");
             ShowEmptyMessage = true;
             FilteredProducts?.Clear();
@@ -327,7 +327,7 @@ public partial class ProductViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"ERROR Loading Filter Options: {ex}");
+            Debug.WriteLine($"LỖI Tải Tùy Chọn Bộ Lọc: {ex}");
             errorMsg = $"Không thể tải dữ liệu cho các bộ lọc: {ex.Message}";
             // Không Clear collection ở đây vì đang ở luồng nền
         }
@@ -361,7 +361,7 @@ public partial class ProductViewModel : ViewModelBase
             }
             catch (Exception uiEx)
             {
-                Debug.WriteLine($"Error updating filter collections on UI thread: {uiEx}");
+                Debug.WriteLine($"Lỗi cập nhật các collection bộ lọc trên luồng UI: {uiEx}");
             }
 
             if (!string.IsNullOrEmpty(errorMsg))
@@ -397,7 +397,7 @@ public partial class ProductViewModel : ViewModelBase
         }
     }
 
-    // Helper to update command states when IsLoading or Page numbers change
+    // Helper để cập nhật trạng thái command khi IsLoading hoặc số trang thay đổi
     private void UpdateCommandStates()
     {
         (PreviousPageCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
@@ -414,7 +414,7 @@ public partial class ProductViewModel : ViewModelBase
     private async Task AddProductAsync()
     {
         if (!CanAddProduct()) return;
-        Debug.WriteLine("Navigating to AddEditProductPage (Add Mode)");
+        Debug.WriteLine("Điều hướng đến AddEditProductPage (Chế độ Thêm)");
         bool navigated = _navigationService.Navigate(typeof(Views.AddEditProductPage));
         if (!navigated)
         {
@@ -426,7 +426,7 @@ public partial class ProductViewModel : ViewModelBase
     private async Task EditProductAsync(Product? product)
     {
         if (!CanEditProduct(product)) return;
-        Debug.WriteLine($"Navigating to AddEditProductPage (Edit Mode) for ProductId: {product.ProductId}");
+        Debug.WriteLine($"Điều hướng đến AddEditProductPage (Chế độ Sửa) cho ProductId: {product!.ProductId}");
         bool navigated = _navigationService.Navigate(typeof(Views.AddEditProductPage), product.ProductId);
         if (!navigated)
         {
@@ -443,7 +443,7 @@ public partial class ProductViewModel : ViewModelBase
         try
         {
             IsLoading = true;
-            productWithVariants = _filteredProducts!.FirstOrDefault(p => p.ProductId == product.ProductId);
+            productWithVariants = _filteredProducts!.FirstOrDefault(p => p.ProductId == product!.ProductId);
 
             if (productWithVariants == null)
             {
@@ -453,7 +453,7 @@ public partial class ProductViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Error fetching product for delete check: {ex}");
+            Debug.WriteLine($"Lỗi khi lấy sản phẩm để kiểm tra xóa: {ex}");
             await ShowErrorDialogAsync("Lỗi", $"Không thể tải chi tiết sản phẩm để kiểm tra xóa: {ex.Message}");
             return;
         }
@@ -495,7 +495,7 @@ public partial class ProductViewModel : ViewModelBase
                 if (hasVariantInOrder)
                 {
                     // --- SOFT DELETE ---
-                    Debug.WriteLine($"Soft deleting Product ID: {productWithVariants.ProductId} due to variants in orders.");
+                    Debug.WriteLine($"Xóa mềm Product ID: {productWithVariants.ProductId} do có variants trong đơn hàng.");
                     productWithVariants.IsDeleted = true;
 
                     // Xóa mềm các variant
@@ -509,7 +509,7 @@ public partial class ProductViewModel : ViewModelBase
                 else
                 {
                     // --- HARD DELETE ---
-                    Debug.WriteLine($"Hard deleting Product ID: {productWithVariants.ProductId}.");
+                    Debug.WriteLine($"Xóa cứng Product ID: {productWithVariants.ProductId}.");
                     await _unitOfWork.Products.DeleteAsync(productWithVariants);
                 }
 
@@ -534,7 +534,7 @@ public partial class ProductViewModel : ViewModelBase
             {
                 // Rollback Transaction on Error
                 await _unitOfWork.RollbackTransactionAsync();
-                Debug.WriteLine($"ERROR Deleting Product (DB): {dbEx}");
+                Debug.WriteLine($"LỖI Xóa Sản Phẩm (DB): {dbEx}");
                 errorMsg = dbEx.InnerException is Npgsql.PostgresException pgEx && pgEx.SqlState == "23503"
                     ? "Lỗi xóa sản phẩm: Không thể xóa vì sản phẩm hoặc biến thể của nó vẫn còn liên kết dữ liệu ở nơi khác (có thể trong đơn hàng chưa xử lý hết hoặc lỗi logic)."
                     : $"Lỗi cơ sở dữ liệu khi xóa: {dbEx.InnerException?.Message ?? dbEx.Message}. Thay đổi đã được hoàn tác.";
@@ -543,7 +543,7 @@ public partial class ProductViewModel : ViewModelBase
             {
                 // Rollback Transaction on Error
                 await _unitOfWork.RollbackTransactionAsync();
-                Debug.WriteLine($"ERROR Deleting Product: {ex}");
+                Debug.WriteLine($"LỖI Xóa Sản Phẩm: {ex}");
                 errorMsg = $"Đã xảy ra lỗi không mong muốn khi xóa: {ex.Message}. Thay đổi đã được hoàn tác.";
             }
             finally
@@ -576,13 +576,13 @@ public partial class ProductViewModel : ViewModelBase
         {
             try
             {
-                var products = _excelService.ImportProductsFromExcel(file.Path);
+                var products = ExcelService.ImportProductsFromExcel(file.Path);
 
-                // Retrieve existing product names, categories, colors, and sizes from the database
+                // Lấy tên sản phẩm, danh mục, màu sắc và kích thước hiện có từ cơ sở dữ liệu
                 var existingProducts = await _unitOfWork.Products.GetAllAsync();
                 var existingProductNames = existingProducts
                     .Select(p => p.ProductName.ToLower())
-                    .ToHashSet(); // Use HashSet for efficient lookups
+                    .ToHashSet(); // Sử dụng HashSet để tra cứu hiệu quả
 
                 var existingCategoryIds = (await _unitOfWork.ProductCategories.GetAllAsync())
                     .Select(c => c.CategoryId)
@@ -598,27 +598,27 @@ public partial class ProductViewModel : ViewModelBase
 
                 foreach (var product in products)
                 {
-                    // Check if the product already exists by name
+                    // Kiểm tra xem sản phẩm đã tồn tại theo tên chưa
                     if (existingProductNames.Contains(product.ProductName.ToLower()))
                     {
-                        continue; // Skip duplicates
+                        continue; // Bỏ qua các sản phẩm trùng lặp
                     }
 
-                    // Validate CategoryId
+                    // Xác thực CategoryId
                     if (product.CategoryId.HasValue && !existingCategoryIds.Contains(product.CategoryId.Value))
                     {
-                        continue; // Skip if CategoryId does not exist
+                        continue; // Bỏ qua nếu CategoryId không tồn tại
                     }
 
-                    // Validate ProductVariants
+                    // Xác thực ProductVariants
                     if (product.ProductVariants.Any(variant =>
                             (variant.ColorId.HasValue && !existingColorIds.Contains(variant.ColorId.Value)) ||
                             (variant.SizeId.HasValue && !existingSizeIds.Contains(variant.SizeId.Value))))
                     {
-                        continue; // Skip if any ColorId or SizeId in variants does not exist
+                        continue; // Bỏ qua nếu bất kỳ ColorId hoặc SizeId nào trong variants không tồn tại
                     }
 
-                    // Check for duplicate variants within the product
+                    // Kiểm tra các variants trùng lặp trong sản phẩm
                     var duplicateVariants = product.ProductVariants
                         .GroupBy(v => new { v.ColorId, v.SizeId, product.CategoryId })
                         .Where(group => group.Count() > 1)
@@ -626,25 +626,25 @@ public partial class ProductViewModel : ViewModelBase
 
                     if (duplicateVariants.Any())
                     {
-                        continue; // Skip the product if it has duplicate variants
+                        continue; // Bỏ qua sản phẩm nếu có variants trùng lặp
                     }
 
-                    // Add the product if all validations pass
+                    // Thêm sản phẩm nếu tất cả các xác thực đều đạt
                     await _unitOfWork.Products.AddAsync(product);
                 }
 
                 await _unitOfWork.SaveChangesAsync();
-                await ShowSuccessDialogAsync("Import Successful", "Nhập file thành công");
-                await LoadProductsAsync(); // Reload the product list
+                await ShowSuccessDialogAsync("Nhập Thành Công", "Nhập file thành công");
+                await LoadProductsAsync(); // Tải lại danh sách sản phẩm
             }
             catch (Exception ex)
             {
-                string errorMessage = $"An error occurred while importing: {ex.Message}";
+                string errorMessage = $"Đã xảy ra lỗi khi nhập: {ex.Message}";
                 if (ex.InnerException != null)
                 {
-                    errorMessage += $"\nInner Exception: {ex.InnerException.Message}";
+                    errorMessage += $"\nLỗi Nội Bộ: {ex.InnerException.Message}";
                 }
-                await ShowErrorDialogAsync("Import Failed", errorMessage);
+                await ShowErrorDialogAsync("Nhập Thất Bại", errorMessage);
             }
         }
     }
@@ -654,7 +654,7 @@ public partial class ProductViewModel : ViewModelBase
     private async Task ExportProductsAsync()
     {
         var picker = new Windows.Storage.Pickers.FileSavePicker();
-        picker.FileTypeChoices.Add("Excel File", new List<string> { ".xlsx" });
+        picker.FileTypeChoices.Add("Tệp Excel", [".xlsx"]);
 
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(((App)Microsoft.UI.Xaml.Application.Current).MainWindow);
         WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
@@ -665,17 +665,17 @@ public partial class ProductViewModel : ViewModelBase
             try
             {
                 var products = await _unitOfWork.Products.GetAllAsync();
-                _excelService.ExportProductsToExcel(file.Path, products.ToList());
-                await ShowSuccessDialogAsync("Export Successful", "Xuất file thành công.");
+                ExcelService.ExportProductsToExcel(file.Path, [.. products]);
+                await ShowSuccessDialogAsync("Xuất Thành Công", "Xuất file thành công.");
             }
             catch (Exception ex)
             {
-                string errorMessage = $"An error occurred while exporting: {ex.Message}";
+                string errorMessage = $"Đã xảy ra lỗi khi xuất: {ex.Message}";
                 if (ex.InnerException != null)
                 {
-                    errorMessage += $"\nInner Exception: {ex.InnerException.Message}";
+                    errorMessage += $"\nLỗi Nội Bộ: {ex.InnerException.Message}";
                 }
-                await ShowErrorDialogAsync("Export Failed", errorMessage);
+                await ShowErrorDialogAsync("Xuất Thất Bại", errorMessage);
             }
         }
     }

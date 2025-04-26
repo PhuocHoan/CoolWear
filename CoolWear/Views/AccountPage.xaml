@@ -60,7 +60,7 @@
                                    FontSize="18" 
                                    FontWeight="SemiBold" 
                                    Margin="0,0,0,5"/>
-                        <NumberBox Text="{x:Bind ViewModel.Phone, Mode=TwoWay}" 
+                        <TextBox Text="{x:Bind ViewModel.Phone, Mode=TwoWay}" 
                                  FontSize="16" 
                                  Padding="10" 
                                  BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}" 

@@ -258,7 +258,7 @@ public partial class OrderViewModel : ViewModelBase
         if (!CanShowEditDialog(orderToEdit)) return;
 
         EditingOrder = orderToEdit; // Lưu lại đơn hàng gốc
-        DialogTitle = $"Cập nhật Đơn hàng #{orderToEdit.OrderId}";
+        DialogTitle = $"Cập nhật Đơn hàng #{orderToEdit!.OrderId}";
         SelectedDialogStatus = orderToEdit.Status; // Trạng thái hiện tại
         IsDialogSaving = false;
 

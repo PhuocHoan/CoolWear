@@ -7,7 +7,7 @@ namespace CoolWear.Converters;
 
 public partial class ZeroIsCollapsedConverter : IValueConverter
 {
-    // Convert count (int, bool or collection count) to Visibility
+    // Chuyển đổi count (int, bool hoặc collection count) sang Visibility
     public object Convert(object value, Type targetType, object parameter, string language)
     {
         bool isZero = false;
@@ -19,7 +19,7 @@ public partial class ZeroIsCollapsedConverter : IValueConverter
         {
             isZero = b == false;
         }
-        else if (value is ICollection c) // Check if it's a collection
+        else if (value is ICollection c) // Check nếu nó là collection
         {
             isZero = c.Count == 0;
         }
@@ -66,7 +66,6 @@ public partial class InverseBoolConverter : IValueConverter
 
     /// <summary>
     /// Chuyển đổi giá trị boolean đã đảo ngược trở lại giá trị gốc.
-    /// (Thường không cần thiết cho binding IsEnabled).
     /// </summary>
     /// <returns>Giá trị boolean gốc, hoặc false nếu đầu vào không phải bool.</returns>
     public object ConvertBack(object value, Type targetType, object parameter, string language)

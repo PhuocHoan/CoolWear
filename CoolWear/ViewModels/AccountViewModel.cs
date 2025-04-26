@@ -1,17 +1,16 @@
 ﻿using CoolWear.Models;
 using CoolWear.Services;
 using CoolWear.Utilities;
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using System;
 
 namespace CoolWear.ViewModels;
 
-public partial class AccountViewModel : ViewModelBase
+public partial class AccountViewModel(IUnitOfWork unitOfWork) : ViewModelBase
 {
-    private readonly IUnitOfWork _unitOfWork;
-    private ManagePassword _managePassword;
+    public ManagePassword? ManagePassword { get; private set; }
     private StoreOwner? _storeOwner;
 
     private string _ownerName = "";
@@ -66,19 +65,13 @@ public partial class AccountViewModel : ViewModelBase
         set => SetProperty(ref _repeatPassword, value);
     }
 
-    public AccountViewModel(IUnitOfWork unitOfWork)
-    {
-        _unitOfWork = unitOfWork;
-
-    }
-
     public async Task LoadAccountInfoAsync()
     {
-        var owners = await _unitOfWork.StoreOwners.GetAllAsync();
+        var owners = await unitOfWork.StoreOwners.GetAllAsync();
         if (owners.Any())
         {
             _storeOwner = owners.First();
-            _managePassword = new ManagePassword(_storeOwner, _unitOfWork);
+            ManagePassword = new(_storeOwner, unitOfWork);
 
 
             Debug.WriteLine($"Store owner: {_storeOwner.OwnerName}");
@@ -109,13 +102,13 @@ public partial class AccountViewModel : ViewModelBase
 
         try
         {
-            await _unitOfWork.StoreOwners.UpdateAsync(_storeOwner);
-            var success = await _unitOfWork.SaveChangesAsync();
+            await unitOfWork.StoreOwners.UpdateAsync(_storeOwner);
+            var success = await unitOfWork.SaveChangesAsync();
 
             if (success)
             {
                 Debug.WriteLine("Account information saved successfully.");
-                ShowSuccessDialogAsync("Success", "Đổi thông tin thành công.");
+                await ShowSuccessDialogAsync("Success", "Đổi thông tin thành công.");
             }
             else
             {
@@ -144,28 +137,23 @@ public partial class AccountViewModel : ViewModelBase
             return false;
         }
 
-        var storedPassword = _managePassword.UnprotectPassword().Item2;
+        var storedPassword = ManagePassword!.UnprotectPassword().Item2;
         if (string.IsNullOrEmpty(storedPassword))
         {
             throw new InvalidOperationException("Stored password is invalid.");
         }
 
-        //Debug.WriteLine($"Stored password: {storedPassword}");
-        //Debug.WriteLine($"Old password: {oldPassword}");
-        //Debug.WriteLine($"New password: {newPassword}");
-        //Debug.WriteLine($"Repeat password: {repeatPassword}");
-
-        if (storedPassword != oldPassword) 
+        if (storedPassword != oldPassword)
         {
             await ShowErrorDialogAsync("Error", "Mật khẩu cũ không đúng.");
             return false;
         }
 
-        _managePassword.ProtectPassword(newPassword);
+        ManagePassword.ProtectPassword(newPassword);
 
 
-         _unitOfWork.SaveChangesAsync();
-         ShowSuccessDialogAsync("Success", "Đổi mật khẩu thành công.");
-         return true;
+        await unitOfWork.SaveChangesAsync();
+        await ShowSuccessDialogAsync("Success", "Đổi mật khẩu thành công.");
+        return true;
     }
 }

@@ -17,7 +17,7 @@ public partial class CategoryViewModel : ViewModelBase
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly DispatcherQueue _dispatcherQueue; // Thêm DispatcherQueue
-    private readonly ExcelService _excelService = new ExcelService(); // Added ExcelService instance
+    private readonly ExcelService _excelService = new(); // Added ExcelService instance
 
     private bool _isResettingFilters = false;
     private const int DefaultPageSize = 2; // Số danh mục trên mỗi trang
@@ -306,7 +306,7 @@ public partial class CategoryViewModel : ViewModelBase
             ProductTypes?.Add("Tất cả loại sản phẩm");
             if (distinctTypesData != null)
             {
-                foreach (var type in distinctTypesData) ProductTypes.Add(type);
+                foreach (var type in distinctTypesData) ProductTypes!.Add(type);
             }
             SelectedProductType = ProductTypes?.FirstOrDefault();
 
@@ -375,7 +375,7 @@ public partial class CategoryViewModel : ViewModelBase
 
         _editingCategory = categoryToEdit; // Lưu lại category đang sửa
         DialogTitle = "Chỉnh Sửa Danh Mục";
-        DialogCategoryName = categoryToEdit.CategoryName; // Điền thông tin cũ vào ô nhập liệu
+        DialogCategoryName = categoryToEdit!.CategoryName; // Điền thông tin cũ vào ô nhập liệu
         DialogProductType = categoryToEdit.ProductType;
         IsDialogSaving = false;
 
@@ -518,7 +518,7 @@ public partial class CategoryViewModel : ViewModelBase
 
         var confirmation = await ShowConfirmationDialogAsync(
             "Xác Nhận Xóa Danh Mục",
-            $"Bạn có chắc muốn xóa danh mục '{category.CategoryName}' không?",
+            $"Bạn có chắc muốn xóa danh mục '{category!.CategoryName}' không?",
             "Xóa", "Hủy");
 
         if (confirmation == ContentDialogResult.Primary)
@@ -587,7 +587,7 @@ public partial class CategoryViewModel : ViewModelBase
         {
             try
             {
-                var categories = _excelService.ImportCategoriesFromExcel(file.Path);
+                var categories = ExcelService.ImportCategoriesFromExcel(file.Path);
 
                 // Retrieve existing category names from the database
                 var existingCategoryNames = (await _unitOfWork.ProductCategories.GetAllAsync())
@@ -623,7 +623,7 @@ public partial class CategoryViewModel : ViewModelBase
     private async Task ExportAsync()
     {
         var picker = new Windows.Storage.Pickers.FileSavePicker();
-        picker.FileTypeChoices.Add("Excel File", new List<string> { ".xlsx" });
+        picker.FileTypeChoices.Add("Excel File", [".xlsx"]);
 
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(((App)Microsoft.UI.Xaml.Application.Current).MainWindow);
         WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
@@ -634,7 +634,7 @@ public partial class CategoryViewModel : ViewModelBase
             try
             {
                 var categories = await _unitOfWork.ProductCategories.GetAllAsync();
-                _excelService.ExportCategoriesToExcel(file.Path, categories.ToList());
+                ExcelService.ExportCategoriesToExcel(file.Path, [.. categories]);
                 await ShowSuccessDialogAsync("Export Successful", "Xuất file thành công.");
             }
             catch (Exception ex)

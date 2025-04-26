@@ -20,6 +20,5 @@ public partial class EnumToStringConverter : IValueConverter
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, string language) =>
-        // Thường không cần ConvertBack cho hiển thị Enum
         throw new NotImplementedException();
 }

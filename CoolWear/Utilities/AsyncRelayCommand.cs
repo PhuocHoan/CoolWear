@@ -6,7 +6,7 @@ namespace CoolWear.Utilities;
 
 public partial class AsyncRelayCommand(Func<Task> execute, Func<bool>? canExecute = null) : ICommand
 {
-    private bool _isExecuting; // To avoid re-entrancy
+    private bool _isExecuting; // Để tránh tái nhập
 
     public bool CanExecute(object? parameter) =>
         !_isExecuting && (canExecute?.Invoke() ?? true);
@@ -37,7 +37,7 @@ public partial class AsyncRelayCommand(Func<Task> execute, Func<bool>? canExecut
 
 public partial class AsyncRelayCommand<T>(Func<T, Task> execute, Func<T, bool>? canExecute = null) : ICommand
 {
-    private bool _isExecuting; // To avoid re-entrancy
+    private bool _isExecuting; // Để tránh tái nhập
 
     public bool CanExecute(object? parameter) =>
         !_isExecuting && (parameter is T typedParameter && (canExecute?.Invoke(typedParameter) ?? true));

@@ -14,12 +14,12 @@ public class ProductSpecification : GenericSpecification<Product>
         int? categoryId = null,
         int? colorId = null,
         int? sizeId = null,
-        bool? inStockOnly = null, // true = in stock, false = out of stock, null = all
+        bool? inStockOnly = null, // true = còn hàng, false = hết hàng, null = tất cả
         int? skip = null,
         int? take = null,
         bool includeDetails = true)
     {
-        AddCriteria(p => !p.IsDeleted); // Exclude deleted products
+        AddCriteria(p => !p.IsDeleted); // Loại bỏ sản phẩm đã bị xóa
 
         if (includeDetails)
         {
@@ -27,7 +27,7 @@ public class ProductSpecification : GenericSpecification<Product>
             IncludeVariantsWithDetails();
         }
 
-        // Apply Filters based on constructor parameters
+        // Áp dụng bộ lọc dựa trên các tham số của hàm tạo
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
             SearchByIdOrName(searchTerm);
@@ -56,7 +56,7 @@ public class ProductSpecification : GenericSpecification<Product>
             }
         }
 
-        // Apply Paging if requested
+        // Áp dụng phân trang nếu được yêu cầu
         if (skip.HasValue && take.HasValue)
         {
             ApplyPaging(skip.Value, take.Value);
@@ -64,53 +64,52 @@ public class ProductSpecification : GenericSpecification<Product>
     }
 
     /// <summary>
-    /// Includes category data using string-based include.
+    /// Bao gồm dữ liệu danh mục sử dụng chuỗi bao gồm.
     /// </summary>
     public ProductSpecification IncludeCategory()
     {
-        AddInclude(nameof(Product.Category)); // Pass "Category" string
+        AddInclude(nameof(Product.Category)); // Truyền chuỗi "Category"
         return this;
     }
 
     /// <summary>
-    /// Includes variants and their related Color and Size using string-based includes.
+    /// Bao gồm các biến thể và thông tin liên quan về Màu sắc và Kích thước bằng cách sử dụng chuỗi bao gồm.
     /// </summary>
     public ProductSpecification IncludeVariantsWithDetails()
     {
-        AddInclude(nameof(Product.ProductVariants)); // Pass "ProductVariants" string
+        AddInclude(nameof(Product.ProductVariants)); // Truyền chuỗi "ProductVariants"
 
-        AddInclude($"{nameof(Product.ProductVariants)}.{nameof(ProductVariant.Color)}"); // Pass "ProductVariants.Color"
-        AddInclude($"{nameof(Product.ProductVariants)}.{nameof(ProductVariant.Size)}");  // Pass "ProductVariants.Size"
+        AddInclude($"{nameof(Product.ProductVariants)}.{nameof(ProductVariant.Color)}"); // Truyền chuỗi "ProductVariants.Color"
+        AddInclude($"{nameof(Product.ProductVariants)}.{nameof(ProductVariant.Size)}");  // Truyền chuỗi "ProductVariants.Size"
 
         return this;
     }
 
     /// <summary>
-    /// Includes variants
+    /// Bao gồm các biến thể
     /// </summary>
     public ProductSpecification IncludeVariants()
     {
-        AddInclude(nameof(Product.ProductVariants)); // Pass "ProductVariants" string
-
+        AddInclude(nameof(Product.ProductVariants)); // Truyền chuỗi "ProductVariants"
         return this;
     }
 
     /// <summary>
-    /// Creates a specification for products with a specific category name.
-    /// Relies on Category being included or EF Core implicitly joining.
-    /// Consider calling IncludeCategory() if using this filter often.
+    /// Tạo đặc tả cho các sản phẩm với tên danh mục cụ thể.
+    /// Phụ thuộc vào việc bao gồm Category hoặc EF Core tự động join.
+    /// Cân nhắc gọi IncludeCategory() nếu sử dụng bộ lọc này thường xuyên.
     /// </summary>
     public ProductSpecification WithCategoryName(string categoryName)
     {
         if (!string.IsNullOrWhiteSpace(categoryName))
         {
-            AddCriteria(p => p.Category.CategoryName == categoryName);
+            AddCriteria(p => p.Category!.CategoryName == categoryName);
         }
         return this;
     }
 
     /// <summary>
-    /// Adds criteria to search by product name or ProductID.
+    /// Thêm tiêu chí để tìm kiếm theo tên sản phẩm hoặc Mã sản phẩm.
     /// </summary>
     public ProductSpecification SearchByIdOrName(string searchTerm)
     {
@@ -132,7 +131,7 @@ public class ProductSpecification : GenericSpecification<Product>
     }
 
     /// <summary>
-    /// Adds criteria to filter by a specific category ID.
+    /// Thêm tiêu chí lọc theo mã danh mục cụ thể.
     /// </summary>
     public ProductSpecification WhereCategoryIs(int categoryId)
     {
@@ -141,7 +140,7 @@ public class ProductSpecification : GenericSpecification<Product>
     }
 
     /// <summary>
-    /// Adds criteria to filter products that have a variant with the specified color ID.
+    /// Thêm tiêu chí lọc theo mã màu cụ thể.
     /// </summary>
     public ProductSpecification HasColor(int colorId)
     {
@@ -150,7 +149,7 @@ public class ProductSpecification : GenericSpecification<Product>
     }
 
     /// <summary>
-    /// Adds criteria to filter products that have a variant with the specified size ID.
+    /// Thêm tiêu chí lọc theo mã kích thước cụ thể.
     /// </summary>
     public ProductSpecification HasSize(int sizeId)
     {
@@ -159,7 +158,7 @@ public class ProductSpecification : GenericSpecification<Product>
     }
 
     /// <summary>
-    /// Adds criteria to filter products that have at least one variant in stock.
+    /// Thêm tiêu chí lọc để chỉ lấy các sản phẩm còn hàng.
     /// </summary>
     public ProductSpecification IsInStock()
     {
@@ -167,6 +166,9 @@ public class ProductSpecification : GenericSpecification<Product>
         return this;
     }
 
+    /// <summary>
+    /// Thêm tiêu chí lọc để chỉ lấy các sản phẩm hết hàng.
+    /// </summary>
     public ProductSpecification IsOutOfStock()
     {
         AddCriteria(p => p.ProductVariants.Any(v => v.StockQuantity == 0));

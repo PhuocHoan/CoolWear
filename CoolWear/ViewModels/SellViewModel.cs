@@ -1,27 +1,25 @@
-﻿using System;
-using CoolWear.Models;
+﻿using CoolWear.Models;
 using CoolWear.Services;
 using CoolWear.Utilities;
 using Microsoft.UI.Dispatching;
+using PdfSharp.Drawing;
+using PdfSharp.Pdf;
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.IO;
-using PdfSharp.Pdf;
-using PdfSharp.Drawing;
-using System.Windows.Input;
 
 namespace CoolWear.ViewModels;
 
-public class SellViewModel : ViewModelBase
+public partial class SellViewModel : ViewModelBase
 {
-    private readonly IUnitOfWork _unitOfWork;
     private readonly DispatcherQueue _dispatcherQueue;
-    public IUnitOfWork UnitOfWork => _unitOfWork;
+    public IUnitOfWork UnitOfWork { get; }
     private ObservableCollection<Product>? _filteredProducts;
     private ObservableCollection<ProductCategory>? _categories;
     private ObservableCollection<ProductVariant>? _productVariants;
@@ -30,17 +28,16 @@ public class SellViewModel : ViewModelBase
     private ProductCategory? _selectedCategory;
     private string? _searchTerm;
     private bool _isLoading;
-    private ObservableCollection<Product>? _selectedProducts = new();
+    private ObservableCollection<Product>? _selectedProducts = [];
     private Product? _selectedProduct;
     public bool IsProductSelected => SelectedProduct != null;
 
-    private ObservableCollection<Order>? _orders = new();
-    private ObservableCollection<OrderItem>? _ordersItems = new();
+    private ObservableCollection<Order>? _orders = [];
+    private ObservableCollection<OrderItem>? _ordersItems = [];
     private ObservableCollection<Customer>? _filteredCustomers;
     private bool _isReceiptEnabled;
-    private List<int> _selectedVariantIds = new();
+    private List<int> _selectedVariantIds = [];
 
-    private decimal _totalPrice;
     private string? _customerSearchTerm;
     private string? _selectedCustomerName;
     public int Points { get; set; }
@@ -48,8 +45,6 @@ public class SellViewModel : ViewModelBase
     private int _pointInput;
     private int _pointUsed;
     private decimal _netTotal;
-    private decimal _subTotal;
-
 
     public int? SelectedCustomerPoints
     {
@@ -112,7 +107,7 @@ public class SellViewModel : ViewModelBase
         get => _selectedPaymentMethodId;
         set
         {
-            if (value == 1 || value == 2) 
+            if (value == 1 || value == 2)
             {
                 _selectedPaymentMethodId = value;
                 OnPropertyChanged(nameof(SelectedPaymentMethodId));
@@ -200,7 +195,7 @@ public class SellViewModel : ViewModelBase
     {
         get => _ordersItems;
         set => SetProperty(ref _ordersItems, value);
-        
+
     }
 
     public List<int> SelectedVariantIds
@@ -212,13 +207,13 @@ public class SellViewModel : ViewModelBase
 
     public SellViewModel(IUnitOfWork unitOfWork)
     {
-        _unitOfWork = unitOfWork;
+        UnitOfWork = unitOfWork;
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
-        FilteredProducts = new();
-        Categories = new();
-        OrdersItems = new ObservableCollection<OrderItem>();
-        FilteredCustomers = new ObservableCollection<Customer>();
+        FilteredProducts = [];
+        Categories = [];
+        OrdersItems = [];
+        FilteredCustomers = [];
         OrdersItems.CollectionChanged += OrdersItems_CollectionChanged;
 
 
@@ -242,13 +237,13 @@ public class SellViewModel : ViewModelBase
 
     private void OrdersItems_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        OnPropertyChanged(nameof(TotalPrice)); // Update TotalPrice when collection changes
+        OnPropertyChanged(nameof(TotalPrice)); // Cập nhật TotalPrice khi collection thay đổi
 
         if (e.NewItems != null)
         {
             foreach (OrderItem item in e.NewItems)
             {
-                // Attach PropertyChanged event to new items
+                // Đính kèm sự kiện PropertyChanged vào các mục mới
                 if (item is INotifyPropertyChanged notifyItem)
                 {
                     notifyItem.PropertyChanged += OrderItem_PropertyChanged;
@@ -260,7 +255,7 @@ public class SellViewModel : ViewModelBase
         {
             foreach (OrderItem item in e.OldItems)
             {
-                // Detach PropertyChanged event from removed items
+                // Gỡ bỏ sự kiện PropertyChanged khỏi các mục đã bị xóa
                 if (item is INotifyPropertyChanged notifyItem)
                 {
                     notifyItem.PropertyChanged -= OrderItem_PropertyChanged;
@@ -273,7 +268,7 @@ public class SellViewModel : ViewModelBase
     {
         if (e.PropertyName == nameof(OrderItem.Quantity) || e.PropertyName == nameof(OrderItem.UnitPrice))
         {
-            OnPropertyChanged(nameof(TotalPrice)); // Update TotalPrice when item properties change
+            OnPropertyChanged(nameof(TotalPrice)); // Cập nhật TotalPrice khi thuộc tính của mục thay đổi
         }
     }
 
@@ -290,14 +285,15 @@ public class SellViewModel : ViewModelBase
 
         try
         {
-            var allCustomers = await _unitOfWork.Customers.GetAllAsync();
+            var dataSpec = new CustomerSpecification();
+            var allCustomers = await UnitOfWork.Customers.GetAsync(dataSpec);
             var filtered = string.IsNullOrWhiteSpace(CustomerSearchTerm)
                 ? allCustomers
-                : allCustomers.Where(c =>
+                : [.. allCustomers.Where(c =>
                     (c.CustomerName?.Contains(CustomerSearchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
                     (c.Email?.Contains(CustomerSearchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
                     (c.Phone?.Contains(CustomerSearchTerm, StringComparison.OrdinalIgnoreCase) ?? false)
-                  ).ToList();
+                  )];
 
             _dispatcherQueue.TryEnqueue(() =>
             {
@@ -325,7 +321,7 @@ public class SellViewModel : ViewModelBase
 
         try
         {
-            var categoryList = await _unitOfWork.ProductCategories.GetAllAsync();
+            var categoryList = await UnitOfWork.ProductCategories.GetAllAsync();
             var sorted = categoryList.OrderBy(c => c.CategoryName).ToList();
 
             Debug.WriteLine($"Categories loaded: {string.Join(", ", sorted.Select(c => c.CategoryName))}");
@@ -361,7 +357,7 @@ public class SellViewModel : ViewModelBase
                 includeDetails: true
             );
 
-            var products = await _unitOfWork.Products.GetAsync(spec);
+            var products = await UnitOfWork.Products.GetAsync(spec);
 
             _dispatcherQueue.TryEnqueue(() =>
             {
@@ -382,82 +378,21 @@ public class SellViewModel : ViewModelBase
         }
     }
 
-    public async Task<bool> CreateOrderAsync(int? customerId)
-    {
-        try
-        {
-            var variants = await _unitOfWork.ProductVariants.GetAllAsync();
-            var selectedVariants = variants.Where(v => SelectedVariantIds.Contains(v.VariantId)).ToList();
-
-            if (!selectedVariants.Any())
-            {
-                Debug.WriteLine("Không có biến thể sản phẩm nào được chọn để tạo đơn hàng.");
-                return false;
-            }
-
-            var newOrder = new Order
-            {
-                CustomerId = customerId,
-                Subtotal = 0,
-                PaymentMethodId = SelectedPaymentMethodId,
-                Status = SelectedStatus,
-                NetTotal = 0
-            };
-
-            foreach (var variant in selectedVariants)
-            {
-
-                int unitPrice = 100_000;
-
-                var item = new OrderItem
-                {
-                    VariantId = variant.VariantId,
-                    Quantity = 1,
-                    UnitPrice = unitPrice
-                };
-
-                newOrder.OrderItems.Add(item);
-                newOrder.Subtotal += item.Quantity * item.UnitPrice;
-            }
-
-            newOrder.NetTotal = newOrder.Subtotal;
-
-            await _unitOfWork.Orders.AddAsync(newOrder);
-            var saved = await _unitOfWork.SaveChangesAsync();
-
-            if (saved)
-            {
-                Debug.WriteLine($"Đơn hàng đã được tạo với {newOrder.OrderItems.Count} sản phẩm.");
-                Orders?.Add(newOrder);
-
-                return true;
-            }
-
-            return false;
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Lỗi khi tạo đơn hàng: {ex}");
-
-            return false;
-        }
-    }
-
     public async Task GenerateAndOpenReceiptAsync(Order order)
     {
         try
         {
-            // Ensure the order is valid
+            // Đảm bảo đơn hàng hợp lệ
             if (order == null || order.OrderItems == null || !order.OrderItems.Any())
             {
-                await ShowErrorDialogAsync("Error", "No order or items found to generate a receipt.");
+                await ShowErrorDialogAsync("Error", "Không tìm thấy đơn hàng hoặc mục nào để tạo hóa đơn.");
                 return;
             }
 
-            // Generate the PDF file
+            // Tạo file PDF
             string filePath = await GenerateReceiptPdfAsync(order);
 
-            // Open the PDF file
+            // Mở file PDF
             if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
             {
                 Process.Start(new ProcessStartInfo
@@ -469,7 +404,7 @@ public class SellViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Error generating or opening receipt: {ex.Message}");
+            Debug.WriteLine($"Lỗi khi tạo hoặc mở hóa đơn: {ex.Message}");
             await ShowErrorDialogAsync("Error", "Lỗi tạo hóa đơn.");
         }
     }
@@ -481,29 +416,29 @@ public class SellViewModel : ViewModelBase
 
         try
         {
-            var storeOwner = (await _unitOfWork.StoreOwners.GetAllAsync()).FirstOrDefault();
-            var paymentMethod = await _unitOfWork.PaymentMethods.GetByIdAsync(order.PaymentMethodId);
+            var storeOwner = (await UnitOfWork.StoreOwners.GetAllAsync()).FirstOrDefault();
+            var paymentMethod = await UnitOfWork.PaymentMethods.GetByIdAsync(order.PaymentMethodId);
             string paymentMethodName = paymentMethod?.PaymentMethodName ?? "N/A";
 
-            // Create a new PDF document
-            using (PdfDocument document = new PdfDocument())
+            // Tạo tài liệu PDF mới
+            using (PdfDocument document = new())
             {
                 document.Info.Title = "Receipt";
 
-                // Add a page
+                // Thêm trang
                 PdfPage page = document.AddPage();
                 XGraphics gfx = XGraphics.FromPdfPage(page);
 
-                // Define fonts
-                XFont titleFont = new XFont("Arial", 20);
-                XFont regularFont = new XFont("Arial", 12);
+                // Định nghĩa font
+                XFont titleFont = new("Arial", 20);
+                XFont regularFont = new("Arial", 12);
 
-                // Draw title
+                // Vẽ tiêu đề
                 gfx.DrawString("Receipt", titleFont, XBrushes.Black,
                     new XRect(0, 30, page.Width, 0), XStringFormats.TopCenter);
 
-                // Draw shop information
-                gfx.DrawString($"Tên chủ: {storeOwner.OwnerName}", regularFont, XBrushes.Black,
+                // Vẽ thông tin cửa hàng
+                gfx.DrawString($"Tên chủ: {storeOwner!.OwnerName}", regularFont, XBrushes.Black,
                     new XRect(40, 70, page.Width, 0), XStringFormats.TopLeft);
                 gfx.DrawString($"Địa chỉ: {storeOwner.Address}", regularFont, XBrushes.Black,
                     new XRect(40, 90, page.Width, 0), XStringFormats.TopLeft);
@@ -512,30 +447,30 @@ public class SellViewModel : ViewModelBase
                 gfx.DrawString($"Email: {storeOwner.Email}", regularFont, XBrushes.Black,
                     new XRect(40, 130, page.Width, 0), XStringFormats.TopLeft);
 
-                // Draw order details
+                // Vẽ chi tiết đơn hàng
                 gfx.DrawString($"Order ID: {order.OrderId}", regularFont, XBrushes.Black,
                     new XRect(40, 170, page.Width, 0), XStringFormats.TopLeft);
                 gfx.DrawString($"Ngày: {order.OrderDate:yyyy-MM-dd HH:mm:ss}", regularFont, XBrushes.Black,
                     new XRect(40, 190, page.Width, 0), XStringFormats.TopLeft);
 
-                // Handle long customer names with wrapping
+                // Xử lý tên khách hàng dài với việc ngắt dòng
                 string customerName = order.Customer?.CustomerName ?? "N/A";
-                double maxWidth = page.Width - 80; // Allow some margin
+                double maxWidth = page.Width - 80; // Chừa một số lề
                 var wrappedLines = WrapText(gfx, $"Khách: {customerName}", regularFont, maxWidth);
 
-                int yOffset = 210; // Starting Y position for customer name
+                int yOffset = 210; // Vị trí Y bắt đầu cho tên khách hàng
                 foreach (var line in wrappedLines)
                 {
                     gfx.DrawString(line, regularFont, XBrushes.Black,
                         new XRect(40, yOffset, page.Width, 0), XStringFormats.TopLeft);
-                    yOffset += 15; // Move to the next line
+                    yOffset += 15; // Di chuyển đến dòng tiếp theo
                 }
 
                 gfx.DrawString($"Phương thức thanh toán: {paymentMethodName}", regularFont, XBrushes.Black,
                     new XRect(40, yOffset, page.Width, 0), XStringFormats.TopLeft);
 
-                // Draw table header
-                yOffset += 40; // Add some space before the table
+                // Vẽ tiêu đề bảng
+                yOffset += 40; // Thêm một số khoảng trống trước bảng
                 gfx.DrawString("Món", regularFont, XBrushes.Black,
                     new XRect(40, yOffset, 200, 0), XStringFormats.TopLeft);
                 gfx.DrawString("Màu", regularFont, XBrushes.Black,
@@ -547,8 +482,8 @@ public class SellViewModel : ViewModelBase
                 gfx.DrawString("Giá", regularFont, XBrushes.Black,
                     new XRect(440, yOffset, 100, 0), XStringFormats.TopLeft);
 
-                // Draw order items
-                yOffset += 20; // Move below the header
+                // Vẽ các mục đơn hàng
+                yOffset += 20; // Di chuyển xuống dưới tiêu đề
                 int lineHeight = 20;
 
                 foreach (var item in order.OrderItems)
@@ -571,7 +506,7 @@ public class SellViewModel : ViewModelBase
                         new XRect(440, yOffset - lineHeight, 100, lineHeight), XStringFormats.TopLeft);
                 }
 
-                // Draw total
+                // Vẽ tổng cộng
                 yOffset += 30;
                 gfx.DrawString($"Số tiền hàng: {order.Subtotal:N0}đ", regularFont, XBrushes.Black,
                     new XRect(40, yOffset, page.Width, 30), XStringFormats.TopLeft);
@@ -582,7 +517,7 @@ public class SellViewModel : ViewModelBase
                 gfx.DrawString($"Tổng tiền: {order.NetTotal:N0}đ", titleFont, XBrushes.Black,
                     new XRect(40, yOffset + 40, page.Width, 30), XStringFormats.TopLeft);
 
-                // Save the document
+                // Lưu tài liệu
                 document.Save(filePath);
             }
 
@@ -590,14 +525,14 @@ public class SellViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Error generating PDF: {ex.Message}");
-            await ShowErrorDialogAsync("Error", "Failed to generate the receipt PDF.");
+            Debug.WriteLine($"Lỗi khi tạo PDF: {ex.Message}");
+            await ShowErrorDialogAsync("Error", "Lỗi tạo hóa đơn PDF.");
             return string.Empty;
         }
     }
 
 
-    private List<string> WrapText(XGraphics gfx, string text, XFont font, double maxWidth)
+    private static List<string> WrapText(XGraphics gfx, string text, XFont font, double maxWidth)
     {
         var lines = new List<string>();
         var words = text.Split(' ');
@@ -634,19 +569,13 @@ public class SellViewModel : ViewModelBase
         }
         else
         {
-            Debug.WriteLine("Receipt generation is disabled.");
+            Debug.WriteLine("Tạo hóa đơn đã bị vô hiệu hóa.");
         }
     }
 
     public static int CalculatePoints(int netTotal) => (int)Math.Floor((double)netTotal / 100000);
 
-    public async Task ShowErrorDialog(string title, string message)
-    {
-        await ShowErrorDialogAsync(title, message);
-    }
+    public static async Task ShowErrorDialog(string title, string message) => await ShowErrorDialogAsync(title, message);
 
-    public async Task ShowSuccessDialog(string title, string message)
-    {
-        await ShowSuccessDialogAsync(title, message);
-    }
+    public static async Task ShowSuccessDialog(string title, string message) => await ShowSuccessDialogAsync(title, message);
 }

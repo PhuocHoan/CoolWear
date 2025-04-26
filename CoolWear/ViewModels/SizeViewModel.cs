@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Controls;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -286,7 +285,7 @@ public partial class SizeViewModel : ViewModelBase
 
         _editingSize = sizeToEdit; // Lưu lại size đang sửa
         DialogTitle = "Chỉnh Sửa Size";
-        DialogSizeName = sizeToEdit.SizeName; // Điền thông tin cũ vào ô nhập liệu
+        DialogSizeName = sizeToEdit!.SizeName; // Điền thông tin cũ vào ô nhập liệu
         IsDialogSaving = false;
 
         // Yêu cầu View hiển thị dialog
@@ -436,7 +435,7 @@ public partial class SizeViewModel : ViewModelBase
 
         var confirmation = await ShowConfirmationDialogAsync(
             "Xác Nhận Xóa Size",
-            $"Bạn có chắc muốn xóa size '{size.SizeName}' không?",
+            $"Bạn có chắc muốn xóa size '{size!.SizeName}' không?",
             "Xóa", "Hủy");
 
         if (confirmation == ContentDialogResult.Primary)
@@ -518,14 +517,14 @@ public partial class SizeViewModel : ViewModelBase
         {
             try
             {
-                var sizes = _excelService.ImportSizesFromExcel(file.Path);
+                var sizes = ExcelService.ImportSizesFromExcel(file.Path);
 
                 // Retrieve existing size names from the database
                 var existingSizeNames = (await _unitOfWork.ProductSizes.GetAllAsync())
                     .Select(s => s.SizeName.ToLower())
                     .ToHashSet(); // Use HashSet for efficient lookups
 
-                foreach (var size in sizes)
+                foreach (var size in sizes!)
                 {
                     // Check if the size already exists
                     if (!existingSizeNames.Contains(size.SizeName.ToLower()))
@@ -551,12 +550,10 @@ public partial class SizeViewModel : ViewModelBase
         }
     }
 
-
-
     private async Task ExportAsync()
     {
         var picker = new Windows.Storage.Pickers.FileSavePicker();
-        picker.FileTypeChoices.Add("Excel File", new List<string> { ".xlsx" });
+        picker.FileTypeChoices.Add("Excel File", [".xlsx"]);
 
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(((App)Microsoft.UI.Xaml.Application.Current).MainWindow);
         WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
@@ -567,7 +564,7 @@ public partial class SizeViewModel : ViewModelBase
             try
             {
                 var sizes = await _unitOfWork.ProductSizes.GetAllAsync();
-                _excelService.ExportSizesToExcel(file.Path, sizes.ToList());
+                ExcelService.ExportSizesToExcel(file.Path, [.. sizes]);
                 await ShowSuccessDialogAsync("Export Successful", "Xuất file thành công.");
             }
             catch (Exception ex)

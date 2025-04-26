@@ -33,12 +33,12 @@ public sealed class ServiceManager
 
     public static void ConfigureServices()
     {
-        // Configure user secrets
+        // Cấu hình bí mật người dùng
         AddKeyedSingleton<IConfiguration>(() => new ConfigurationBuilder()
                 .AddUserSecrets<ServiceManager>()
                 .Build());
 
-        // Register PostgresDao
+        // Đăng ký PostgresDao
         try
         {
             var configuration = GetKeyedSingleton<IConfiguration>();
@@ -47,10 +47,10 @@ public sealed class ServiceManager
 
             if (string.IsNullOrEmpty(connectionString))
             {
-                throw new InvalidOperationException("Connection string 'PostgresDatabase' not found in user secrets configuration.");
+                throw new InvalidOperationException("Chuỗi kết nối 'PostgresDatabase' không được tìm thấy trong cấu hình bí mật người dùng.");
             }
 
-            // Configure DbContext
+            // Cấu hình DbContext
             AddKeyedSingleton(() =>
                 new PooledDbContextFactory<PostgresContext>(
                 new DbContextOptionsBuilder<PostgresContext>()
@@ -59,48 +59,48 @@ public sealed class ServiceManager
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Database connection error: {ex.Message}");
+            Debug.WriteLine($"Lỗi kết nối cơ sở dữ liệu: {ex.Message}");
             throw;
         }
 
         var context = GetKeyedSingleton<PostgresContext>();
 
-        // Register Navigation Service
+        // Đăng ký Dịch vụ Điều hướng
         AddKeyedSingleton<INavigationService, NavigationService>();
 
         var navigationService = GetKeyedSingleton<INavigationService>();
 
-        // Register UnitOfWork
+        // Đăng ký Đơn vị công việc
         AddKeyedSingleton<IUnitOfWork>(() => new UnitOfWork(context));
 
-        // Register LoginViewModel
+        // Đăng ký LoginViewModel
         AddKeyedSingleton(() => new LoginViewModel(GetKeyedSingleton<IUnitOfWork>()));
 
-        // Register ProductViewModel
+        // Đăng ký ProductViewModel
         AddKeyedSingleton(() => new ProductViewModel(GetKeyedSingleton<IUnitOfWork>(), navigationService));
 
-        // Register CategoryViewModel
+        // Đăng ký CategoryViewModel
         AddKeyedSingleton(() => new CategoryViewModel(GetKeyedSingleton<IUnitOfWork>()));
 
-        // Register ColorViewModel
+        // Đăng ký ColorViewModel
         AddKeyedSingleton(() => new ColorViewModel(GetKeyedSingleton<IUnitOfWork>()));
 
-        // Register SizeViewModel
+        // Đăng ký SizeViewModel
         AddKeyedSingleton(() => new SizeViewModel(GetKeyedSingleton<IUnitOfWork>()));
 
-        // Register AccountViewModel
+        // Đăng ký AccountViewModel
         AddKeyedSingleton(() => new AccountViewModel(GetKeyedSingleton<IUnitOfWork>()));
 
-        // Register CustomerViewModel
+        // Đăng ký CustomerViewModel
         AddKeyedSingleton(() => new CustomerViewModel(GetKeyedSingleton<IUnitOfWork>()));
 
-        // Register OrderViewModel
+        // Đăng ký OrderViewModel
         AddKeyedSingleton(() => new OrderViewModel(GetKeyedSingleton<IUnitOfWork>()));
 
-        // Register ReportViewModel
+        // Đăng ký ReportViewModel
         AddKeyedSingleton(() => new ReportViewModel(GetKeyedSingleton<IUnitOfWork>()));
 
-        // Register SellViewModel
+        // Đăng ký SellViewModel
         AddKeyedSingleton(() => new SellViewModel(GetKeyedSingleton<IUnitOfWork>()));
     }
 }
