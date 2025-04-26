@@ -261,7 +261,7 @@
                     <!-- Order Status Section -->
                     <StackPanel Width="auto">
                         <TextBlock Text="Chọn hình thức giao hàng:" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
-                        <RadioButton Content="Tại chổ"
+                        <RadioButton Content="Tại chỗ"
                  IsChecked="{x:Bind ViewModel.SelectedStatus, Mode=TwoWay, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=Hoàn thành}"
                  GroupName="OrderStatus"
                  FontSize="14"/>
